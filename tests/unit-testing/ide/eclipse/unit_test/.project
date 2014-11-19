@@ -26,16 +26,6 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>gmock</name>
-			<type>2</type>
-			<locationURI>PARENT-3-PROJECT_LOC/gmock</locationURI>
-		</link>
-		<link>
-			<name>gtest</name>
-			<type>2</type>
-			<locationURI>PARENT-3-PROJECT_LOC/gtest</locationURI>
-		</link>
-		<link>
 			<name>mocks</name>
 			<type>2</type>
 			<locationURI>PARENT-3-PROJECT_LOC/mocks</locationURI>
