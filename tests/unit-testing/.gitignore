@@ -1,7 +1,0 @@
-# ignore eclipse workspace files
-/ide/eclipse/.metadata
-/ide/eclipse/RemoteSystemsTempFiles
-*.stackdump
-
-#ignore eclipse output files
-/ide/eclipse/wheelstore_unit_test/Debug/
