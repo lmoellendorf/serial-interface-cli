@@ -12,9 +12,10 @@
  *
  =============================================================================*/
 
-#include "serial-interface.h"
+#include <iostream>
+using namespace std;
 
 int main(int argc, char **argv) {
-	greetTheWorld();
+	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 }
 
