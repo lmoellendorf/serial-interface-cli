@@ -22,6 +22,7 @@ using namespace std;
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "stackforce_serial_mac_api.h"
 
 #define BAUDRATE B38400
 #define MODEMDEVICE "/dev/ttyUSB0"
@@ -31,16 +32,64 @@ using namespace std;
 
 volatile int STOP = FALSE;
 
+typedef struct serial_ctx
+{
+    int tty_fd;
+    size_t buffLen;
+    uint8_t *buff;
+} serial_ctx_t;
+
+ssize_t rx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength);
+ssize_t tx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength);
+void read_evt(uint8_t *frameBuffer, size_t frameBufferLength);
+void write_evt(uint8_t *frameBuffer, size_t frameBufferLength);
+
+ssize_t rx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength)
+{
+    return 0;
+}
+
+ssize_t tx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength)
+{
+    serial_ctx_t *ctx;
+    if (serial_ctx)
+    {
+        ctx = (serial_ctx_t*) serial_ctx;
+        if (ctx->buff == frameBuffer && ctx->buffLen == frameBufferLength)
+        {
+            return write(ctx->tty_fd, ctx->buff, ctx->buffLen);
+        }
+    }
+    return -1;
+}
+
+void read_evt(uint8_t *frameBuffer, size_t frameBufferLength)
+{
+
+}
+void write_evt(uint8_t *frameBuffer, size_t frameBufferLength)
+{
+
+}
 
 int main(int argc, char **argv)
 {
 
+    SF_SERIAL_MAC_CTX mac_ctx;
+    SF_SERIAL_MAC_CTX *mac_instance;
+    SF_SERIAL_MAC_HAL_RX_FUNC macHalRx = rx;
+    SF_SERIAL_MAC_HAL_TX_FUNC macHalTx = tx;
+    SF_SERIAL_MAC_READ_EVT macRead = read_evt;
+    SF_SERIAL_MAC_WRITE_EVT macWrite = write_evt;
     struct termios tio;
     struct termios stdio;
     struct termios old_stdio;
-    int tty_fd;
+//    int tty_fd;
+    serial_ctx_t ctx;
+    ctx.buffLen = 1;
+    ctx.buff = new uint8_t[ctx.buffLen];
 
-    unsigned char c = 'D';
+//    unsigned char c = 'D';
     /* save current port settings */
     tcgetattr(STDOUT_FILENO, &old_stdio);
 
@@ -69,8 +118,11 @@ int main(int argc, char **argv)
     /* inter-character timer */
     tio.c_cc[VTIME] = 5;
 
-    tty_fd = open(MODEMDEVICE, O_RDWR | O_NONBLOCK);
-    if (tty_fd < 0)
+    mac_instance = sf_serial_mac_init(&mac_ctx, (void*) &ctx, macHalRx,
+            macHalTx, macRead, macWrite);
+
+    ctx.tty_fd = open(MODEMDEVICE, O_RDWR | O_NONBLOCK);
+    if (ctx.tty_fd < 0)
     {
         perror(MODEMDEVICE);
         exit(-1);
@@ -78,16 +130,18 @@ int main(int argc, char **argv)
     cfsetospeed(&tio, B115200);            // 115200 baud
     cfsetispeed(&tio, B115200);            // 115200 baud
 
-    tcsetattr(tty_fd, TCSANOW, &tio);
-    while (c != 'q')
+    tcsetattr(ctx.tty_fd, TCSANOW, &tio);
+    while (*(ctx.buff) != 'q')
     {
-        if (read(tty_fd, &c, 1) > 0)
-            write(STDOUT_FILENO, &c, 1); // if new data is available on the serial port, print it out
-        if (read(STDIN_FILENO, &c, 1) > 0)
-            write(tty_fd, &c, 1); // if new data is available on the console, send it to the serial port
+        if (read(ctx.tty_fd, ctx.buff, 1) > 0)
+            write(STDOUT_FILENO, ctx.buff, 1); // if new data is available on the serial port, print it out
+        if (read(STDIN_FILENO, ctx.buff, 1) > 0)
+            sf_serial_mac_enqueFrame(&mac_ctx, ctx.buff, ctx.buffLen);
+        //            write(ctx.tty_fd, ctx.buff, 1); // if new data is available on the console, send it to the serial port
+        sf_serial_mac_entry(&mac_ctx);
     }
 
-    close(tty_fd);
+    close(ctx.tty_fd);
     /* restore previous port settings */
     tcsetattr(STDOUT_FILENO, TCSANOW, &old_stdio);
 
