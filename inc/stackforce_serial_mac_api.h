@@ -108,26 +108,7 @@ typedef void (*SF_SERIAL_MAC_WRITE_EVT)(uint8_t *frameBuffer,
 /*! @addtogroup STACKFORCE_SERIAL_MAC_API_STRUCTS
  *  @{ */
 
-struct sf_serial_mac_buffer
-{
-    uint8_t *buffer;
-//    uint8_t *currentPosition;
-    size_t length;
-    size_t byteSent;
-};
-
-struct sf_serial_mac_ctx
-{
-    SF_SERIAL_MAC_HAL_RX_FUNC rx;
-    struct sf_serial_mac_buffer rxBuffer;
-    SF_SERIAL_MAC_HAL_TX_FUNC tx;
-    struct sf_serial_mac_buffer txBuffer;
-    SF_SERIAL_MAC_READ_EVT read;
-    struct sf_serial_mac_buffer readBuffer;
-    SF_SERIAL_MAC_WRITE_EVT write;
-    struct sf_serial_mac_buffer writeBuffer;
-    int fd;
-};
+struct sf_serial_mac_ctx;
 
 /*!@} end of STACKFORCE_SERIAL_MAC_API_STRUCTS */
 
@@ -150,6 +131,8 @@ struct sf_serial_mac_ctx
 
 /*! @addtogroup STACKFORCE_SERIAL_MAC_API_API
  *  @{ */
+
+size_t sf_serial_mac_ctx_size(void);
 
 struct sf_serial_mac_ctx *sf_serial_mac_init(struct sf_serial_mac_ctx *ctx, int fd,
         SF_SERIAL_MAC_HAL_RX_FUNC rx, SF_SERIAL_MAC_HAL_TX_FUNC tx,

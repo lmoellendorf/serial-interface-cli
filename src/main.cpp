@@ -30,6 +30,7 @@ using namespace std;
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
 #define TRUE 1
+//#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 volatile int STOP = FALSE;
 
@@ -88,7 +89,8 @@ static void write_evt(uint8_t *frameBuffer, size_t frameBufferLength)
 int main(int argc, char **argv)
 {
 
-    struct sf_serial_mac_ctx mac_ctx;
+    uint8_t mac_ctx[sf_serial_mac_ctx_size()];
+//    struct sf_serial_mac_ctx mac_ctx;
     struct sf_serial_mac_ctx *mac_instance;
     SF_SERIAL_MAC_HAL_RX_FUNC macHalRx = rx;
     SF_SERIAL_MAC_HAL_TX_FUNC macHalTx = tx;
@@ -98,10 +100,15 @@ int main(int argc, char **argv)
     struct termios stdio;
     struct termios old_stdio;
 
+    if (sizeof(mac_ctx) != sf_serial_mac_ctx_size())
+    {
+        cout << "Fix me!" << sizeof(mac_ctx) << "!=" << sf_serial_mac_ctx_size();
+        return -1;
+    }
+
     ctx.buffLen = 1;
     ctx.buff = new uint8_t[ctx.buffLen];
     bzero(&mac_ctx, sizeof(mac_ctx));
-
 
     /* save current port settings */
     tcgetattr(STDOUT_FILENO, &old_stdio);
@@ -142,17 +149,18 @@ int main(int argc, char **argv)
 
     tcsetattr(ctx.tty_fd, TCSANOW, &tio);
 
-    mac_instance = sf_serial_mac_init(&mac_ctx, ctx.tty_fd, macHalRx, macHalTx,
-            macRead, macWrite);
+    mac_instance = sf_serial_mac_init((struct sf_serial_mac_ctx *) mac_ctx,
+            ctx.tty_fd, macHalRx, macHalTx, macRead, macWrite);
 
     while (*(ctx.buff) != 'q')
     {
         if (read(ctx.tty_fd, ctx.buff, 1) > 0)
             write(STDOUT_FILENO, ctx.buff, 1); // if new data is available on the serial port, print it out
         if (read(STDIN_FILENO, ctx.buff, 1) > 0)
-            sf_serial_mac_enqueFrame(&mac_ctx, ctx.buff, ctx.buffLen);
+            sf_serial_mac_enqueFrame((struct sf_serial_mac_ctx *) mac_ctx,
+                    ctx.buff, ctx.buffLen);
         //            write(ctx.tty_fd, ctx.buff, 1); // if new data is available on the console, send it to the serial port
-        sf_serial_mac_entry(&mac_ctx);
+        sf_serial_mac_entry((struct sf_serial_mac_ctx *) mac_ctx);
     }
 
     close(ctx.tty_fd);
