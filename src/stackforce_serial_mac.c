@@ -23,6 +23,7 @@ extern "C"
 #include <stdint.h>
 /*! Common definitions most notably NULL */
 #include <stddef.h>
+
 /*! Define the "external include guard" before including the module header */
 #define __DECL_EXAMPLE_H__
 #include "stackforce_serial_mac_api.h"
@@ -50,22 +51,25 @@ extern "C"
 /*==============================================================================
  |                         LOCAL FUNCTION PROTOTYPES
  =============================================================================*/
-static void clearBuffer(BUF* buffer);
+static void clearBuffer(struct sf_serial_mac_buffer* buffer);
 
 /*==============================================================================
  |                              LOCAL FUNCTIONS
  =============================================================================*/
-static void clearBuffer(BUF* buffer)
+static void clearBuffer(struct sf_serial_mac_buffer* buffer)
 {
-    buffer->buffer = NULL;
-    buffer->byteSent = 0;
-    buffer->length = 0;
+    if (buffer)
+    {
+        buffer->buffer = NULL;
+        buffer->byteSent = 0;
+        buffer->length = 0;
+    }
 }
 
 /*==============================================================================
  |                               API FUNCTIONS
  =============================================================================*/
-SF_SERIAL_MAC_CTX *sf_serial_mac_init(SF_SERIAL_MAC_CTX *ctx, void *halCtx,
+struct sf_serial_mac_ctx *sf_serial_mac_init(struct sf_serial_mac_ctx *ctx, int fd,
         SF_SERIAL_MAC_HAL_RX_FUNC rx, SF_SERIAL_MAC_HAL_TX_FUNC tx,
         SF_SERIAL_MAC_READ_EVT readEvt, SF_SERIAL_MAC_WRITE_EVT writeEvt)
 {
@@ -73,35 +77,40 @@ SF_SERIAL_MAC_CTX *sf_serial_mac_init(SF_SERIAL_MAC_CTX *ctx, void *halCtx,
     ctx->tx = tx;
     ctx->read = readEvt;
     ctx->write = writeEvt;
-    ctx->halCtx = halCtx;
+    ctx->fd = fd;
+    clearBuffer(&ctx->txBuffer);
+    clearBuffer(&ctx->rxBuffer);
     return ctx;
 }
 
-int sf_serial_mac_enqueFrame(SF_SERIAL_MAC_CTX *ctx, uint8_t *frameBuffer,
+int sf_serial_mac_enqueFrame(struct sf_serial_mac_ctx *ctx, uint8_t *frameBuffer,
         size_t frameBufferLength)
 {
     //TODO: check if previous buffer has been processed
     //TODO: change name - enqueue is misleading, flush is better
-    ctx->txBuffer->buffer = frameBuffer;
-    ctx->txBuffer->length = frameBufferLength;
-    ctx->txBuffer->byteSent = 0;
+    ctx->txBuffer.buffer = frameBuffer;
+    ctx->txBuffer.length = frameBufferLength;
+    ctx->txBuffer.byteSent = 0;
     return 0;
 }
 
-int sf_serial_mac_entry(SF_SERIAL_MAC_CTX *ctx)
+int sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx)
 {
-    size_t bytesSent = 0;
-    size_t bytesToSend = ctx->txBuffer->length - ctx->txBuffer->byteSent;
 
     /***************************************************************************
      * TX
      */
 
-    if (ctx->txBuffer->buffer != NULL
-            && ctx->txBuffer->byteSent < ctx->txBuffer->length)
+    /* Check if we (still) have bytes to send */
+    if (ctx && ctx->txBuffer.buffer
+            && ctx->txBuffer.byteSent < ctx->txBuffer.length)
     {
-        bytesSent = ctx->tx(ctx->halCtx,
-                ctx->txBuffer->buffer + ctx->txBuffer->byteSent, bytesToSend);
+        size_t bytesToSend = 0;
+        size_t bytesSent = 0;
+        bytesToSend = ctx->txBuffer.length - ctx->txBuffer.byteSent;
+        /* Send the bytes */
+        bytesSent = ctx->tx(ctx->fd,
+                ctx->txBuffer.buffer + ctx->txBuffer.byteSent, bytesToSend);
         /**
          * This should never happen, but who knows...
          * And so to prevent an buffer overrun we reset the length hardly
@@ -110,13 +119,14 @@ int sf_serial_mac_entry(SF_SERIAL_MAC_CTX *ctx)
          */
         bytesSent = bytesSent > bytesToSend ? bytesToSend : bytesSent;
         /** update to the number of byte already sent */
-        ctx->txBuffer->byteSent += bytesSent;
+        ctx->txBuffer.byteSent += bytesSent;
     }
-    if (ctx->txBuffer->buffer != NULL
-            && (ctx->txBuffer->length <= ctx->txBuffer->byteSent))
+    /* Check if all bytes have been sent */
+    if (ctx && ctx->txBuffer.buffer
+            && (ctx->txBuffer.length <= ctx->txBuffer.byteSent))
     {
-        ctx->write(ctx->txBuffer->buffer, ctx->txBuffer->length);
-        clearBuffer(ctx->txBuffer);
+        ctx->write(ctx->txBuffer.buffer, ctx->txBuffer.length);
+        clearBuffer(&ctx->txBuffer);
     }
 
     /***************************************************************************

@@ -22,6 +22,7 @@ using namespace std;
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include "stackforce_serial_mac_api.h"
 
 #define BAUDRATE B38400
@@ -32,29 +33,31 @@ using namespace std;
 
 volatile int STOP = FALSE;
 
-typedef struct serial_ctx
+struct serial_ctx
 {
     int tty_fd;
     size_t buffLen;
     uint8_t *buff;
-} serial_ctx_t;
+};
 
-ssize_t rx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength);
-ssize_t tx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength);
-void read_evt(uint8_t *frameBuffer, size_t frameBufferLength);
-void write_evt(uint8_t *frameBuffer, size_t frameBufferLength);
+static struct serial_ctx ctx;
 
-ssize_t rx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength)
+static ssize_t rx(int fd, uint8_t *frameBuffer, size_t frameBufferLength);
+static ssize_t tx(int fd, uint8_t *frameBuffer, size_t frameBufferLength);
+static void read_evt(uint8_t *frameBuffer, size_t frameBufferLength);
+static void write_evt(uint8_t *frameBuffer, size_t frameBufferLength);
+static struct serial_ctx* getCtxByFd(int fd);
+
+static ssize_t rx(int fd, uint8_t *frameBuffer, size_t frameBufferLength)
 {
     return 0;
 }
 
-ssize_t tx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength)
+static ssize_t tx(int fd, uint8_t *frameBuffer, size_t frameBufferLength)
 {
-    serial_ctx_t *ctx;
-    if (serial_ctx)
+    struct serial_ctx *ctx;
+    if ((ctx = getCtxByFd(fd)))
     {
-        ctx = (serial_ctx_t*) serial_ctx;
         if (ctx->buff == frameBuffer && ctx->buffLen == frameBufferLength)
         {
             return write(ctx->tty_fd, ctx->buff, ctx->buffLen);
@@ -63,11 +66,21 @@ ssize_t tx(void *serial_ctx, uint8_t *frameBuffer, size_t frameBufferLength)
     return -1;
 }
 
-void read_evt(uint8_t *frameBuffer, size_t frameBufferLength)
+static struct serial_ctx* getCtxByFd(int fd)
+{
+    if (fd == ctx.tty_fd)
+    {
+        return &ctx;
+    }
+    return NULL;
+}
+
+static void read_evt(uint8_t *frameBuffer, size_t frameBufferLength)
 {
 
 }
-void write_evt(uint8_t *frameBuffer, size_t frameBufferLength)
+
+static void write_evt(uint8_t *frameBuffer, size_t frameBufferLength)
 {
 
 }
@@ -75,8 +88,8 @@ void write_evt(uint8_t *frameBuffer, size_t frameBufferLength)
 int main(int argc, char **argv)
 {
 
-    SF_SERIAL_MAC_CTX mac_ctx;
-    SF_SERIAL_MAC_CTX *mac_instance;
+    struct sf_serial_mac_ctx mac_ctx;
+    struct sf_serial_mac_ctx *mac_instance;
     SF_SERIAL_MAC_HAL_RX_FUNC macHalRx = rx;
     SF_SERIAL_MAC_HAL_TX_FUNC macHalTx = tx;
     SF_SERIAL_MAC_READ_EVT macRead = read_evt;
@@ -84,12 +97,12 @@ int main(int argc, char **argv)
     struct termios tio;
     struct termios stdio;
     struct termios old_stdio;
-//    int tty_fd;
-    serial_ctx_t ctx;
+
     ctx.buffLen = 1;
     ctx.buff = new uint8_t[ctx.buffLen];
+    bzero(&mac_ctx, sizeof(mac_ctx));
 
-//    unsigned char c = 'D';
+
     /* save current port settings */
     tcgetattr(STDOUT_FILENO, &old_stdio);
 
@@ -118,9 +131,6 @@ int main(int argc, char **argv)
     /* inter-character timer */
     tio.c_cc[VTIME] = 5;
 
-    mac_instance = sf_serial_mac_init(&mac_ctx, (void*) &ctx, macHalRx,
-            macHalTx, macRead, macWrite);
-
     ctx.tty_fd = open(MODEMDEVICE, O_RDWR | O_NONBLOCK);
     if (ctx.tty_fd < 0)
     {
@@ -131,6 +141,10 @@ int main(int argc, char **argv)
     cfsetispeed(&tio, B115200);            // 115200 baud
 
     tcsetattr(ctx.tty_fd, TCSANOW, &tio);
+
+    mac_instance = sf_serial_mac_init(&mac_ctx, ctx.tty_fd, macHalRx, macHalTx,
+            macRead, macWrite);
+
     while (*(ctx.buff) != 'q')
     {
         if (read(ctx.tty_fd, ctx.buff, 1) > 0)
@@ -144,7 +158,7 @@ int main(int argc, char **argv)
     close(ctx.tty_fd);
     /* restore previous port settings */
     tcsetattr(STDOUT_FILENO, TCSANOW, &old_stdio);
-
+    delete ctx.buff;
     return EXIT_SUCCESS;
 }
 

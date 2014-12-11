@@ -87,9 +87,9 @@ extern "C"
 /*! @addtogroup STACKFORCE_SERIAL_MAC_API_STRUCTS
  *  @{ */
 
-typedef ssize_t (*SF_SERIAL_MAC_HAL_RX_FUNC)(void *serial_ctx,
+typedef ssize_t (*SF_SERIAL_MAC_HAL_RX_FUNC)(int fd,
         uint8_t *frameBuffer, size_t frameBufferLength);
-typedef ssize_t (*SF_SERIAL_MAC_HAL_TX_FUNC)(void *serial_ctx,
+typedef ssize_t (*SF_SERIAL_MAC_HAL_TX_FUNC)(int fd,
         uint8_t *frameBuffer, size_t frameBufferLength);
 
 typedef void (*SF_SERIAL_MAC_READ_EVT)(uint8_t *frameBuffer,
@@ -108,26 +108,26 @@ typedef void (*SF_SERIAL_MAC_WRITE_EVT)(uint8_t *frameBuffer,
 /*! @addtogroup STACKFORCE_SERIAL_MAC_API_STRUCTS
  *  @{ */
 
-typedef struct sf_serial_mac_buffer
+struct sf_serial_mac_buffer
 {
     uint8_t *buffer;
 //    uint8_t *currentPosition;
     size_t length;
     size_t byteSent;
-} BUF;
+};
 
-typedef struct sf_serial_mac_ctx
+struct sf_serial_mac_ctx
 {
     SF_SERIAL_MAC_HAL_RX_FUNC rx;
-    BUF *rxBuffer;
+    struct sf_serial_mac_buffer rxBuffer;
     SF_SERIAL_MAC_HAL_TX_FUNC tx;
-    BUF *txBuffer;
+    struct sf_serial_mac_buffer txBuffer;
     SF_SERIAL_MAC_READ_EVT read;
-    BUF *readBuffer;
+    struct sf_serial_mac_buffer readBuffer;
     SF_SERIAL_MAC_WRITE_EVT write;
-    BUF *writeBuffer;
-    void *halCtx;
-} SF_SERIAL_MAC_CTX;
+    struct sf_serial_mac_buffer writeBuffer;
+    int fd;
+};
 
 /*!@} end of STACKFORCE_SERIAL_MAC_API_STRUCTS */
 
@@ -151,14 +151,14 @@ typedef struct sf_serial_mac_ctx
 /*! @addtogroup STACKFORCE_SERIAL_MAC_API_API
  *  @{ */
 
-SF_SERIAL_MAC_CTX *sf_serial_mac_init(SF_SERIAL_MAC_CTX *ctx, void *halCtx,
+struct sf_serial_mac_ctx *sf_serial_mac_init(struct sf_serial_mac_ctx *ctx, int fd,
         SF_SERIAL_MAC_HAL_RX_FUNC rx, SF_SERIAL_MAC_HAL_TX_FUNC tx,
         SF_SERIAL_MAC_READ_EVT readEvt, SF_SERIAL_MAC_WRITE_EVT writeEvt);
 
-int sf_serial_mac_enqueFrame(SF_SERIAL_MAC_CTX *ctx, uint8_t *frameBuffer,
+int sf_serial_mac_enqueFrame(struct sf_serial_mac_ctx *ctx, uint8_t *frameBuffer,
         size_t frameBufferLength);
 
-int sf_serial_mac_entry(SF_SERIAL_MAC_CTX *ctx);
+int sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx);
 
 /*!@} end of STACKFORCE_SERIAL_MAC_API_API */
 
