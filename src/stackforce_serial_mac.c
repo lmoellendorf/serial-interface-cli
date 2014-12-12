@@ -41,7 +41,7 @@ extern "C"
  =============================================================================*/
 struct sf_serial_mac_buffer
 {
-    uint8_t *buffer;
+    uint8_t *memory;
 //    uint8_t *currentPosition;
     size_t length;
     size_t byteSent;
@@ -49,6 +49,7 @@ struct sf_serial_mac_buffer
 
 struct sf_serial_mac_ctx
 {
+    int fd;
     SF_SERIAL_MAC_HAL_RX_FUNC rx;
     struct sf_serial_mac_buffer rxBuffer;
     SF_SERIAL_MAC_HAL_TX_FUNC tx;
@@ -57,7 +58,6 @@ struct sf_serial_mac_ctx
     struct sf_serial_mac_buffer readBuffer;
     SF_SERIAL_MAC_WRITE_EVT write;
     struct sf_serial_mac_buffer writeBuffer;
-    int fd;
 };
 
 
@@ -81,7 +81,7 @@ static void clearBuffer(struct sf_serial_mac_buffer* buffer)
 {
     if (buffer)
     {
-        buffer->buffer = NULL;
+        buffer->memory = NULL;
         buffer->byteSent = 0;
         buffer->length = 0;
     }
@@ -113,7 +113,7 @@ int sf_serial_mac_enqueFrame(struct sf_serial_mac_ctx *ctx, uint8_t *frameBuffer
 {
     //TODO: check if previous buffer has been processed
     //TODO: change name - enqueue is misleading, flush is better
-    ctx->txBuffer.buffer = frameBuffer;
+    ctx->txBuffer.memory = frameBuffer;
     ctx->txBuffer.length = frameBufferLength;
     ctx->txBuffer.byteSent = 0;
     return 0;
@@ -127,7 +127,7 @@ int sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx)
      */
 
     /* Check if we (still) have bytes to send */
-    if (ctx && ctx->txBuffer.buffer
+    if (ctx && ctx->txBuffer.memory
             && ctx->txBuffer.byteSent < ctx->txBuffer.length)
     {
         size_t bytesToSend = 0;
@@ -135,7 +135,7 @@ int sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx)
         bytesToSend = ctx->txBuffer.length - ctx->txBuffer.byteSent;
         /* Send the bytes */
         bytesSent = ctx->tx(ctx->fd,
-                ctx->txBuffer.buffer + ctx->txBuffer.byteSent, bytesToSend);
+                ctx->txBuffer.memory + ctx->txBuffer.byteSent, bytesToSend);
         /**
          * This should never happen, but who knows...
          * And so to prevent an buffer overrun we reset the length hardly
@@ -147,10 +147,10 @@ int sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx)
         ctx->txBuffer.byteSent += bytesSent;
     }
     /* Check if all bytes have been sent */
-    if (ctx && ctx->txBuffer.buffer
+    if (ctx && ctx->txBuffer.memory
             && (ctx->txBuffer.length <= ctx->txBuffer.byteSent))
     {
-        ctx->write(ctx->txBuffer.buffer, ctx->txBuffer.length);
+        ctx->write(ctx->txBuffer.memory, ctx->txBuffer.length);
         clearBuffer(&ctx->txBuffer);
     }
 
