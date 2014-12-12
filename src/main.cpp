@@ -92,19 +92,9 @@ int main(int argc, char **argv)
     uint8_t mac_ctx[sf_serial_mac_ctx_size()];
 //    struct sf_serial_mac_ctx mac_ctx;
     struct sf_serial_mac_ctx *mac_instance;
-    SF_SERIAL_MAC_HAL_RX_FUNC macHalRx = rx;
-    SF_SERIAL_MAC_HAL_TX_FUNC macHalTx = tx;
-    SF_SERIAL_MAC_READ_EVT macRead = read_evt;
-    SF_SERIAL_MAC_WRITE_EVT macWrite = write_evt;
     struct termios tio;
     struct termios stdio;
     struct termios old_stdio;
-
-    if (sizeof(mac_ctx) != sf_serial_mac_ctx_size())
-    {
-        cout << "Fix me!" << sizeof(mac_ctx) << "!=" << sf_serial_mac_ctx_size();
-        return -1;
-    }
 
     ctx.buffLen = 1;
     ctx.buff = new uint8_t[ctx.buffLen];
@@ -149,8 +139,8 @@ int main(int argc, char **argv)
 
     tcsetattr(ctx.tty_fd, TCSANOW, &tio);
 
-    mac_instance = sf_serial_mac_init((struct sf_serial_mac_ctx *) mac_ctx,
-            ctx.tty_fd, macHalRx, macHalTx, macRead, macWrite);
+    sf_serial_mac_init((struct sf_serial_mac_ctx *) mac_ctx,
+            ctx.tty_fd, rx, tx, read_evt, write_evt);
 
     while (*(ctx.buff) != 'q')
     {
