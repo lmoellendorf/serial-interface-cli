@@ -34,14 +34,14 @@ using namespace std;
 
 volatile int STOP = FALSE;
 
-struct serial_ctx
+struct apl_ctx
 {
     int tty_fd;
     size_t buffLen;
     char *buff;
 };
 
-static struct serial_ctx ctx;
+static struct apl_ctx ctx;
 
 static ssize_t rx(int fd, const char *frameBuffer, size_t frameBufferLength);
 static ssize_t tx(int fd, const char *frameBuffer, size_t frameBufferLength);
@@ -56,7 +56,7 @@ static ssize_t rx(int fd, const char *frameBuffer, size_t frameBufferLength)
 
 static ssize_t tx(int fd, const char *frameBuffer, size_t frameBufferLength)
 {
-    struct serial_ctx *ctx;
+    struct apl_ctx *ctx;
     if ((ctx = getCtxByFd(fd)))
     {
         if (ctx->buff == frameBuffer && ctx->buffLen == frameBufferLength)
@@ -67,7 +67,7 @@ static ssize_t tx(int fd, const char *frameBuffer, size_t frameBufferLength)
     return -1;
 }
 
-static struct serial_ctx* getCtxByFd(int fd)
+static struct apl_ctx* getCtxByFd(int fd)
 {
     if (fd == ctx.tty_fd)
     {
@@ -90,8 +90,7 @@ int main(int argc, char **argv)
 {
 
     uint8_t mac_ctx[sf_serial_mac_ctx_size()];
-//    struct sf_serial_mac_ctx mac_ctx;
-    struct sf_serial_mac_ctx *mac_instance;
+//    struct sf_serial_mac_ctx *mac_instance;
     struct termios tio;
     struct termios stdio;
     struct termios old_stdio;
