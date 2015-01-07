@@ -41,7 +41,7 @@ extern "C"
  =============================================================================*/
 struct sf_serial_mac_buffer
 {
-    uint8_t *memory;
+    const char *memory;
 //    uint8_t *currentPosition;
     size_t length;
     size_t byteSent;
@@ -108,8 +108,8 @@ struct sf_serial_mac_ctx *sf_serial_mac_init(struct sf_serial_mac_ctx *ctx, int 
     return ctx;
 }
 
-int sf_serial_mac_enqueFrame(struct sf_serial_mac_ctx *ctx, uint8_t *frameBuffer,
-        size_t frameBufferLength)
+int sf_serial_mac_enqueFrame(struct sf_serial_mac_ctx *ctx,
+        const char *frameBuffer, size_t frameBufferLength)
 {
     //TODO: check if previous buffer has been processed
     //TODO: change name - enqueue is misleading, flush is better

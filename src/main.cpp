@@ -38,23 +38,23 @@ struct serial_ctx
 {
     int tty_fd;
     size_t buffLen;
-    uint8_t *buff;
+    char *buff;
 };
 
 static struct serial_ctx ctx;
 
-static ssize_t rx(int fd, uint8_t *frameBuffer, size_t frameBufferLength);
-static ssize_t tx(int fd, uint8_t *frameBuffer, size_t frameBufferLength);
-static void read_evt(uint8_t *frameBuffer, size_t frameBufferLength);
-static void write_evt(uint8_t *frameBuffer, size_t frameBufferLength);
-static struct serial_ctx* getCtxByFd(int fd);
+static ssize_t rx(int fd, const char *frameBuffer, size_t frameBufferLength);
+static ssize_t tx(int fd, const char *frameBuffer, size_t frameBufferLength);
+static void read_evt(const char *frameBuffer, size_t frameBufferLength);
+static void write_evt(const char *frameBuffer, size_t frameBufferLength);
+static struct apl_ctx* getCtxByFd(int fd);
 
-static ssize_t rx(int fd, uint8_t *frameBuffer, size_t frameBufferLength)
+static ssize_t rx(int fd, const char *frameBuffer, size_t frameBufferLength)
 {
     return 0;
 }
 
-static ssize_t tx(int fd, uint8_t *frameBuffer, size_t frameBufferLength)
+static ssize_t tx(int fd, const char *frameBuffer, size_t frameBufferLength)
 {
     struct serial_ctx *ctx;
     if ((ctx = getCtxByFd(fd)))
@@ -76,12 +76,12 @@ static struct serial_ctx* getCtxByFd(int fd)
     return NULL;
 }
 
-static void read_evt(uint8_t *frameBuffer, size_t frameBufferLength)
+static void read_evt(const char *frameBuffer, size_t frameBufferLength)
 {
 
 }
 
-static void write_evt(uint8_t *frameBuffer, size_t frameBufferLength)
+static void write_evt(const char *frameBuffer, size_t frameBufferLength)
 {
 
 }
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
     struct termios old_stdio;
 
     ctx.buffLen = 1;
-    ctx.buff = new uint8_t[ctx.buffLen];
+    ctx.buff = new char[ctx.buffLen];
     bzero(&mac_ctx, sizeof(mac_ctx));
 
     /* save current port settings */
