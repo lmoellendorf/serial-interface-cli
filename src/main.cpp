@@ -138,8 +138,8 @@ int main(int argc, char **argv)
 
     tcsetattr(ctx.tty_fd, TCSANOW, &tio);
 
-    sf_serial_mac_init((struct sf_serial_mac_ctx *) mac_ctx,
-            ctx.tty_fd, rx, tx, read_evt, write_evt);
+    sf_serial_mac_init((struct sf_serial_mac_ctx *) mac_ctx, ctx.tty_fd, rx, tx,
+            read_evt, write_evt);
 
     while (*(ctx.buff) != 'q')
     {
