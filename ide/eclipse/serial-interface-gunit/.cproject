@@ -23,9 +23,9 @@
 								<option id="gnu.cpp.compiler.option.include.paths.1797649089" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src_under_test}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/unit_test_code}&quot;"/>
-									<listOptionValue builtIn="false" value="/usr/include/gtest/include"/>
-									<listOptionValue builtIn="false" value="/usr/include/gmock/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/gtest/"/>
+									<listOptionValue builtIn="false" value="/usr/include/gmock/"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/tests}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1944918016" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="_cplusplus"/>
@@ -40,9 +40,9 @@
 								<option id="gnu.c.compiler.option.include.paths.154355760" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src_under_test}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/unit_test_code}&quot;"/>
-									<listOptionValue builtIn="false" value="/usr/include/gtest/include"/>
-									<listOptionValue builtIn="false" value="/usr/include/gmock/include"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/tests}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/include/gmock/"/>
+									<listOptionValue builtIn="false" value="/usr/include/gtest/"/>
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1435443335" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="GTEST_HAS_PTHREAD"/>
