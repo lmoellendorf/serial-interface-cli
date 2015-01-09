@@ -21,6 +21,7 @@ using namespace std;
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <thread>
 #include <unistd.h>
 
 #include "stackforce_serial_mac_api.h"
@@ -36,9 +37,12 @@ volatile int STOP = FALSE;
 
 struct apl_ctx
 {
+    int wait4hal = TRUE;
     int tty_fd;
-    size_t buffLen;
-    char *buff;
+    size_t iBuffLen;
+    char *iBuff;
+    size_t oBuffLen;
+    const char *oBuff;
 };
 
 static struct apl_ctx ctx;
@@ -59,9 +63,9 @@ static ssize_t tx(int fd, const char *frameBuffer, size_t frameBufferLength)
     struct apl_ctx *ctx;
     if ((ctx = getCtxByFd(fd)))
     {
-        if (ctx->buff == frameBuffer && ctx->buffLen == frameBufferLength)
+        if (ctx->oBuff == frameBuffer && ctx->oBuffLen == frameBufferLength)
         {
-            return write(ctx->tty_fd, ctx->buff, ctx->buffLen);
+            return write(ctx->tty_fd, ctx->oBuff, ctx->oBuffLen);
         }
     }
     return -1;
@@ -83,38 +87,33 @@ static void read_evt(const char *frameBuffer, size_t frameBufferLength)
 
 static void write_evt(const char *frameBuffer, size_t frameBufferLength)
 {
+    ctx.wait4hal = FALSE;
+}
 
+void userinput(struct apl_ctx *ctx, struct sf_serial_mac_ctx *mac_ctx)
+{
+    while (TRUE)
+    {
+        string line;
+        getline(cin, line);
+        line += "\n";
+        ctx->oBuffLen = line.length();
+        ctx->oBuff = line.c_str();
+        sf_serial_mac_enqueFrame(mac_ctx, ctx->oBuff, ctx->oBuffLen);
+        while (ctx->wait4hal)
+            ;
+    }
 }
 
 int main(int argc, char **argv)
 {
 
     uint8_t mac_ctx[sf_serial_mac_ctx_size()];
-//    struct sf_serial_mac_ctx *mac_instance;
     struct termios tio;
-    struct termios stdio;
-    struct termios old_stdio;
 
-    ctx.buffLen = 1;
-    ctx.buff = new char[ctx.buffLen];
+    ctx.iBuffLen = 5;
+    ctx.iBuff = new char[ctx.iBuffLen];
     bzero(&mac_ctx, sizeof(mac_ctx));
-
-    /* save current port settings */
-    tcgetattr(STDOUT_FILENO, &old_stdio);
-
-    /* reset all settings to default */
-    memset(&stdio, 0, sizeof(stdio));
-    stdio.c_iflag = 0;
-    stdio.c_oflag = 0;
-    stdio.c_cflag = 0;
-    stdio.c_lflag = 0;
-    /* blocking read until 1 char received */
-    stdio.c_cc[VMIN] = 1;
-    /* inter-character timer */
-    stdio.c_cc[VTIME] = 0;
-    tcsetattr(STDOUT_FILENO, TCSANOW, &stdio);
-    tcsetattr(STDOUT_FILENO, TCSAFLUSH, &stdio);
-    fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);     // make the reads non-blocking
 
     memset(&tio, 0, sizeof(tio));
     tio.c_iflag = IGNPAR;
@@ -141,21 +140,17 @@ int main(int argc, char **argv)
     sf_serial_mac_init((struct sf_serial_mac_ctx *) mac_ctx, ctx.tty_fd, rx, tx,
             read_evt, write_evt);
 
-    while (*(ctx.buff) != 'q')
+    thread get(userinput, &ctx, (struct sf_serial_mac_ctx*) &mac_ctx);
+    get.detach();
+
+    while (*(ctx.iBuff) != 'q')
     {
-        if (read(ctx.tty_fd, ctx.buff, 1) > 0)
-            write(STDOUT_FILENO, ctx.buff, 1); // if new data is available on the serial port, print it out
-        if (read(STDIN_FILENO, ctx.buff, 1) > 0)
-            sf_serial_mac_enqueFrame((struct sf_serial_mac_ctx *) mac_ctx,
-                    ctx.buff, ctx.buffLen);
-        //            write(ctx.tty_fd, ctx.buff, 1); // if new data is available on the console, send it to the serial port
+        if (read(ctx.tty_fd, ctx.iBuff, 1) > 0)
+            write(STDOUT_FILENO, ctx.iBuff, 1); // if new data is available on the serial port, print it out
         sf_serial_mac_entry((struct sf_serial_mac_ctx *) mac_ctx);
     }
 
     close(ctx.tty_fd);
-    /* restore previous port settings */
-    tcsetattr(STDOUT_FILENO, TCSANOW, &old_stdio);
-    delete ctx.buff;
+    delete ctx.iBuff;
     return EXIT_SUCCESS;
 }
-
