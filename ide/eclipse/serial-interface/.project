@@ -3,6 +3,7 @@
 	<name>serial-interface</name>
 	<comment></comment>
 	<projects>
+		<project>libserialport</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
