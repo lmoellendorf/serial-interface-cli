@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>serial-interface-lib</name>
+	<name>serial-interface-app</name>
 	<comment></comment>
 	<projects>
+		<project>libserialport</project>
+		<project>serial-interface</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -26,14 +28,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>inc</name>
-			<type>2</type>
-			<locationURI>PARENT-3-PROJECT_LOC/inc</locationURI>
-		</link>
-		<link>
 			<name>src</name>
 			<type>2</type>
-			<locationURI>PARENT-3-PROJECT_LOC/src</locationURI>
+			<location>/home/lars/stackforce/10216_wimbus/sources/serial-interface/app</location>
 		</link>
 	</linkedResources>
 </projectDescription>
