@@ -16,7 +16,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-//#include <termios.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -30,169 +29,179 @@ extern "C"
 }
 #include <stackforce_serial_mac_api.h>
 
-//#include "stackforce_serial_hal.h"
-
-//#define BAUDRATE B115200
-//#define MODEMDEVICE "/dev/ttyUSB0"
-//#define _POSIX_SOURCE 1 /* POSIX compliant source */
+#define SF_SERIAL_BAUDRATE 115200
+#define SF_SERIAL_INPUT_MAX_SIZE 255
 #define FALSE 0
 #define TRUE 1
-//#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#ifdef __linux__
+#define SF_SERIAL_PORT_NAME "/dev/ttyUSB0"
+#else
+#ifdef _WIN32
+#define SF_SERIAL_PORT_NAME "COM1"
+#endif
+#endif
 
 using namespace std;
 
-volatile int STOP = FALSE;
-//int wait_flag = TRUE;
-volatile int wait4MAC = TRUE;
-
-//struct apl_ctx
-//{
-//    int wait4hal = TRUE;
-//    int tty_fd;
-//    size_t iBuffLen;
-//    char *iBuff;
-//    size_t oBuffLen;
-//    const char *oBuff;
-//};
-//
-//static struct apl_ctx ctx;
-
-//static ssize_t rx(int fd, const char *frameBuffer, size_t frameBufferLength);
-//static ssize_t tx(int fd, const char *frameBuffer, size_t frameBufferLength);
-static void read_evt(const char *frameBuffer, size_t frameBufferLength);
-static void write_evt(const char *frameBuffer, size_t frameBufferLength);
-//static struct apl_ctx* getCtxByFd(int fd);
-///* definition of signal handler */
-//static void signal_handler_IO(int status);
-
-//static ssize_t rx(int fd, const char *frameBuffer, size_t frameBufferLength)
-//{
-//    struct apl_ctx *ctx;
-//    if ((ctx = getCtxByFd(fd)))
-//    {
-////    ctx.tty_fd, ctx.iBuff,
-//    }
-//    return 0;
-//}
-//
-//static ssize_t tx(int fd, const char *frameBuffer, size_t frameBufferLength)
-//{
-//    struct apl_ctx *ctx;
-//    if ((ctx = getCtxByFd(fd)))
-//    {
-//        if (ctx->oBuff == frameBuffer && ctx->oBuffLen == frameBufferLength)
-//        {
-//            return write(ctx->tty_fd, ctx->oBuff, ctx->oBuffLen);
-//        }
-//    }
-//    return -1;
-//}
-//
-//static struct apl_ctx* getCtxByFd(int fd)
-//{
-//    if (fd == ctx.tty_fd)
-//    {
-//        return &ctx;
-//    }
-//    return NULL;
-//}
-
-static void read_evt(const char *frameBuffer, size_t frameBufferLength)
+struct app_ctx
 {
+    int run = TRUE;
+    struct sp_port *port = NULL;
+    struct sf_serial_mac_ctx *mac_ctx;
+    size_t iBuffLen = 0;
+    char iBuff[SF_SERIAL_INPUT_MAX_SIZE];
+};
 
-}
+static struct app_ctx ctx;
 
-static void write_evt(const char *frameBuffer, size_t frameBufferLength)
+void read_evt(const char *frameBuffer, size_t frameBufferLength);
+void write_evt(const char *frameBuffer, size_t frameBufferLength);
+void wait4userinput();
+
+void read_evt(const char *frameBuffer, size_t frameBufferLength)
 {
-    wait4MAC = FALSE;
-}
-
-void userinput(struct sf_serial_mac_ctx *mac_ctx)
-{
-    while (TRUE)
+    if (frameBuffer && frameBufferLength)
     {
-        string line;
-        getline(cin, line);
-        line += "\n";
-//        ctx->oBuffLen = line.length();
-//        ctx->oBuff = line.c_str();
-//        ctx->wait4hal = TRUE;
-        wait4MAC = TRUE;
-        sf_serial_mac_enqueFrame(mac_ctx, line.c_str(), line.length());
-        while (wait4MAC)
-            ;
+        if ('\n' == frameBuffer[0])
+        {
+            ctx.run = FALSE;
+        }
+        else
+        {
+            printf(":%s:%zd\n", frameBuffer, frameBufferLength);
+            sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
+                        sizeof(ctx.iBuff));
+        }
     }
 }
 
-///***************************************************************************
-// * signal handler. sets wait_flag to FALSE, to indicate above loop that     *
-// * characters have been received.                                           *
-// ***************************************************************************/
-//
-//void signal_handler_IO(int status)
-//{
-//    printf("received SIGIO signal.\n");
-//    wait_flag = FALSE;
-//}
-//
+void write_evt(const char *frameBuffer, size_t frameBufferLength)
+{
+    thread get(wait4userinput);
+    get.detach();
+}
+
+void wait4userinput()
+{
+    string line;
+    getline(cin, line);
+    if (line.length() > 0)
+    {
+        line += "\n";
+        sf_serial_mac_txFrame(ctx.mac_ctx, line.c_str(), line.length());
+    }
+    else
+    {
+        /** Userinput was empty line -> STOP */
+        ctx.run = FALSE;
+    }
+}
+
+/**
+ * This is a method stub to react on libserialport events. The plan is to
+ * create 2 APIs for the MAC:
+ * <ul>
+ * <li>event driven</li>
+ * <li>active polling</li>
+ * </ul>
+ */
+void wait4halEvent()
+{
+    struct sp_event_set * portEventSet = NULL;
+    unsigned int portEventMask = SP_EVENT_RX_READY | SP_EVENT_TX_READY
+            | SP_EVENT_ERROR;
+    unsigned int timeout = 0;
+
+    if (SP_OK <= sp_new_event_set(&portEventSet))
+    {
+
+        if (SP_OK
+                <= sp_add_port_events(portEventSet, ctx.port,
+                        (enum sp_event) portEventMask))
+        {
+            if (SP_OK <= sp_wait(portEventSet, timeout))
+            {
+//                portEventSet->masks
+                //TODO: react on event
+            }
+        }
+        sp_free_event_set(portEventSet);
+    }
+    return;
+}
+
 int main(int argc, char **argv)
 {
 
     uint8_t mac_ctx[sf_serial_mac_ctx_size()];
+    ctx.mac_ctx = (struct sf_serial_mac_ctx*) mac_ctx;
 
-    struct sp_port **port;
+    sp_return sp_ret = SP_OK;
+//    struct sp_port **availablePorts = NULL;
+    const char portname[] = SF_SERIAL_PORT_NAME;
+    struct sp_port_config * savedPortConfig = NULL;
 
-    if(SP_OK != sp_list_ports(&port))
-    {
+//    sp_ret = sp_list_ports(&availablePorts);
+//    if (SP_OK > sp_ret)
+//        return sp_ret;
+//    if (NULL != availablePorts[0])
+//    {
+//        sp_ret = sp_copy_port(availablePorts[0], &port);
+//    }
+//    if (NULL != availablePorts)
+//    {
+//        sp_free_port_list(availablePorts);
+//    }
+//    if (SP_OK > sp_ret)
+//        return sp_ret;
+
+    sp_ret = sp_get_port_by_name(portname, &ctx.port);
+    if (SP_OK > sp_ret)
+        return sp_ret;
+
+    if (NULL == ctx.port)
         return EXIT_FAILURE;
+
+    sp_ret = sp_open(ctx.port, SP_MODE_READ_WRITE);
+    if (SP_OK > sp_ret)
+        return sp_ret;
+
+    /** Save current port configuration for later restoring */
+    sp_ret = sp_new_config(&savedPortConfig);
+    if (SP_OK > sp_ret)
+        return sp_ret;
+    sp_ret = sp_get_config(ctx.port, savedPortConfig);
+    if (SP_OK > sp_ret)
+        return sp_ret;
+
+    sp_ret = sp_set_baudrate(ctx.port, SF_SERIAL_BAUDRATE);
+    if (SP_OK > sp_ret)
+        return sp_ret;
+
+    sf_serial_mac_init((struct sf_serial_mac_ctx *) ctx.mac_ctx,
+            (void *) ctx.port,
+            (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read,
+            (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt,
+            write_evt);
+
+    sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
+            sizeof(ctx.iBuff));
+
+    /** Start waiting for user input */
+    write_evt(NULL, 0);
+
+    /* Loop until the user quits */
+    while (ctx.run)
+    {
+
+        sf_serial_mac_entry((struct sf_serial_mac_ctx *) ctx.mac_ctx);
     }
 
-//    stackforce::serial::Hal serial;
-//    struct termios tio;
-//    struct termios oldtio;
-//    /* definition of signal action */
-//    struct sigaction saio;
-//
-//    ctx.iBuffLen = 5;
-//    ctx.iBuff = new char[ctx.iBuffLen];
-
-//    sf_serial_mac_init((struct sf_serial_mac_ctx *) mac_ctx, serial.getTtyFd(),
-//            &stackforce::serial::Hal::rx, &stackforce::serial::Hal::tx,
-//            read_evt, write_evt);
-
-thread get(userinput, (struct sf_serial_mac_ctx*) &mac_ctx);
-get.detach();
-
-//    while (*(ctx.iBuff) != 'q')
-//    {
-//        if (read(ctx.tty_fd, ctx.iBuff, 1) > 0)
-//            write(STDOUT_FILENO, ctx.iBuff, 1); // if new data is available on the serial port, print it out
-//        sf_serial_mac_entry((struct sf_serial_mac_ctx *) mac_ctx);
-//    }
-/* loop while waiting for input. normally we would do something
- useful here */
-while (STOP == FALSE)
-{
-    ;
-//        printf(".\n");
-//        usleep(100000);
-    /* after receiving SIGIO, wait_flag = FALSE, input is available
-     and can be read */
-//        if (wait_flag == FALSE)
-//        {
-//            ctx.iBuffLen = read(ctx.tty_fd, ctx.iBuff, 255);
-//            ctx.iBuff[ctx.iBuffLen] = 0;
-//            printf(":%s:%zd\n", ctx.iBuff, ctx.iBuffLen);
-//            if (ctx.iBuffLen == 1)
-//                STOP = TRUE; /* stop loop if only a CR was input */
-//            wait_flag = TRUE; /* wait for new input */
-//        }
-//    sf_serial_mac_entry((struct sf_serial_mac_ctx *) mac_ctx);
-}
-
-//    /* restore old port settings */
-//    tcsetattr(ctx.tty_fd, TCSANOW, &oldtio);
-//    close(ctx.tty_fd);
-//    delete ctx.iBuff;
-return EXIT_SUCCESS;
+    if (NULL != ctx.port)
+    {
+        /** Restore previous port configuration */
+        sp_ret = sp_set_config(ctx.port, savedPortConfig);
+        sp_free_port(ctx.port);
+    }
+    return sp_ret;
 }

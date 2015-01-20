@@ -87,10 +87,10 @@ extern "C"
 /*! @addtogroup STACKFORCE_SERIAL_MAC_API_STRUCTS
  *  @{ */
 
-typedef ssize_t (*SF_SERIAL_MAC_HAL_RX_FUNC)(int fd, const char *frameBuffer,
-        size_t frameBufferLength);
-typedef ssize_t (*SF_SERIAL_MAC_HAL_TX_FUNC)(int fd, const char *frameBuffer,
-        size_t frameBufferLength);
+typedef ssize_t (*SF_SERIAL_MAC_HAL_READ_FUNC)(void *portHandle,
+        void *frameBuffer, size_t frameBufferLength);
+typedef ssize_t (*SF_SERIAL_MAC_HAL_WRITE_FUNC)(void *portHandle,
+        const void *frameBuffer, size_t frameBufferLength);
 
 typedef void (*SF_SERIAL_MAC_READ_EVT)(const char *frameBuffer,
         size_t frameBufferLength);
@@ -135,11 +135,18 @@ struct sf_serial_mac_ctx;
 size_t sf_serial_mac_ctx_size(void);
 
 struct sf_serial_mac_ctx *sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
-        int fd, SF_SERIAL_MAC_HAL_RX_FUNC rx, SF_SERIAL_MAC_HAL_TX_FUNC tx,
-        SF_SERIAL_MAC_READ_EVT readEvt, SF_SERIAL_MAC_WRITE_EVT writeEvt);
+        void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
+        SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
+        SF_SERIAL_MAC_WRITE_EVT writeEvt);
 
-int sf_serial_mac_enqueFrame(struct sf_serial_mac_ctx *ctx,
-        const char *frameBuffer, size_t frameBufferLength);
+int sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx, const char *frmBufLoc,
+        size_t frmBufSize);
+
+int sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
+        size_t frmBufSize);
+
+size_t sf_serial_mac_halRxCallback(struct sf_serial_mac_ctx *ctx,
+        const char *frmBufLoc, size_t frmBufSize);
 
 int sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx);
 
