@@ -206,17 +206,17 @@ int main(int argc, char **argv)
     /** Start waiting for user input */
     write_evt(NULL, 0);
 
-    thread txEventLoop(wait4halTxEvent);
-    txEventLoop.detach();
-
-    thread rxEventLoop(wait4halRxEvent);
-    rxEventLoop.detach();
+//    thread txEventLoop(wait4halTxEvent);
+//    txEventLoop.detach();
+//
+//    thread rxEventLoop(wait4halRxEvent);
+//    rxEventLoop.detach();
 
     /* Loop until the user quits */
     while (ctx.run)
     {
         sleep(1);
-//        sf_serial_mac_entry((struct sf_serial_mac_ctx *) ctx.mac_ctx);
+        sf_serial_mac_entry((struct sf_serial_mac_ctx *) ctx.mac_ctx);
     }
 
     if (NULL != ctx.port)
