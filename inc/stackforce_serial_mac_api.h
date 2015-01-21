@@ -134,21 +134,21 @@ struct sf_serial_mac_ctx;
 
 size_t sf_serial_mac_ctx_size(void);
 
-struct sf_serial_mac_ctx *sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
+void* sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
         void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
         SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
         SF_SERIAL_MAC_WRITE_EVT writeEvt);
 
-int sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx, const char *frmBufLoc,
+void* sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx, const char *frmBufLoc,
         size_t frmBufSize);
 
-int sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
+void* sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
         size_t frmBufSize);
 
-size_t sf_serial_mac_halRxCallback(struct sf_serial_mac_ctx *ctx,
-        const char *frmBufLoc, size_t frmBufSize);
+void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx);
+void* sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx);
 
-int sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx);
+void* sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx);
 
 /*!@} end of STACKFORCE_SERIAL_MAC_API_API */
 

@@ -57,6 +57,10 @@ static struct app_ctx ctx;
 void read_evt(const char *frameBuffer, size_t frameBufferLength);
 void write_evt(const char *frameBuffer, size_t frameBufferLength);
 void wait4userinput();
+void wait4halEvent(enum sp_event event,
+        void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
+void wait4halTxEvent();
+void wait4halRxEvent();
 
 void read_evt(const char *frameBuffer, size_t frameBufferLength)
 {
@@ -69,16 +73,16 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
         else
         {
             printf(":%s:%zd\n", frameBuffer, frameBufferLength);
-            sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
-                        sizeof(ctx.iBuff));
+            sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx,
+                    ctx.iBuff, sizeof(ctx.iBuff));
         }
     }
 }
 
 void write_evt(const char *frameBuffer, size_t frameBufferLength)
 {
-    thread get(wait4userinput);
-    get.detach();
+    thread userInputEventLoop(wait4userinput);
+    userInputEventLoop.detach();
 }
 
 void wait4userinput()
@@ -97,6 +101,15 @@ void wait4userinput()
     }
 }
 
+void wait4halTxEvent()
+{
+    wait4halEvent(SP_EVENT_TX_READY, sf_serial_mac_halTxCb);
+}
+
+void wait4halRxEvent()
+{
+    wait4halEvent(SP_EVENT_RX_READY, sf_serial_mac_halRxCb);
+}
 /**
  * This is a method stub to react on libserialport events. The plan is to
  * create 2 APIs for the MAC:
@@ -105,11 +118,11 @@ void wait4userinput()
  * <li>active polling</li>
  * </ul>
  */
-void wait4halEvent()
+void wait4halEvent(enum sp_event event,
+        void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
 {
     struct sp_event_set * portEventSet = NULL;
-    unsigned int portEventMask = SP_EVENT_RX_READY | SP_EVENT_TX_READY
-            | SP_EVENT_ERROR;
+    unsigned int portEventMask = event;
     unsigned int timeout = 0;
 
     if (SP_OK <= sp_new_event_set(&portEventSet))
@@ -119,10 +132,13 @@ void wait4halEvent()
                 <= sp_add_port_events(portEventSet, ctx.port,
                         (enum sp_event) portEventMask))
         {
-            if (SP_OK <= sp_wait(portEventSet, timeout))
+            while (SP_OK <= sp_wait(portEventSet, timeout))
             {
-//                portEventSet->masks
-                //TODO: react on event
+//                printf("masks: %X\nnumber of handles: %u\n",
+//                        (unsigned int) *(portEventSet->masks),
+//                        portEventSet->count);
+                sf_serial_mac_halCb(ctx.mac_ctx);
+                sleep(1);
             }
         }
         sp_free_event_set(portEventSet);
@@ -190,11 +206,17 @@ int main(int argc, char **argv)
     /** Start waiting for user input */
     write_evt(NULL, 0);
 
+    thread txEventLoop(wait4halTxEvent);
+    txEventLoop.detach();
+
+    thread rxEventLoop(wait4halRxEvent);
+    rxEventLoop.detach();
+
     /* Loop until the user quits */
     while (ctx.run)
     {
-
-        sf_serial_mac_entry((struct sf_serial_mac_ctx *) ctx.mac_ctx);
+        sleep(1);
+//        sf_serial_mac_entry((struct sf_serial_mac_ctx *) ctx.mac_ctx);
     }
 
     if (NULL != ctx.port)

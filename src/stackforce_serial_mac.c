@@ -70,19 +70,24 @@ struct sf_serial_mac_ctx
 /*==============================================================================
  |                         LOCAL FUNCTION PROTOTYPES
  =============================================================================*/
-static void resetBuffer(struct sf_serial_mac_buffer* buffer);
+static struct sf_serial_mac_buffer* initBuffer(
+        struct sf_serial_mac_buffer* buffer, const char *memory, size_t length,
+        size_t byteProcessed);
 
 /*==============================================================================
  |                              LOCAL FUNCTIONS
  =============================================================================*/
-static void resetBuffer(struct sf_serial_mac_buffer* buffer)
+static struct sf_serial_mac_buffer* initBuffer(
+        struct sf_serial_mac_buffer* buffer, const char *memory, size_t length,
+        size_t byteProcessed)
 {
     if (buffer)
     {
-        buffer->memory = NULL;
-        buffer->byteProcessed = 0;
-        buffer->length = 0;
+        buffer->memory = memory;
+        buffer->length = length;
+        buffer->byteProcessed = byteProcessed;
     }
+    return buffer;
 }
 
 /*==============================================================================
@@ -93,122 +98,159 @@ size_t sf_serial_mac_ctx_size(void)
     return sizeof(struct sf_serial_mac_ctx);
 }
 
-struct sf_serial_mac_ctx *sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
-        void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
-        SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
-        SF_SERIAL_MAC_WRITE_EVT writeEvt)
+void* sf_serial_mac_init(struct sf_serial_mac_ctx *ctx, void *portHandle,
+        SF_SERIAL_MAC_HAL_READ_FUNC rx, SF_SERIAL_MAC_HAL_WRITE_FUNC tx,
+        SF_SERIAL_MAC_READ_EVT readEvt, SF_SERIAL_MAC_WRITE_EVT writeEvt)
 {
-    ctx->read = rx;
-    ctx->write = tx;
-    ctx->readEvt = readEvt;
-    ctx->writeEvt = writeEvt;
-    ctx->portHandle = portHandle;
-    resetBuffer(&ctx->writeBuffer);
-    resetBuffer(&ctx->readBuffer);
+    if (ctx)
+    {
+        ctx->read = rx;
+        ctx->write = tx;
+        ctx->readEvt = readEvt;
+        ctx->writeEvt = writeEvt;
+        ctx->portHandle = portHandle;
+        initBuffer(&ctx->writeBuffer, NULL, 0, 0);
+        initBuffer(&ctx->readBuffer, NULL, 0, 0);
+    }
     return ctx;
 }
 
-int sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx,
-        const char *frameBuffer, size_t frameBufferLength)
-{
-    //TODO: check if previous buffer has been processed
-    ctx->writeBuffer.memory = frameBuffer;
-    ctx->writeBuffer.length = frameBufferLength;
-    ctx->writeBuffer.byteProcessed = 0;
-    return 0;
-}
-
-int sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
-        size_t frmBufSize)
-{
-    //TODO: check if previous buffer has been processed
-    ctx->readBuffer.memory = frmBufLoc;
-    ctx->readBuffer.length = frmBufSize;
-    ctx->readBuffer.byteProcessed = 0;
-    //TODO: zero buffer
-    memset((void *) ctx->readBuffer.memory, 0, ctx->readBuffer.length);
-    return 0;
-}
-
-size_t sf_serial_mac_halRxCallback(struct sf_serial_mac_ctx *ctx,
+void* sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx,
         const char *frmBufLoc, size_t frmBufSize)
 {
-    return 0;
+    if (ctx)
+    {
+        //TODO: check if previous buffer has been processed
+        ctx->writeBuffer.memory = frmBufLoc;
+        ctx->writeBuffer.length = frmBufSize;
+        ctx->writeBuffer.byteProcessed = 0;
+    }
+    return ctx;
 }
 
-// TODO: read buffer handling?
-int sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx)
+void* sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
+        size_t frmBufSize)
 {
+    if (ctx)
+    {
+        //TODO: check if previous buffer has been processed?
+        ctx->readBuffer.memory = frmBufLoc;
+        ctx->readBuffer.length = frmBufSize;
+        ctx->readBuffer.byteProcessed = 0;
+        /** zero buffer */
+        memset((void *) ctx->readBuffer.memory, 0, ctx->readBuffer.length);
+    }
+    return ctx;
+}
 
+void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
+{
+    /** Do nothing if there is no context. */
+    if (ctx)
+    {
+        /**
+         * Check if a write buffer has been assigned - otherwise this means
+         * there is nothing to do.
+         */
+        if (ctx->writeBuffer.memory)
+        {
+            /** Check if we (still) have bytes to send */
+            if (ctx->writeBuffer.byteProcessed < ctx->writeBuffer.length)
+            {
+                size_t bytesToSend = 0;
+                size_t bytesSent = 0;
+                bytesToSend = ctx->writeBuffer.length
+                        - ctx->writeBuffer.byteProcessed;
+                /* Send the bytes */
+                //TODO: add frame building here
+                bytesSent = ctx->write(ctx->portHandle,
+                        ctx->writeBuffer.memory
+                                + ctx->writeBuffer.byteProcessed, bytesToSend);
+                /**
+                 * This should never happen, but who knows...
+                 * And so to prevent an buffer overrun we reset the length hardly
+                 * here. TODO: Maybe we should report such incidence to main() by
+                 * returning the number of bytes that have been send additionally?
+                 */
+                bytesSent = bytesSent > bytesToSend ? bytesToSend : bytesSent;
+                /** update to the number of byte already sent */
+                ctx->writeBuffer.byteProcessed += bytesSent;
+            }
+            /* Check if all bytes have been sent */
+            if ((ctx->writeBuffer.length <= ctx->writeBuffer.byteProcessed))
+            {
+                /** Inform the upper layer that we are finished */
+                ctx->writeEvt(ctx->writeBuffer.memory, ctx->writeBuffer.length);
+                /**
+                 * Clear the buffer, so the write event won't be called again
+                 * and again.
+                 */
+                initBuffer(&ctx->writeBuffer, NULL, 0, 0);
+            }
+        }
+    }
+    return ctx;
+}
+
+void* sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
+{
+    /** Do nothing if there is no context. */
+    if (ctx)
+    {
+        /**
+         * Check if a read buffer has been assigned - otherwise this means
+         * there is nothing to do.
+         */
+        if (ctx->readBuffer.memory)
+        {
+            if ( //TODO: signal buffer overflow
+            (ctx->readBuffer.byteProcessed < ctx->readBuffer.length))
+            {
+                int recv = 0;
+                do
+                {
+                    recv = ctx->read(ctx->portHandle,
+                            (char *) (ctx->readBuffer.memory
+                                    + ctx->readBuffer.byteProcessed), 1);
+                    if (recv > 0)
+                    {
+                        //TODO: here the parsing of data begins
+                        if ('\n'
+                                == ctx->readBuffer.memory[ctx->readBuffer.byteProcessed]) // this is just a proof of concept
+                        {
+                            // end of line is reached - inform the app
+                            ctx->readEvt(ctx->readBuffer.memory,
+                                    ctx->readBuffer.byteProcessed + recv);
+                            /** Leave the loop */
+                            break; /** recv = 0; would have the same effect - at least now */
+                        }
+                        else
+                        {
+                            ctx->readBuffer.byteProcessed += recv;
+                        }
+
+                    }
+
+                } while (recv);
+            }
+        }
+    }
+    return ctx;
+}
+
+void* sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx)
+{
     /***************************************************************************
      * TX
      */
-
-    /* Check if we (still) have bytes to send */
-    if (ctx && ctx->writeBuffer.memory
-            && ctx->writeBuffer.byteProcessed < ctx->writeBuffer.length)
-    {
-        size_t bytesToSend = 0;
-        size_t bytesSent = 0;
-        bytesToSend = ctx->writeBuffer.length - ctx->writeBuffer.byteProcessed;
-        /* Send the bytes */
-        //TODO: add frame building here
-        bytesSent = ctx->write(ctx->portHandle,
-                ctx->writeBuffer.memory + ctx->writeBuffer.byteProcessed,
-                bytesToSend);
-        /**
-         * This should never happen, but who knows...
-         * And so to prevent an buffer overrun we reset the length hardly
-         * here. TODO: Maybe we should report such incidence to main() by
-         * returning the number of bytes that have been send additionally?
-         */
-        bytesSent = bytesSent > bytesToSend ? bytesToSend : bytesSent;
-        /** update to the number of byte already sent */
-        ctx->writeBuffer.byteProcessed += bytesSent;
-    }
-    /* Check if all bytes have been sent */
-    if (ctx && ctx->writeBuffer.memory
-            && (ctx->writeBuffer.length <= ctx->writeBuffer.byteProcessed))
-    {
-        ctx->writeEvt(ctx->writeBuffer.memory, ctx->writeBuffer.length);
-        resetBuffer(&ctx->writeBuffer);
-    }
+    sf_serial_mac_halTxCb(ctx);
 
     /***************************************************************************
      * RX
      */
+    sf_serial_mac_halRxCb(ctx);
 
-    if (ctx && ctx->readBuffer.memory && //TODO: signal buffer overflow
-            (ctx->readBuffer.byteProcessed < ctx->readBuffer.length))
-    {
-        int recv = 0;
-        do
-        {
-            recv = ctx->read(ctx->portHandle,
-                    (char *) (ctx->readBuffer.memory
-                            + ctx->readBuffer.byteProcessed), 1);
-            if (recv > 0)
-            {
-                //TODO: here the parsing of data begins
-                if ('\n'
-                        == ctx->readBuffer.memory[ctx->readBuffer.byteProcessed]) // this is just a proof of concept
-                {
-                    // end of line is reached - inform the app
-                    ctx->readEvt(ctx->readBuffer.memory,
-                            ctx->readBuffer.byteProcessed + recv);
-                    /** Leave the loop */
-                    break; /** recv = 0; would have the same effect - at least now */
-                }
-                else
-                {
-                    ctx->readBuffer.byteProcessed += recv;
-                }
-
-            }
-
-        } while (recv);
-    }
-    return 0;
+    return ctx;
 }
 
 #ifdef __cplusplus
