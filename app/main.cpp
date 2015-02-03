@@ -13,16 +13,9 @@
  =============================================================================*/
 
 #include <iostream>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <thread>
 #include <unistd.h>
-#include <sys/signal.h>
-#include <fcntl.h>
 extern "C"
 {
 #include <libserialport.h>
