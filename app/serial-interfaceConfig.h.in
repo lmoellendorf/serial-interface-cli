@@ -1,3 +1,0 @@
-#define serial-interface_VERSION_MAJOR @serial-interface_VERSION_MAJOR@
-#define serial-interface_VERSION_MINOR @serial-interface_VERSION_MINOR@
-
