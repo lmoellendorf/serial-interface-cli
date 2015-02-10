@@ -16,4 +16,7 @@ configure_file (
 # add the binary tree to the search path for include files
 include_directories("${PROJECT_SOURCE_DIR}/../inc/")
 
+# build a shared library
+SET(BUILD_SHARED_LIBS ON)
+
 add_library(serial-interface-lib ${PROJECT_SOURCE_DIR}/stackforce_serial_mac)
