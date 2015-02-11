@@ -6,7 +6,7 @@ set (SERIAL_INTERFACE_VERSION_MAJOR 1)
 set (SERIAL_INTERFACE_VERSION_MINOR 0)
 set (SERIAL_INTERFACE_VERSION_PATCH 0)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -lpthread")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 # configure a header file to pass some of the CMake settings
 # to the source code
