@@ -15,14 +15,15 @@ configure_file (
   "${PROJECT_BINARY_DIR}/version.h"
   )
 
-link_directories(${PROJECT_BINARY_DIR}/../sp_lib/)
 
 # add the binary tree to the search path for include files
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/../inc/")
-include_directories("${PROJECT_SOURCE_DIR}/../ide/eclipse/libserialport/src/")
+include_directories("${PROJECT_BINARY_DIR}/sp_lib")
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/../src ${PROJECT_BINARY_DIR}/lib)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../ide/eclipse/libserialport/
+    ${PROJECT_BINARY_DIR}/sp_lib)
 
 add_executable(stackforce-serial-interface ${PROJECT_SOURCE_DIR}/main)
 
