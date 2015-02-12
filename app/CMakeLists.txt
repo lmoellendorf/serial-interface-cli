@@ -15,7 +15,7 @@ configure_file (
   "${PROJECT_BINARY_DIR}/version.h"
   )
 
-link_directories(${PROJECT_SOURCE_DIR}/../ide/eclipse/libserialport/src/.libs/)
+link_directories(${PROJECT_BINARY_DIR}/../sp_lib/)
 
 # add the binary tree to the search path for include files
 include_directories("${PROJECT_BINARY_DIR}")
