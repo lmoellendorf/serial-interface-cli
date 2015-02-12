@@ -6,7 +6,7 @@ set (SERIAL_INTERFACE_VERSION_MAJOR 1)
 set (SERIAL_INTERFACE_VERSION_MINOR 0)
 set (SERIAL_INTERFACE_VERSION_PATCH 0)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -15,7 +15,7 @@ configure_file (
   "${PROJECT_BINARY_DIR}/version.h"
   )
 
-LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/../ide/eclipse/libserialport/src/.libs/)
+link_directories(${PROJECT_SOURCE_DIR}/../ide/eclipse/libserialport/src/.libs/)
 
 # add the binary tree to the search path for include files
 include_directories("${PROJECT_BINARY_DIR}")

@@ -9,9 +9,9 @@ set (SERIAL_INTERFACE_LIB_VERSION_PATCH 0)
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/version.h.in"
-  "${PROJECT_BINARY_DIR}/version.h"
-  )
+    "${PROJECT_SOURCE_DIR}/version.h.in"
+    "${PROJECT_BINARY_DIR}/version.h"
+    )
 
 # add the binary tree to the search path for include files
 include_directories("${PROJECT_SOURCE_DIR}/../inc/")
