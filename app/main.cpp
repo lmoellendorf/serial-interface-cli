@@ -150,6 +150,8 @@ int main(int argc, char **argv)
     const char portname[] = SF_SERIAL_PORT_NAME;
     struct sp_port_config * savedPortConfig = NULL;
 
+    //TODO: use sp_list_ports, look for valid port names and try to
+    //connect them or let the user choose.
 //    sp_ret = sp_list_ports(&availablePorts);
 //    if (SP_OK > sp_ret)
 //        return sp_ret;
@@ -165,27 +167,42 @@ int main(int argc, char **argv)
 //        return sp_ret;
 
     sp_ret = sp_get_port_by_name(portname, &ctx.port);
-    if (SP_OK > sp_ret)
+    if (SP_OK > sp_ret || NULL == ctx.port)
+    {
+        printf("Port \"%s\" could not be found!\n", portname);
         return sp_ret;
-
-    if (NULL == ctx.port)
-        return EXIT_FAILURE;
+    }
 
     sp_ret = sp_open(ctx.port, SP_MODE_READ_WRITE);
     if (SP_OK > sp_ret)
+    {
+        printf("Port \"%s\" could not be opened!\n", portname);
         return sp_ret;
+    }
 
     /** Save current port configuration for later restoring */
     sp_ret = sp_new_config(&savedPortConfig);
     if (SP_OK > sp_ret)
+    {
+        printf("Config of port \"%s\" could not be saved! (Out of memory?)\n",
+                portname);
         return sp_ret;
+    }
     sp_ret = sp_get_config(ctx.port, savedPortConfig);
     if (SP_OK > sp_ret)
+    {
+        printf("Config of port \"%s\" could not be saved! (Read error?)\n",
+                portname);
         return sp_ret;
+    }
 
     sp_ret = sp_set_baudrate(ctx.port, SF_SERIAL_BAUDRATE);
     if (SP_OK > sp_ret)
+    {
+        printf("Could not set baudrate to %u on port \"%s\"!\n",
+                SF_SERIAL_BAUDRATE, portname);
         return sp_ret;
+    }
 
     sf_serial_mac_init((struct sf_serial_mac_ctx *) ctx.mac_ctx,
             (void *) ctx.port,
