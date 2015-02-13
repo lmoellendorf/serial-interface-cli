@@ -8,6 +8,11 @@ set (SERIAL_INTERFACE_VERSION_PATCH 0)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
+if (WIN32)
+    MESSAGE(STATUS "On Windows")
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+endif()
+
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
@@ -26,6 +31,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/../lib/libserialport/
 
 add_executable(stackforce-serial-interface ${PROJECT_SOURCE_DIR}/main)
 
+# This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
+find_package ( Threads REQUIRED )
 target_link_libraries (stackforce-serial-interface serial-interface-lib
-    serialport pthread)
+    serialport  ${CMAKE_THREAD_LIBS_INIT})
 
