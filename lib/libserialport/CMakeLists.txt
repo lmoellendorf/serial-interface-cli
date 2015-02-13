@@ -45,7 +45,7 @@ check_cxx_compiler_flag(-fvisibility=hidden GCC_SUPPORTS_VISIBILITY)
 if (UNIX AND GCC_SUPPORTS_VISIBILITY)
     MESSAGE(STATUS "GCC with visibility support")
     add_definitions (-DSP_API=${GCC_EXPORT} -DSP_PRIV=${GCC_PRIVATE})
-elseif (WIN32)
+elseif (MSVC)
     MESSAGE(STATUS "MSVC")
     add_definitions (-DSP_API=${WIN_EXPORT} -DSP_PRIV=)
 else()
@@ -65,12 +65,12 @@ elseif (WIN32)
     list (APPEND SERIALPORT_SOURCES
         ${PROJECT_SOURCE_DIR}/src/windows.c)
     set (SERIALPORT_TARGET_LINK_LIBS setupapi uuid)
-    set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -no-undefined")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --no-undefined")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MESSAGE(STATUS "On Mac OSX")
     list (APPEND SERIALPORT_SOURCES
         ${PROJECT_SOURCE_DIR}/src/macosx.c)
-    set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation")
 endif()
 
 # build a shared library
