@@ -6,7 +6,7 @@ set (SERIAL_INTERFACE_VERSION_MAJOR 1)
 set (SERIAL_INTERFACE_VERSION_MINOR 0)
 set (SERIAL_INTERFACE_VERSION_PATCH 0)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra -pedantic -fmessage-length=0")
 
 if (WIN32)
     MESSAGE(STATUS "On Windows")
@@ -22,17 +22,10 @@ configure_file (
 
 # add the binary tree to the search path for include files
 include_directories("${PROJECT_BINARY_DIR}")
-include_directories("${PROJECT_SOURCE_DIR}/../inc/")
-include_directories("${PROJECT_BINARY_DIR}/sp_lib")
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/../src ${PROJECT_BINARY_DIR}/lib)
-add_subdirectory(${PROJECT_SOURCE_DIR}/../lib/libserialport/
-    ${PROJECT_BINARY_DIR}/sp_lib)
 
 add_executable(stackforce-serial-interface ${PROJECT_SOURCE_DIR}/main)
 
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
-target_link_libraries (stackforce-serial-interface serial-interface-lib
-    serialport  ${CMAKE_THREAD_LIBS_INIT})
 
