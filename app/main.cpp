@@ -19,8 +19,13 @@
 
 using namespace std;
 
-int main(int argc, char **argv) {
 
-	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
+int main(int argc, char **argv)
+{
+
+	string line;
+	getline(cin, line);
+	printf("your line: %s\n", line.c_str());
 	return 0;
+
 }
