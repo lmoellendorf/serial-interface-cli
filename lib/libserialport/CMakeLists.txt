@@ -83,7 +83,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 # build a shared library
-set(BUILD_SHARED_LIBS ON)
+set(BUILD_SHARED_LIBS OFF)
 
 add_library(serialport ${SERIALPORT_SOURCES})
 
