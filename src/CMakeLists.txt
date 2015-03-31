@@ -19,4 +19,9 @@ include_directories("${PROJECT_SOURCE_DIR}/../inc/")
 # build a shared library
 set(BUILD_SHARED_LIBS OFF)
 
-add_library(serial-interface-lib ${PROJECT_SOURCE_DIR}/stackforce_serial_mac)
+set (SERIAL_INTERFACE_LIB_SOURCES
+    ${PROJECT_SOURCE_DIR}/stackforce_serial_mac
+	${PROJECT_SOURCE_DIR}/../inc/stackforce_serial_mac_api.h
+    )
+
+add_library(serial-interface-lib ${SERIAL_INTERFACE_LIB_SOURCES})
