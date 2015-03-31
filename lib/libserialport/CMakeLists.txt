@@ -41,6 +41,7 @@ include_directories("${PROJECT_SOURCE_DIR}/src/" "${PROJECT_BINARY_DIR}/")
 
 set (SERIALPORT_SOURCES
     ${PROJECT_SOURCE_DIR}/src/serialport.c
+    ${PROJECT_SOURCE_DIR}/src/libserialport_internal.h
     )
 
 set (GCC_EXPORT __attribute__\(\(visibility\(\"default\"\)\)\))
@@ -68,6 +69,7 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     list (APPEND SERIALPORT_SOURCES
         ${PROJECT_SOURCE_DIR}/src/linux.c
         ${PROJECT_SOURCE_DIR}/src/linux_termios.c
+        ${PROJECT_SOURCE_DIR}/src/linux_termios.h
         )
 elseif (WIN32)
     MESSAGE(STATUS "On Windows")
