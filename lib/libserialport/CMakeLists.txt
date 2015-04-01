@@ -37,11 +37,15 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -Wall -Wextra -pedantic
 -werror")
 
 # add the binary tree to the search path for include files
-include_directories("${PROJECT_SOURCE_DIR}/src/" "${PROJECT_BINARY_DIR}/")
+include_directories(
+    "${PROJECT_SOURCE_DIR}/src/"
+    "${PROJECT_BINARY_DIR}/"
+    )
 
 set (SERIALPORT_SOURCES
     ${PROJECT_SOURCE_DIR}/src/serialport.c
     ${PROJECT_SOURCE_DIR}/src/libserialport_internal.h
+    ${PROJECT_BINARY_DIR}/libserialport.h
     )
 
 set (GCC_EXPORT __attribute__\(\(visibility\(\"default\"\)\)\))
