@@ -20,18 +20,21 @@ configure_file (
   "${PROJECT_BINARY_DIR}/version.h"
   )
 
-# add the binary tree to the search path for include files
-include_directories("${PROJECT_BINARY_DIR}")
-include_directories("${PROJECT_SOURCE_DIR}/../inc/")
-include_directories("${PROJECT_BINARY_DIR}/sp_lib")
-
-set (SERIAL_INTERFACE_SOURCES
-    ${PROJECT_SOURCE_DIR}/main
-    )
-
 add_subdirectory(${PROJECT_SOURCE_DIR}/../src ${PROJECT_BINARY_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/../lib/libserialport/
     ${PROJECT_BINARY_DIR}/sp_lib)
+
+# add the binary tree to the search path for include files
+include_directories(
+    "${PROJECT_BINARY_DIR}"
+    "${PROJECT_SOURCE_DIR}/../inc/"
+    "${PROJECT_BINARY_DIR}/sp_lib/"
+    )
+
+set (SERIAL_INTERFACE_SOURCES
+    ${PROJECT_SOURCE_DIR}/main
+    ${PROJECT_BINARY_DIR}/version.h
+    ${PROJECT_BINARY_DIR}/sp_lib/libserialport.h)
 
 add_executable(stackforce-serial-interface  ${SERIAL_INTERFACE_SOURCES})
 
