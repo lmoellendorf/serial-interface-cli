@@ -1,3 +1,0 @@
-[submodule "lib/libserialport/src"]
-	path = lib/libserialport/src
-	url = git://sigrok.org/libserialport

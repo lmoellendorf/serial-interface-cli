@@ -21,25 +21,50 @@ configure_file (
   )
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/../src ${PROJECT_BINARY_DIR}/lib)
-add_subdirectory(${PROJECT_SOURCE_DIR}/../lib/libserialport/
-    ${PROJECT_BINARY_DIR}/sp_lib)
 
 # add the binary tree to the search path for include files
 include_directories(
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}/../inc/"
-    "${PROJECT_BINARY_DIR}/sp_lib/"
+    "${PROJECT_BINARY_DIR}/libserialport-prefix/src/libserialport/"
     )
 
-set (SERIAL_INTERFACE_SOURCES
+
+include(ExternalProject)
+ExternalProject_Add(libserialport    # Name for custom target
+ #--Download step--------------
+  GIT_REPOSITORY git://sigrok.org/libserialport
+  GIT_TAG master
+ #--Configure step-------------
+  CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
+ #--Build step-----------------
+  BUILD_COMMAND ${MAKE}
+  BUILD_IN_SOURCE 1
+  #INSTALL_COMMAND ${MAKE} install
+  )
+
+set(SERIAL_INTERFACE_SOURCES
     ${PROJECT_SOURCE_DIR}/main
     ${PROJECT_BINARY_DIR}/version.h
-    ${PROJECT_BINARY_DIR}/sp_lib/libserialport.h)
+    )
 
-add_executable(stackforce-serial-interface  ${SERIAL_INTERFACE_SOURCES})
+set(LIBSERIALPORT_HEADER
+    ${PROJECT_BINARY_DIR}/libserialport-prefix/include/libserialport.h
+    )
+
+set_source_files_properties(${LIBSERIALPORT_HEADER} PROPERTIES GENERATED TRUE)
+
+set(LIBSERIALPORT_LIB
+    ${PROJECT_BINARY_DIR}/libserialport-prefix/lib/libserialport.so
+    )
+
+add_executable(stackforce-serial-interface  ${SERIAL_INTERFACE_SOURCES}
+    ${LIBSERIALPORT_HEADER})
+add_dependencies(stackforce-serial-interface libserialport)
 
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
+
 target_link_libraries (stackforce-serial-interface serial-interface-lib
-    serialport  ${CMAKE_THREAD_LIBS_INIT})
+    ${LIBSERIALPORT_LIB} ${CMAKE_THREAD_LIBS_INIT})
 
