@@ -16,9 +16,9 @@ endif()
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
-  "${PROJECT_SOURCE_DIR}/version.h.in"
-  "${PROJECT_BINARY_DIR}/version.h"
-  )
+    "${PROJECT_SOURCE_DIR}/version.h.in"
+    "${PROJECT_BINARY_DIR}/version.h"
+    )
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/../src ${PROJECT_BINARY_DIR}/lib)
 
@@ -26,27 +26,47 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/../src ${PROJECT_BINARY_DIR}/lib)
 include_directories(
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}/../inc/"
-    "${PROJECT_BINARY_DIR}/libserialport-prefix/src/libserialport/"
+    "${PROJECT_BINARY_DIR}/libserialport-prefix/include/"
     )
-
-
-include(ExternalProject)
-ExternalProject_Add(libserialport    # Name for custom target
- #--Download step--------------
-  GIT_REPOSITORY git://sigrok.org/libserialport
-  GIT_TAG master
- #--Configure step-------------
-  CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
- #--Build step-----------------
-  BUILD_COMMAND ${MAKE}
-  BUILD_IN_SOURCE 1
-  #INSTALL_COMMAND ${MAKE} install
-  )
 
 set(SERIAL_INTERFACE_SOURCES
     ${PROJECT_SOURCE_DIR}/main
     ${PROJECT_BINARY_DIR}/version.h
     )
+
+
+find_library(LIBSERIALPORTLIB serialport
+    ${PROJECT_BINARY_DIR}/libserialport-prefix/lib/)
+
+if(NOT LIBSERIALPORTLIB)
+    MESSAGE(STATUS "libserialport not found!")
+    include(ExternalProject)
+    ExternalProject_Add(libserialport    # Name for custom target
+        #--Download step--------------
+        GIT_REPOSITORY git://sigrok.org/libserialport
+        GIT_TAG master
+        #--Configure step-------------
+        CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
+        #--Build step-----------------
+        BUILD_COMMAND make
+        BUILD_IN_SOURCE 1
+        #UPDATE_COMMAND=""
+        INSTALL_COMMAND make install
+        )
+
+    # rerun cmake in initial build
+    # will update cmakecache/project files on first build
+    # so you may have to reload project after first build
+    add_custom_target(serialport ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS libserialport)
+else()
+    MESSAGE(STATUS "libserialport found!")
+    # serialport becomes a dummy target after first build
+    # this prevents cmake from rebuilding cache/projects on subsequent builds
+    ## TODO: Would be nice to have a target for cleaning/updating
+    ## libserialport
+    #add_custom_target(serialport ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS ${LIBSERIALPORTLIB})
+    add_custom_target(serialport)
+endif()
 
 set(LIBSERIALPORT_HEADER
     ${PROJECT_BINARY_DIR}/libserialport-prefix/include/libserialport.h
@@ -54,17 +74,19 @@ set(LIBSERIALPORT_HEADER
 
 set_source_files_properties(${LIBSERIALPORT_HEADER} PROPERTIES GENERATED TRUE)
 
-set(LIBSERIALPORT_LIB
-    ${PROJECT_BINARY_DIR}/libserialport-prefix/lib/libserialport.so
-    )
-
 add_executable(stackforce-serial-interface  ${SERIAL_INTERFACE_SOURCES}
     ${LIBSERIALPORT_HEADER})
-add_dependencies(stackforce-serial-interface libserialport)
+
+add_dependencies(stackforce-serial-interface serialport serial-interface-lib)
 
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
 
-target_link_libraries (stackforce-serial-interface serial-interface-lib
-    ${LIBSERIALPORT_LIB} ${CMAKE_THREAD_LIBS_INIT})
+if(LIBSERIALPORTLIB)
+    target_link_libraries(stackforce-serial-interface
+        serial-interface-lib
+        ${LIBSERIALPORTLIB}
+        ${CMAKE_THREAD_LIBS_INIT}
+        )
+endif()
 
