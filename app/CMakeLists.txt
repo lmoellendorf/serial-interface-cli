@@ -48,7 +48,7 @@ if(NOT LIBSERIALPORTLIB)
         GIT_REPOSITORY git://sigrok.org/libserialport
         GIT_TAG master
         #--Configure step-------------
-        #SOURCE_DIR ${PROJECT_BINARY_DIR}
+        #SOURCE_DIR ${PROJECT_SOURCE_DIR}/../lib/libserialport/src
         # set prefix to the default install dir
         # (libserialport-prefix in this case)
         CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
