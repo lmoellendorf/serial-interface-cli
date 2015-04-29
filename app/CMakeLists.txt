@@ -1,4 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
+include(ExternalProject)
+
 project (serial-interface)
 
 # The version number.
@@ -40,20 +42,30 @@ find_library(LIBSERIALPORTLIB serialport
 
 if(NOT LIBSERIALPORTLIB)
     MESSAGE(STATUS "libserialport not found!")
-    include(ExternalProject)
     ExternalProject_Add(libserialport    # Name for custom target
+        #PREFIX ${PROJECT_BINARY_DIR}
         #--Download step--------------
         GIT_REPOSITORY git://sigrok.org/libserialport
         GIT_TAG master
         #--Configure step-------------
+        #SOURCE_DIR ${PROJECT_BINARY_DIR}
+        # set prefix to the default install dir
+        # (libserialport-prefix in this case)
         CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
         #--Build step-----------------
         BUILD_COMMAND make
         BUILD_IN_SOURCE 1
-        #UPDATE_COMMAND=""
+        BUILD_ALWAYS 0
+        #--Install step-----------------
         INSTALL_COMMAND make install
         )
 
+    ExternalProject_Get_Property(libserialport install_dir)
+    ExternalProject_Get_Property(libserialport build_command)
+    ExternalProject_Get_Property(libserialport configure_command)
+    MESSAGE(STATUS "libserialport will be installed to:\n "
+        ${install_dir} "\nusing build command: " ${build_command}
+        "\nusing configure command: " ${configure_command})
     # rerun cmake in initial build
     # will update cmakecache/project files on first build
     # so you may have to reload project after first build
