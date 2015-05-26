@@ -43,6 +43,7 @@ struct app_ctx
     struct sf_serial_mac_ctx *mac_ctx;
     size_t iBuffLen = 0;
     char iBuff[SF_SERIAL_INPUT_MAX_SIZE];
+    char oBuff[SF_SERIAL_INPUT_MAX_SIZE];
 };
 
 static struct app_ctx ctx;
@@ -85,7 +86,8 @@ void wait4userinput()
     if (line.length() > 0)
     {
         line += "\n";
-        sf_serial_mac_txFrame(ctx.mac_ctx, line.c_str(), line.length());
+        strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
+        sf_serial_mac_txFrame(ctx.mac_ctx, ctx.oBuff, line.length());
     }
     else
     {
