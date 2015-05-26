@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <thread>
 #include <unistd.h>
+#include <string.h>
 extern "C"
 {
 #include <libserialport.h>
