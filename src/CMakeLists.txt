@@ -17,7 +17,7 @@ configure_file (
 include_directories("${PROJECT_SOURCE_DIR}/../inc/")
 
 # build a shared library
-SET(BUILD_SHARED_LIBS ON)
+set(BUILD_SHARED_LIBS OFF)
 
 set (SERIAL_INTERFACE_LIB_SOURCES
     ${PROJECT_SOURCE_DIR}/stackforce_serial_mac
