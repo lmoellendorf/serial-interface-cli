@@ -51,7 +51,7 @@ if(NOT LIBSERIALPORTLIB)
         #SOURCE_DIR ${PROJECT_SOURCE_DIR}/../lib/libserialport/src
         # set prefix to the default install dir
         # (libserialport-prefix in this case)
-        CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=<INSTALL_DIR>
+        CONFIGURE_COMMAND ./autogen.sh && ./configure --disable-shared --prefix=<INSTALL_DIR>
         #--Build step-----------------
         BUILD_COMMAND make
         BUILD_IN_SOURCE 1
