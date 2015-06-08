@@ -24,6 +24,8 @@ extern "C"
 #include <stackforce_serial_mac_api.h>
 
 #define SF_SERIAL_BAUDRATE 115200
+#define SF_SERIAL_BITS 8
+#define SF_SERIAL_STOPBITS 1
 #define SF_SERIAL_INPUT_MAX_SIZE 255
 #define FALSE 0
 #define TRUE 1
@@ -204,6 +206,30 @@ int main(int argc, char **argv)
     {
         printf("Could not set baudrate to %u on port \"%s\"!\n",
                 SF_SERIAL_BAUDRATE, portname);
+        return sp_ret;
+    }
+
+    sp_ret = sp_set_bits(ctx.port, SF_SERIAL_BITS);
+    if (SP_OK > sp_ret)
+    {
+        printf("Could not set number of bits to %u on port \"%s\"!\n",
+                SF_SERIAL_BITS, portname);
+        return sp_ret;
+    }
+
+    sp_ret = sp_set_parity(ctx.port, SP_PARITY_NONE);
+    if (SP_OK > sp_ret)
+    {
+        printf("Could not set number of bits to %u on port \"%s\"!\n",
+                SP_PARITY_NONE, portname);
+        return sp_ret;
+    }
+
+    sp_ret = sp_set_stopbits(ctx.port, SF_SERIAL_STOPBITS);
+    if (SP_OK > sp_ret)
+    {
+        printf("Could not set number of bits to %u on port \"%s\"!\n",
+                SF_SERIAL_STOPBITS, portname);
         return sp_ret;
     }
 
