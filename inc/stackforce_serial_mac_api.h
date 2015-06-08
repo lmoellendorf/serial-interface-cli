@@ -12,7 +12,7 @@ extern "C"
  *
  * @brief:   Sample header of the source code
  *
- * @version: 
+ * @version:
  *
  =============================================================================*/
 
@@ -93,9 +93,9 @@ typedef ssize_t (*SF_SERIAL_MAC_HAL_WRITE_FUNC)(void *portHandle,
         const void *frameBuffer, size_t frameBufferLength);
 
 typedef void (*SF_SERIAL_MAC_READ_EVT)(const char *frameBuffer,
-        size_t frameBufferLength);
+                                       size_t frameBufferLength);
 typedef void (*SF_SERIAL_MAC_WRITE_EVT)(const char *frameBuffer,
-        size_t frameBufferLength);
+                                        size_t frameBufferLength);
 
 /*!@} end of STACKFORCE_SERIAL_MAC_API_STRUCTS */
 
@@ -135,15 +135,15 @@ struct sf_serial_mac_ctx;
 size_t sf_serial_mac_ctx_size(void);
 
 void* sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
-        void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
-        SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
-        SF_SERIAL_MAC_WRITE_EVT writeEvt);
+                         void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
+                         SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
+                         SF_SERIAL_MAC_WRITE_EVT writeEvt);
 
 void* sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx, const char *frmBufLoc,
-        size_t frmBufSize);
+                            size_t frmBufSize);
 
 void* sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
-        size_t frmBufSize);
+                            size_t frmBufSize);
 
 void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx);
 void* sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx);

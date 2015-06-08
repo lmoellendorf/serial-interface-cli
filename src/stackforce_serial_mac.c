@@ -12,7 +12,7 @@ extern "C"
  *
  * @brief:   TODO: Sample header of the source code
  *
- * @version: 
+ * @version:
  *
  =============================================================================*/
 
@@ -71,15 +71,15 @@ struct sf_serial_mac_ctx
  |                         LOCAL FUNCTION PROTOTYPES
  =============================================================================*/
 static struct sf_serial_mac_buffer* initBuffer(
-        struct sf_serial_mac_buffer* buffer, const char *memory, size_t length,
-        size_t byteProcessed);
+    struct sf_serial_mac_buffer* buffer, const char *memory, size_t length,
+    size_t byteProcessed);
 
 /*==============================================================================
  |                              LOCAL FUNCTIONS
  =============================================================================*/
 static struct sf_serial_mac_buffer* initBuffer(
-        struct sf_serial_mac_buffer* buffer, const char *memory, size_t length,
-        size_t byteProcessed)
+    struct sf_serial_mac_buffer* buffer, const char *memory, size_t length,
+    size_t byteProcessed)
 {
     if (buffer)
     {
@@ -99,8 +99,8 @@ size_t sf_serial_mac_ctx_size(void)
 }
 
 void* sf_serial_mac_init(struct sf_serial_mac_ctx *ctx, void *portHandle,
-        SF_SERIAL_MAC_HAL_READ_FUNC rx, SF_SERIAL_MAC_HAL_WRITE_FUNC tx,
-        SF_SERIAL_MAC_READ_EVT readEvt, SF_SERIAL_MAC_WRITE_EVT writeEvt)
+                         SF_SERIAL_MAC_HAL_READ_FUNC rx, SF_SERIAL_MAC_HAL_WRITE_FUNC tx,
+                         SF_SERIAL_MAC_READ_EVT readEvt, SF_SERIAL_MAC_WRITE_EVT writeEvt)
 {
     if (ctx)
     {
@@ -129,7 +129,7 @@ void* sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx,
 }
 
 void* sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
-        size_t frmBufSize)
+                            size_t frmBufSize)
 {
     if (ctx)
     {
@@ -160,12 +160,12 @@ void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
                 size_t bytesToSend = 0;
                 size_t bytesSent = 0;
                 bytesToSend = ctx->writeBuffer.length
-                        - ctx->writeBuffer.byteProcessed;
+                              - ctx->writeBuffer.byteProcessed;
                 /* Send the bytes */
                 //TODO: add frame building here
                 bytesSent = ctx->write(ctx->portHandle,
-                        ctx->writeBuffer.memory
-                                + ctx->writeBuffer.byteProcessed, bytesToSend);
+                                       ctx->writeBuffer.memory
+                                       + ctx->writeBuffer.byteProcessed, bytesToSend);
                 /**
                  * This should never happen, but who knows...
                  * And so to prevent an buffer overrun we reset the length hardly
@@ -204,14 +204,14 @@ void* sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
         if (ctx->readBuffer.memory)
         {
             if ( //TODO: signal buffer overflow
-            (ctx->readBuffer.byteProcessed < ctx->readBuffer.length))
+                (ctx->readBuffer.byteProcessed < ctx->readBuffer.length))
             {
                 int recv = 0;
                 do
                 {
                     recv = ctx->read(ctx->portHandle,
-                            (char *) (ctx->readBuffer.memory
-                                    + ctx->readBuffer.byteProcessed), 1);
+                                     (char *) (ctx->readBuffer.memory
+                                               + ctx->readBuffer.byteProcessed), 1);
                     if (recv > 0)
                     {
                         //TODO: here the parsing of data begins
@@ -220,7 +220,7 @@ void* sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
                         {
                             // end of line is reached - inform the app
                             ctx->readEvt(ctx->readBuffer.memory,
-                                    ctx->readBuffer.byteProcessed + recv);
+                                         ctx->readBuffer.byteProcessed + recv);
                             /** Leave the loop */
                             break; /** recv = 0; would have the same effect - at least now */
                         }
@@ -231,7 +231,8 @@ void* sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
 
                     }
 
-                } while (recv);
+                }
+                while (recv);
             }
         }
     }
