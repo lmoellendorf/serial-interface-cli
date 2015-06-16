@@ -8,20 +8,20 @@ set (SERIAL_INTERFACE_LIB_VERSION_PATCH 0)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
-configure_file (
-    "${PROJECT_SOURCE_DIR}/version.h.in"
-    "${PROJECT_BINARY_DIR}/version.h"
-    )
+configure_file(${PROJECT_SOURCE_DIR}/version.h.in
+               ${PROJECT_BINARY_DIR}/version.h)
 
 # add the binary tree to the search path for include files
-include_directories("${PROJECT_SOURCE_DIR}/../inc/")
+include_directories(${PROJECT_SOURCE_DIR}/../inc/
+                    ${PROJECT_SOURCE_DIR}/../lib/crc/)
 
 # build a shared library
 set(BUILD_SHARED_LIBS OFF)
 
 set (SERIAL_INTERFACE_LIB_SOURCES
-    ${PROJECT_SOURCE_DIR}/stackforce_serial_mac
-	${PROJECT_SOURCE_DIR}/../inc/stackforce_serial_mac_api.h
-    )
+     ${PROJECT_SOURCE_DIR}/stackforce_serial_mac
+     ${PROJECT_SOURCE_DIR}/../inc/stackforce_serial_mac_api.h
+     ${PROJECT_SOURCE_DIR}/../lib/crc/sf_crc.c
+     ${PROJECT_SOURCE_DIR}/../lib/crc/sf_crc.h)
 
 add_library(serial-interface-lib ${SERIAL_INTERFACE_LIB_SOURCES})

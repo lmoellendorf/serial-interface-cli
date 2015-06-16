@@ -52,7 +52,7 @@ struct app_ctx
 static struct app_ctx ctx;
 
 void read_evt(const char *frameBuffer, size_t frameBufferLength);
-void write_evt(const char *frameBuffer, size_t frameBufferLength);
+void write_evt(void);
 void wait4userinput();
 void wait4halEvent(enum sp_event event,
         void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
@@ -76,7 +76,7 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
     }
 }
 
-void write_evt(const char *frameBuffer, size_t frameBufferLength)
+void write_evt(void)
 {
     thread userInputEventLoop(wait4userinput);
     userInputEventLoop.detach();
@@ -90,7 +90,8 @@ void wait4userinput()
     {
         line += "\n";
         strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
-        sf_serial_mac_txFrame(ctx.mac_ctx, ctx.oBuff, line.length());
+        sf_serial_mac_txFrameStart(ctx.mac_ctx, line.length());
+        sf_serial_mac_txFrameAppend(ctx.mac_ctx, ctx.oBuff, line.length());
     }
     else
     {
@@ -243,7 +244,7 @@ int main(int argc, char **argv)
             sizeof(ctx.iBuff));
 
     /** Start waiting for user input */
-    write_evt(NULL, 0);
+    write_evt();
 
 //    thread txEventLoop(wait4halTxEvent);
 //    txEventLoop.detach();

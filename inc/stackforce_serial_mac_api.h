@@ -91,8 +91,7 @@ typedef ssize_t (*SF_SERIAL_MAC_HAL_WRITE_FUNC)(void *portHandle,
 
 typedef void (*SF_SERIAL_MAC_READ_EVT)(const char *frameBuffer,
                                        size_t frameBufferLength);
-typedef void (*SF_SERIAL_MAC_WRITE_EVT)(const char *frameBuffer,
-                                        size_t frameBufferLength);
+typedef void (*SF_SERIAL_MAC_WRITE_EVT)(void);
 
 /*!@} end of STACKFORCE_SERIAL_MAC_API_STRUCTS */
 
@@ -136,7 +135,10 @@ void* sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
                          SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
                          SF_SERIAL_MAC_WRITE_EVT writeEvt);
 
-void* sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx, const char *frmBufLoc,
+void sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx *ctx,
+                                 uint16_t frmLen);
+
+void* sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx *ctx, const char *frmBufLoc,
                             size_t frmBufSize);
 
 void* sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
