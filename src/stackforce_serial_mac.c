@@ -269,44 +269,53 @@ void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
     {
         UINT8_TO_UINT16(length, ctx->frame.header +
                         SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
+
+        /** If memory has been assigned, then there is a header to process */
         if (ctx->headerBuffer.memory)
         {
             tx(ctx, &ctx->headerBuffer, NULL);
         }
-        else if (ctx->frame.processed >= length)
+
+        /**
+         * If a write buffer has been assigned process it.
+         */
+        if (ctx->writeBuffer.memory)
         {
             /**
-             * If the number of processed bytes is greater than the payload
-             * length, the CRC has been processed.
+             * Send the payload and calculate the CRC.
+             * The second parameter contains the payload, the last parameter is
+             * for storing the CRC which is calculated by tx().
              */
-            if (ctx->frame.processed >= length + SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN)
-            {
-                initFrame(&ctx->frame);
-                /** Inform the upper layer that we are finished */
-                ctx->writeEvt();
-            }
-            else
-            {
-                UINT8_TO_UINT16(crc, ctx->frame.crc);
-                crc = crc_finalize(crc);
-                UINT16_TO_UINT8(ctx->frame.crc, crc);
-                ctx->frame.processed += tx(ctx, &ctx->crcBuffer, NULL);
-            }
+            ctx->frame.processed += tx(ctx, &ctx->writeBuffer, (uint8_t *) &ctx->frame.crc);
         }
-        else
+
+        /**
+         * If the number of processed bytes is greater or equal then the lenght of payload
+         * but smaller then the length of payload and the length of CRC, the latter has not
+         * been (fully) processed yet.
+         */
+        if (ctx->frame.processed >= length &&
+                ctx->frame.processed < length + SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN)
+        {
+            UINT8_TO_UINT16(crc, ctx->frame.crc);
+            crc = crc_finalize(crc);
+            UINT16_TO_UINT8(ctx->frame.crc, crc);
+            ctx->frame.processed += tx(ctx, &ctx->crcBuffer, NULL);
+        }
+
+        /**
+         * If the number of processed bytes is greater than the payload
+         * length plus the length of the CRC field, the latter has been processed.
+         */
+        if (ctx->frame.processed >= length + SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN)
+        {
             /**
-             * Check if a write buffer has been assigned - otherwise this means
-             * there is nothing to do.
+             * Prepare the frame structure for the next frame.
              */
-            if (ctx->writeBuffer.memory)
-            {
-                /**
-                 * Send the payload and calculate the CRC.
-                 * The second parameter contains the payload, the last parameter is
-                 * for storing the CRC which is calculated by tx().
-                 */
-                ctx->frame.processed += tx(ctx, &ctx->writeBuffer, (uint8_t *) &ctx->frame.crc);
-            }
+            initFrame(&ctx->frame);
+            /** Inform the upper layer that we are finished */
+            ctx->writeEvt();
+        }
     }
     return ctx;
 }
