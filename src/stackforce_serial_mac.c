@@ -25,8 +25,6 @@ extern "C"
 #include <stddef.h>
 #include <string.h>
 
-/*! Define the "external include guard" before including the module header */
-#define __DECL_EXAMPLE_H__
 #include "stackforce_serial_mac_api.h"
 
 /*==============================================================================

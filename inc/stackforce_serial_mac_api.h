@@ -18,9 +18,6 @@ extern "C"
 
 #ifndef __STACKFORCE_SERIAL_MAC_API_H_
 #define __STACKFORCE_SERIAL_MAC_API_H_
-#ifndef __DECL_STACKFORCE_SERIAL_MAC_API_H_
-#define __DECL_STACKFORCE_SERIAL_MAC_API_H_ extern
-#endif
 
 /*==============================================================================
  |                               INCLUDE FILES
