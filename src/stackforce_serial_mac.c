@@ -41,7 +41,7 @@ extern "C"
 #define SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN          0x02U
 /*! Length of the serial MAC frame header */
 #define SF_SERIAL_MAC_PROTOCOL_HEADER_LEN      \
- SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN + SF_SERIAL_MAC_PROTOCOL_LENGTH_FIELD_LEN
+ (SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN + SF_SERIAL_MAC_PROTOCOL_LENGTH_FIELD_LEN)
 
 #define UINT16_TO_UINT8(u8arr, u16var)         ((u8arr)[0] = (uint8_t)((uint8_t)((u16var)>>8U) & 0xFFU)); \
                                       ((u8arr)[1] = (uint8_t)((u16var) & 0xFFU))
@@ -100,7 +100,7 @@ static struct sf_serial_mac_buffer* initBuffer(
     struct sf_serial_mac_buffer *buffer, const char *memory, size_t length,
     size_t byteProcessed);
 static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
-              *buffer, uint8_t *crc);
+              *buffer, size_t frmRemain, uint8_t *crc);
 
 /*==============================================================================
  |                              LOCAL FUNCTIONS
@@ -137,7 +137,7 @@ static void initFrame(struct sf_serial_mac_frame *frame)
  *             calculated.
  */
 static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
-              *buffer, uint8_t *crc)
+              *buffer, size_t frmRemain, uint8_t *crc)
 {
     size_t byteToSend = 0;
     size_t byteSent = 0;
@@ -153,6 +153,7 @@ static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
                          - buffer->byteProcessed;
             /* Send the bytes */
             //TODO: add frame building here
+            byteToSend = byteToSend > frmRemain?frmRemain:byteToSend;
             byteSent = ctx->write(ctx->portHandle,
                                   buffer->memory
                                   + buffer->byteProcessed, byteToSend);
@@ -176,7 +177,7 @@ static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
         }
 
         /* Check if all bytes have been sent */
-        if ((buffer->length <= buffer->byteProcessed))
+        if (byteSent == byteToSend)
         {
             /**
              * Clear the buffer, so the write event won't be called again
@@ -273,7 +274,7 @@ void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
         /** If memory has been assigned, then there is a header to process */
         if (ctx->headerBuffer.memory)
         {
-            tx(ctx, &ctx->headerBuffer, NULL);
+            tx(ctx, &ctx->headerBuffer, SF_SERIAL_MAC_PROTOCOL_HEADER_LEN, NULL);
         }
 
         /**
@@ -286,7 +287,9 @@ void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
              * The second parameter contains the payload, the last parameter is
              * for storing the CRC which is calculated by tx().
              */
-            ctx->frame.processed += tx(ctx, &ctx->writeBuffer, (uint8_t *) &ctx->frame.crc);
+            ctx->frame.processed += tx(ctx, &ctx->writeBuffer,
+                                       length - ctx->frame.processed,
+                                       (uint8_t *) &ctx->frame.crc);
         }
 
         /**
@@ -300,7 +303,8 @@ void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
             UINT8_TO_UINT16(crc, ctx->frame.crc);
             crc = crc_finalize(crc);
             UINT16_TO_UINT8(ctx->frame.crc, crc);
-            ctx->frame.processed += tx(ctx, &ctx->crcBuffer, NULL);
+            ctx->frame.processed += tx(ctx, &ctx->crcBuffer,
+                                       SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN, NULL);
         }
 
         /**

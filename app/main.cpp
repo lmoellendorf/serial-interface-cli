@@ -39,9 +39,18 @@ extern "C"
 
 using namespace std;
 
+enum state
+{
+    IDLE,
+    SND_FRME,
+    FIN_FRME,
+
+};
+
 struct app_ctx
 {
     int run = TRUE;
+    int status = IDLE;
     struct sp_port *port = NULL;
     struct sf_serial_mac_ctx *mac_ctx;
     size_t iBuffLen = 0;
@@ -78,20 +87,32 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
 
 void write_evt(void)
 {
-    thread userInputEventLoop(wait4userinput);
-    userInputEventLoop.detach();
+    ctx.status = IDLE;
 }
 
 void wait4userinput()
 {
     string line;
     getline(cin, line);
+
     if (line.length() > 0)
     {
-        line += "\n";
-        strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
-        sf_serial_mac_txFrameStart(ctx.mac_ctx, line.length());
-        sf_serial_mac_txFrameAppend(ctx.mac_ctx, ctx.oBuff, line.length());
+        switch (ctx.status)
+        {
+        case IDLE:
+            //line += "\n";
+            sf_serial_mac_txFrameStart(ctx.mac_ctx, 9);
+            ctx.status = SND_FRME;
+        //break; omitted
+        case SND_FRME:
+            strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
+            sf_serial_mac_txFrameAppend(ctx.mac_ctx, ctx.oBuff, line.length());
+            break;
+        default:
+            break;
+        }
+        thread userInputEventLoop(wait4userinput);
+        userInputEventLoop.detach();
     }
     else
     {
@@ -150,6 +171,7 @@ int main(int argc, char **argv)
 
     uint8_t mac_ctx[sf_serial_mac_ctx_size()];
     ctx.mac_ctx = (struct sf_serial_mac_ctx*) mac_ctx;
+    ctx.status = IDLE;
 
     sp_return sp_ret = SP_OK;
 //    struct sp_port **availablePorts = NULL;
@@ -244,13 +266,13 @@ int main(int argc, char **argv)
             sizeof(ctx.iBuff));
 
     /** Start waiting for user input */
-    write_evt();
-
 //    thread txEventLoop(wait4halTxEvent);
 //    txEventLoop.detach();
 //
 //    thread rxEventLoop(wait4halRxEvent);
 //    rxEventLoop.detach();
+    thread userInputEventLoop(wait4userinput);
+    userInputEventLoop.detach();
 
     /* Loop until the user quits */
     while (ctx.run)
