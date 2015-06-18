@@ -64,10 +64,10 @@ struct sf_serial_mac_buffer
 
 struct sf_serial_mac_frame
 {
-    /* Buffer for the MAC header: [SYNC] [Length field] */
+    /** Buffer for the MAC header: [SYNC] [Length field] */
     uint8_t header[SF_SERIAL_MAC_PROTOCOL_HEADER_LEN];
     uint16_t processed;
-    /*! Checksum. */
+    /** Checksum. */
     uint8_t crc[SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN];
 };
 
@@ -151,9 +151,8 @@ static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
         {
             byteToSend = buffer->length
                          - buffer->byteProcessed;
-            /* Send the bytes */
-            //TODO: add frame building here
             byteToSend = byteToSend > frmRemain?frmRemain:byteToSend;
+            /** Send the bytes */
             byteSent = ctx->write(ctx->portHandle,
                                   buffer->memory
                                   + buffer->byteProcessed, byteToSend);
@@ -176,7 +175,7 @@ static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
             buffer->byteProcessed += byteSent;
         }
 
-        /* Check if all bytes have been sent */
+        /** Check if all bytes have been sent */
         if (byteSent == byteToSend)
         {
             /**

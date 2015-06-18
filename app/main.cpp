@@ -64,7 +64,7 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength);
 void write_evt(void);
 void wait4userinput();
 void wait4halEvent(enum sp_event event,
-        void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
+                   void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
 void wait4halTxEvent();
 void wait4halRxEvent();
 
@@ -80,7 +80,7 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
         {
             printf(":%s:%zd\n", frameBuffer, frameBufferLength);
             sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx,
-                    ctx.iBuff, sizeof(ctx.iBuff));
+                                  ctx.iBuff, sizeof(ctx.iBuff));
         }
     }
 }
@@ -139,7 +139,7 @@ void wait4halRxEvent()
  * </ul>
  */
 void wait4halEvent(enum sp_event event,
-        void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
+                   void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
 {
     struct sp_event_set * portEventSet = NULL;
     unsigned int portEventMask = event;
@@ -150,7 +150,7 @@ void wait4halEvent(enum sp_event event,
 
         if (SP_OK
                 <= sp_add_port_events(portEventSet, ctx.port,
-                        (enum sp_event) portEventMask))
+                                      (enum sp_event) portEventMask))
         {
             while (SP_OK <= sp_wait(portEventSet, timeout))
             {
@@ -213,14 +213,14 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Config of port \"%s\" could not be saved! (Out of memory?)\n",
-                portname);
+               portname);
         return sp_ret;
     }
     sp_ret = sp_get_config(ctx.port, savedPortConfig);
     if (SP_OK > sp_ret)
     {
         printf("Config of port \"%s\" could not be saved! (Read error?)\n",
-                portname);
+               portname);
         return sp_ret;
     }
 
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Could not set baudrate to %u on port \"%s\"!\n",
-                SF_SERIAL_BAUDRATE, portname);
+               SF_SERIAL_BAUDRATE, portname);
         return sp_ret;
     }
 
@@ -236,7 +236,7 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Could not set number of bits to %u on port \"%s\"!\n",
-                SF_SERIAL_BITS, portname);
+               SF_SERIAL_BITS, portname);
         return sp_ret;
     }
 
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Could not set number of bits to %u on port \"%s\"!\n",
-                SP_PARITY_NONE, portname);
+               SP_PARITY_NONE, portname);
         return sp_ret;
     }
 
@@ -252,25 +252,20 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Could not set number of bits to %u on port \"%s\"!\n",
-                SF_SERIAL_STOPBITS, portname);
+               SF_SERIAL_STOPBITS, portname);
         return sp_ret;
     }
 
     sf_serial_mac_init((struct sf_serial_mac_ctx *) ctx.mac_ctx,
-            (void *) ctx.port,
-            (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read,
-            (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt,
-            write_evt);
+                       (void *) ctx.port,
+                       (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read,
+                       (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt,
+                       write_evt);
 
     sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
-            sizeof(ctx.iBuff));
+                          sizeof(ctx.iBuff));
 
     /** Start waiting for user input */
-//    thread txEventLoop(wait4halTxEvent);
-//    txEventLoop.detach();
-//
-//    thread rxEventLoop(wait4halRxEvent);
-//    rxEventLoop.detach();
     thread userInputEventLoop(wait4userinput);
     userInputEventLoop.detach();
 
