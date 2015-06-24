@@ -62,6 +62,7 @@ static struct app_ctx ctx;
 
 void read_evt(const char *frameBuffer, size_t frameBufferLength);
 void write_evt(void);
+void bufferTx_evt(int processed);
 void wait4userinput();
 void wait4halEvent(enum sp_event event,
                    void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
@@ -85,39 +86,55 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
     }
 }
 
-void write_evt(void)
+void write_evt(size_t processed)
 {
     ctx.status = IDLE;
 }
 
+void bufferTx_evt(size_t processed)
+{
+    thread userInputEventLoop(wait4userinput);
+    userInputEventLoop.detach();
+}
+
 void wait4userinput()
 {
-    string line;
+    SF_SERIAL_MAC_RETURN ret = SF_SERIAL_MAC_SUCCESS;
+    string line = "";
+    printf("Input text:\n");
     getline(cin, line);
 
     if (line.length() > 0)
     {
+        strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
         switch (ctx.status)
         {
         case IDLE:
             //line += "\n";
-            sf_serial_mac_txFrameStart(ctx.mac_ctx, 9);
+            if((ret = sf_serial_mac_txFrameStart(ctx.mac_ctx, 9)) != SF_SERIAL_MAC_SUCCESS)
+            {
+                printf("Frame Error %i\n", ret);
+            }
             ctx.status = SND_FRME;
         //break; omitted
         case SND_FRME:
-            strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
-            sf_serial_mac_txFrameAppend(ctx.mac_ctx, ctx.oBuff, line.length());
+            while((ret = sf_serial_mac_txFrameAppend(ctx.mac_ctx, ctx.oBuff,
+                         line.length())) != SF_SERIAL_MAC_SUCCESS)
+            {
+                printf("TX Error %i\nline: %s\nlength: %zd\n", ret, ctx.oBuff, line.length());
+                sleep(1);
+            }
             break;
         default:
+            printf("Exception Error\n");
             break;
         }
-        thread userInputEventLoop(wait4userinput);
-        userInputEventLoop.detach();
     }
     else
     {
         /** Userinput was empty line -> STOP */
         ctx.run = FALSE;
+        printf("Stop\n");
     }
 }
 
@@ -260,7 +277,7 @@ int main(int argc, char **argv)
                        (void *) ctx.port,
                        (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read,
                        (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt,
-                       write_evt);
+                       write_evt, bufferTx_evt);
 
     sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
                           sizeof(ctx.iBuff));

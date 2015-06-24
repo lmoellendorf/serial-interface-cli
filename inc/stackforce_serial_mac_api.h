@@ -71,7 +71,21 @@ extern "C"
 /*! @addtogroup STACKFORCE_SERIAL_MAC_API_ENUMS
  *  @{ */
 
+
 /*!@} end of STACKFORCE_SERIAL_MAC_API_ENUMS */
+
+/******************************************************************************/
+/*! @defgroup STACKFORCE_SERIAL_MAC_API_STRUCTS STACKFORCE TODO: Example structures
+ @ingroup  STACKFORCE_SERIAL_MAC_API
+ This section describes the structures used by the STACKFORCE Example
+ implementation.
+ */
+/*! @addtogroup STACKFORCE_SERIAL_MAC_API_STRUCTS
+ *  @{ */
+
+struct sf_serial_mac_ctx;
+
+/*!@} end of STACKFORCE_SERIAL_MAC_API_STRUCTS */
 
 /******************************************************************************/
 /*!
@@ -84,27 +98,46 @@ extern "C"
 /*! @addtogroup STACKFORCE_SERIAL_MAC_API_STRUCTS
  *  @{ */
 
+/**
+ * Signature of HAL's read function to be used by the MAC for RX.
+ */
 typedef ssize_t (*SF_SERIAL_MAC_HAL_READ_FUNC)(void *portHandle,
         void *frameBuffer, size_t frameBufferLength);
+/**
+ * Signature of HAL's write function to be used by the MAC for TX.
+ */
 typedef ssize_t (*SF_SERIAL_MAC_HAL_WRITE_FUNC)(void *portHandle,
         const void *frameBuffer, size_t frameBufferLength);
-
+/**
+ * Signature of APP's callback function to be called by the MAC
+ * when a whole frame has been received.
+ */
 typedef void (*SF_SERIAL_MAC_READ_EVT)(const char *frameBuffer,
                                        size_t frameBufferLength);
-typedef void (*SF_SERIAL_MAC_WRITE_EVT)(void);
-
-/*!@} end of STACKFORCE_SERIAL_MAC_API_STRUCTS */
-
-/******************************************************************************/
-/*! @defgroup STACKFORCE_SERIAL_MAC_API_STRUCTS STACKFORCE TODO: Example structures
- @ingroup  STACKFORCE_SERIAL_MAC_API
- This section describes the structures used by the STACKFORCE Example
- implementation.
+/**
+ * Signature of APP's callback function to be called by the MAC
+ * when a whole frame has been sent.
  */
-/*! @addtogroup STACKFORCE_SERIAL_MAC_API_STRUCTS
- *  @{ */
+typedef void (*SF_SERIAL_MAC_WRITE_EVT)(size_t byteWritten);
 
-struct sf_serial_mac_ctx;
+typedef enum sf_serial_mac_return
+{
+    SF_SERIAL_MAC_SUCCESS = 0,
+    /** Null pointer exception */
+    SF_SERIAL_MAC_ERROR_NPE,
+    /**
+     * A previously assigned TX buffer is still processed.
+     * Retry later.
+     */
+    SF_SERIAL_MAC_ERROR_TX_PENDING,
+    /**
+     * A previously started frame is still processed.
+     * Wait for SF_SERIAL_MAC_WRITE_EVT before starting a new frame.
+     */
+    SF_SERIAL_MAC_ERROR_FRM_PENDING,
+    /** The HAL reports an error. */
+    SF_SERIAL_MAC_ERROR_HAL_ERROR,
+} SF_SERIAL_MAC_RETURN;
 
 /*!@} end of STACKFORCE_SERIAL_MAC_API_STRUCTS */
 
@@ -133,13 +166,14 @@ size_t sf_serial_mac_ctx_size(void);
 void* sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
                          void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
                          SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
-                         SF_SERIAL_MAC_WRITE_EVT writeEvt);
+                         SF_SERIAL_MAC_WRITE_EVT writeEvt, SF_SERIAL_MAC_WRITE_EVT bufTxEvt);
 
-void sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx *ctx,
-                                 uint16_t frmLen);
+SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx *ctx,
+        size_t frmLen);
 
-void* sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx *ctx, const char *frmBufLoc,
-                            size_t frmBufSize);
+SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx *ctx,
+        const char *frmBufLoc,
+        size_t frmBufSize);
 
 void* sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
                             size_t frmBufSize);
