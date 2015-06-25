@@ -122,30 +122,38 @@ void wait4userinput(void)
     }
     if(ctx.oBuffRemains)
     {
-        switch (ctx.status)
+        while((ret = sf_serial_mac_txFrame(ctx.mac_ctx, frmLength,
+                                           ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains),
+                                           ctx.oBuffRemains)) != SF_SERIAL_MAC_SUCCESS)
         {
-        case START_FRAME:
-            if((ret = sf_serial_mac_txFrameStart(ctx.mac_ctx,
-                                                 frmLength)) != SF_SERIAL_MAC_SUCCESS)
-            {
-                printf("Frame Error %i\n", ret);
-            }
-            ctx.status = APPEND_FRAME;
-        //break; omitted
-        case APPEND_FRAME:
-            while((ret = sf_serial_mac_txFrameAppend(ctx.mac_ctx,
-                         ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains),
-                         ctx.oBuffRemains)) != SF_SERIAL_MAC_SUCCESS)
-            {
-                printf("TX Error %i\nline: %s\nlength: %zd\n", ret,
-                       ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains), ctx.oBuffRemains);
-                sleep(1);
-            }
-            break;
-        default:
-            printf("Exception Error\n");
-            break;
+            printf("TX Error %i\nline: %s\nlength: %zd\n", ret,
+                   ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains), ctx.oBuffRemains);
+            sleep(1);
         }
+        //        switch (ctx.status)
+//        {
+//        case START_FRAME:
+//            if((ret = sf_serial_mac_txFrameStart(ctx.mac_ctx,
+//                                                 frmLength)) != SF_SERIAL_MAC_SUCCESS)
+//            {
+//                printf("Frame Error %i\n", ret);
+//            }
+//            ctx.status = APPEND_FRAME;
+//        //break; omitted
+//        case APPEND_FRAME:
+//            while((ret = sf_serial_mac_txFrameAppend(ctx.mac_ctx,
+//                         ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains),
+//                         ctx.oBuffRemains)) != SF_SERIAL_MAC_SUCCESS)
+//            {
+//                printf("TX Error %i\nline: %s\nlength: %zd\n", ret,
+//                       ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains), ctx.oBuffRemains);
+//                sleep(1);
+//            }
+//            break;
+//        default:
+//            printf("Exception Error\n");
+//            break;
+//        }
     }
 }
 

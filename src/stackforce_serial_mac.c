@@ -308,14 +308,19 @@ SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx *ctx,
     {
         return SF_SERIAL_MAC_ERROR_FRM_PENDING;
     }
-    /** This assigns the propper buffer */
+    /**
+     * By assigning memory to the header buffer a new frame is started with the
+     * next call to <code>sf_serial_mac_halTxCb()</code>.
+     */
     initBuffer(&ctx->headerBuffer, (const char*) &ctx->frame.header,
                sizeof ctx->frame.header, txProcHeaderCB);
-    /** This assigns the propper buffer and locks the MAC so that no other frame
-    can be started until the CRC buffer is cleard */
+    /**
+     * By assigning memory to the CRC buffer starting a new frame is prevented
+     * untill <code>sf_serial_mac_halTxCb()</code> processed the whole frame.
+     */
     initBuffer(&ctx->crcBuffer, (char*) &ctx->frame.crc, sizeof ctx->frame.crc,
                txProcCrcCB);
-    /** write length */
+    /** Write frame length into the length field of the frame header */
     UINT16_TO_UINT8(ctx->frame.header + SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN, len);
     ctx->frame.remains = len;
     return SF_SERIAL_MAC_SUCCESS;
@@ -332,8 +337,21 @@ SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx *ctx,
     {
         return SF_SERIAL_MAC_ERROR_TX_PENDING;
     }
+    /**
+     * By assigning memory to the payload buffer the payload is transmitted with
+     * the next call to <code>sf_serial_mac_halTxCb()</code> and consecutive tries
+     * to assign payload buffers are prevented untill the currently assigned
+     * buffer has been processed.
+     */
     initBuffer(&ctx->writeBuffer, frmBufLoc, frmBufSize, txProcPayloadCB);
     return SF_SERIAL_MAC_SUCCESS;
+}
+
+SF_SERIAL_MAC_RETURN sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx,
+        size_t frmLen, const char *frmBufLoc, size_t frmBufSize)
+{
+    sf_serial_mac_txFrameStart(ctx, frmLen);
+    return sf_serial_mac_txFrameAppend(ctx, frmBufLoc, frmBufSize);
 }
 
 SF_SERIAL_MAC_RETURN sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx,

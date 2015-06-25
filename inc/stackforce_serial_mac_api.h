@@ -164,19 +164,57 @@ typedef enum sf_serial_mac_return
 size_t sf_serial_mac_ctx_size(void);
 
 SF_SERIAL_MAC_RETURN sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
-                         void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
-                         SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
-                         SF_SERIAL_MAC_WRITE_EVT writeEvt, SF_SERIAL_MAC_WRITE_EVT bufTxEvt);
+                                        void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
+                                        SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
+                                        SF_SERIAL_MAC_WRITE_EVT writeEvt, SF_SERIAL_MAC_WRITE_EVT bufTxEvt);
 
+/**
+ * Start a MAC frame with given length, i.e. initialize frame buffers and send
+ * the frame header.
+ *
+ * This is a non-blocking function.
+ *
+ * Use <code>sf_serial_mac_txFrameAppend()</code> to append paylaod data.
+ */
 SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx *ctx,
         size_t frmLen);
 
+/**
+ * Append data to the current frame's payload.
+ * Call <code>sf_serial_mac_txFrameStart()</code> first.
+ *
+ * This is a non-blocking function.
+ *
+ * As soon as all bytes in the buffer have been sent <code>bufTxEvt()</code> is
+ * called. The number of processed buffer bytes is passed to <code>bufTxEvt()</code>.
+ *
+ * As soon as the payload length specified in <code>sf_serial_mac_txFrameStart()</code>
+ * has been reached the frame is completed with an CRC and <code>writeEvt()</code>
+ * is called.
+ *
+ * Remaining payload that did not fit into the frame is ignored. The number of
+ * processed payload bytes is passed to <code>writeEvt()</code>.
+ */
 SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx *ctx,
         const char *frmBufLoc,
         size_t frmBufSize);
 
-SF_SERIAL_MAC_RETURN sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
-                            size_t frmBufSize);
+/**
+ * Start a frame iff not already done and append given payload.
+ * It is save to always use this function instead of
+ * <code>sf_serial_mac_txFrameStart()</code> and
+ * <code>sf_serial_mac_txFrameAppend()</code>.
+ * This function is a combination of <code>sf_serial_mac_txFrameStart()</code> and
+ * <code>sf_serial_mac_txFrameAppend()</code>.
+ *
+ * This is a non-blocking function.
+ */
+SF_SERIAL_MAC_RETURN sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx,
+        size_t frmLen, const char *frmBufLoc, size_t frmBufSize);
+
+SF_SERIAL_MAC_RETURN sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx,
+        char *frmBufLoc,
+        size_t frmBufSize);
 
 SF_SERIAL_MAC_RETURN sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx);
 SF_SERIAL_MAC_RETURN sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx);
