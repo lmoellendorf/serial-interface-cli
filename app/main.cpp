@@ -65,7 +65,7 @@ void write_evt(void);
 void bufferTx_evt(int processed);
 void wait4userinput(void);
 void wait4halEvent(enum sp_event event,
-                   void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
+                   SF_SERIAL_MAC_RETURN (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
 void wait4halTxEvent();
 void wait4halRxEvent();
 
@@ -167,7 +167,7 @@ void wait4halRxEvent()
  * </ul>
  */
 void wait4halEvent(enum sp_event event,
-                   void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
+                   SF_SERIAL_MAC_RETURN (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
 {
     struct sp_event_set * portEventSet = NULL;
     unsigned int portEventMask = event;
