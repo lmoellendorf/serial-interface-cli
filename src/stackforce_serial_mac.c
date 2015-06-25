@@ -67,7 +67,7 @@ struct sf_serial_mac_buffer
 {
     const char *memory;
     size_t length;
-    size_t byteProcessed;
+    size_t remains;
     SF_SERIAL_MAC_BUF_EVT callback;
 };
 
@@ -75,7 +75,7 @@ struct sf_serial_mac_frame
 {
     /** Buffer for the MAC header: [SYNC] [Length field] */
     uint8_t header[SF_SERIAL_MAC_PROTOCOL_HEADER_LEN];
-    uint16_t processed;
+    uint16_t remains;
     /** Checksum. */
     uint8_t crc[SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN];
 };
@@ -108,9 +108,9 @@ struct sf_serial_mac_ctx
  =============================================================================*/
 static struct sf_serial_mac_buffer* initBuffer(
     struct sf_serial_mac_buffer *buffer, const char *memory, size_t length,
-    size_t byteProcessed, SF_SERIAL_MAC_BUF_EVT callback);
+    SF_SERIAL_MAC_BUF_EVT callback);
 static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
-              *buffer, uint16_t frmRemain, uint8_t *crc);
+              *buffer, size_t txAtMost, uint8_t *crc);
 static void txProcHeaderCB(struct sf_serial_mac_ctx *ctx);
 static void txProcPayloadCB(struct sf_serial_mac_ctx *ctx);
 static void txProcCrcCB(struct sf_serial_mac_ctx *ctx);
@@ -123,13 +123,13 @@ static void rxProcPayloadCB(struct sf_serial_mac_ctx *ctx);
  =============================================================================*/
 static struct sf_serial_mac_buffer *initBuffer(
     struct sf_serial_mac_buffer *buffer, const char *memory, size_t length,
-    size_t byteProcessed, SF_SERIAL_MAC_BUF_EVT callback)
+    SF_SERIAL_MAC_BUF_EVT callback)
 {
     if (buffer)
     {
         buffer->memory = memory;
         buffer->length = length;
-        buffer->byteProcessed = byteProcessed;
+        buffer->remains = length;
         buffer->callback = callback;
     }
     return buffer;
@@ -139,7 +139,7 @@ static void initFrame(struct sf_serial_mac_frame *frame)
 {
     /** Set a pointer to the sync word for your convinience */
     frame->header[0] = SF_SERIAL_MAC_PROTOCOL_SYNC_WORD;
-    frame->processed = 0;
+    frame->remains = 0;
     /** zero buffer */
     memset((void *) frame->crc, 0, SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN);
 }
@@ -154,26 +154,23 @@ static void initFrame(struct sf_serial_mac_frame *frame)
  *             calculated.
  */
 static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
-              *buffer, uint16_t frmRemain, uint8_t *crc)
+              *buffer, size_t txAtMost, uint8_t *crc)
 {
     size_t byteToSend = 0;
     size_t byteSent = 0;
     uint16_t crcVal = 0;
-    size_t bufRemain = 0;
 
     if(ctx && buffer)
     {
 
         /** Check if we (still) have bytes to send */
-        if (buffer->byteProcessed < buffer->length)
+        if (buffer->remains)
         {
-            byteToSend = buffer->length
-                         - buffer->byteProcessed;
-            byteToSend = byteToSend > frmRemain?frmRemain:byteToSend;
+            byteToSend = buffer->remains > txAtMost ? txAtMost : buffer->remains;
             /** Send the bytes */
             byteSent = ctx->write(ctx->portHandle,
                                   buffer->memory
-                                  + buffer->byteProcessed, byteToSend);
+                                  + (buffer->length - buffer->remains), byteToSend);
             /**
              * This should never happen, but who knows...
              * And so to prevent an buffer overrun we reset the length hardly
@@ -184,13 +181,14 @@ static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
             if(crc)
             {
                 UINT8_TO_UINT16(crcVal, crc);
-                crcVal = crc_calc(crcVal, (uint8_t*) buffer->memory + buffer->byteProcessed,
+                crcVal = crc_calc(crcVal, (uint8_t*) buffer->memory
+                                  + (buffer->length - buffer->remains),
                                   byteSent);
                 UINT16_TO_UINT8(crc, crcVal);
             }
 
             /** update to the number of byte already sent */
-            buffer->byteProcessed += byteSent;
+            buffer->remains -= byteSent;
         }
 
         /** Check if all bytes have been sent */
@@ -201,7 +199,7 @@ static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
              * Clear the buffer, so the write event won't be called again
              * and again.
              */
-            initBuffer(buffer, NULL, 0, 0, buffer->callback);
+            initBuffer(buffer, NULL, 0, buffer->callback);
         }
     }
 
@@ -242,7 +240,7 @@ static void txProcHeaderCB(struct sf_serial_mac_ctx *ctx)
 static void txProcPayloadCB(struct sf_serial_mac_ctx *ctx)
 {
     /** inform upper layer that the buffer has been processed */
-    ctx->bufTxEvt(ctx->writeBuffer.byteProcessed);
+    ctx->bufTxEvt(ctx->writeBuffer.remains);
 }
 
 static void txProcCrcCB(struct sf_serial_mac_ctx *ctx)
@@ -286,10 +284,10 @@ void* sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
         ctx->writeEvt = writeEvt;
         ctx->portHandle = portHandle;
         ctx->bufTxEvt = bufTxEvt;
-        initBuffer(&ctx->writeBuffer, NULL, 0, 0, txProcPayloadCB);
-        initBuffer(&ctx->readBuffer, NULL, 0, 0, rxProcPayloadCB);
-        initBuffer(&ctx->headerBuffer, NULL, 0, 0, txProcHeaderCB);
-        initBuffer(&ctx->crcBuffer, NULL, 0, 0, txProcCrcCB);
+        initBuffer(&ctx->writeBuffer, NULL, 0, txProcPayloadCB);
+        initBuffer(&ctx->readBuffer, NULL, 0, rxProcPayloadCB);
+        initBuffer(&ctx->headerBuffer, NULL, 0, txProcHeaderCB);
+        initBuffer(&ctx->crcBuffer, NULL, 0, txProcCrcCB);
         initFrame(&ctx->frame);
     }
     return ctx;
@@ -308,14 +306,14 @@ SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx *ctx,
     }
     /** This assigns the propper buffer */
     initBuffer(&ctx->headerBuffer, (const char*) &ctx->frame.header,
-               sizeof ctx->frame.header, 0, txProcHeaderCB);
+               sizeof ctx->frame.header, txProcHeaderCB);
     /** This assigns the propper buffer and locks the MAC so that no other frame
     can be started until the CRC buffer is cleard */
-    initBuffer(&ctx->crcBuffer, (char*) &ctx->frame.crc, sizeof ctx->frame.crc, 0,
+    initBuffer(&ctx->crcBuffer, (char*) &ctx->frame.crc, sizeof ctx->frame.crc,
                txProcCrcCB);
     /** write length */
     UINT16_TO_UINT8(ctx->frame.header + SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN, len);
-    ctx->frame.processed = 0;
+    ctx->frame.remains = len;
     return SF_SERIAL_MAC_SUCCESS;
 }
 
@@ -330,9 +328,7 @@ SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx *ctx,
     {
         return SF_SERIAL_MAC_ERROR_TX_PENDING;
     }
-    ctx->writeBuffer.memory = frmBufLoc;
-    ctx->writeBuffer.length = frmBufSize;
-    ctx->writeBuffer.byteProcessed = 0;
+    initBuffer(&ctx->writeBuffer, frmBufLoc, frmBufSize, txProcPayloadCB);
     return SF_SERIAL_MAC_SUCCESS;
 }
 
@@ -341,10 +337,7 @@ void* sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
 {
     if (ctx)
     {
-        ctx->readBuffer.memory = frmBufLoc;
-        ctx->readBuffer.length = frmBufSize;
-        ctx->readBuffer.byteProcessed = 0;
-        /** zero buffer */
+        initBuffer(&ctx->readBuffer, frmBufLoc, frmBufSize, rxProcPayloadCB);
         memset((void *) ctx->readBuffer.memory, 0, ctx->readBuffer.length);
     }
     return ctx;
@@ -352,14 +345,10 @@ void* sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx, char *frmBufLoc,
 
 void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
 {
-    uint16_t length = 0;
     uint16_t crc = 0;
     /** Do nothing if there is no context. */
     if (ctx)
     {
-        UINT8_TO_UINT16(length, ctx->frame.header +
-                        SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
-
         /** If memory has been assigned, then there is a header to process */
         if (ctx->headerBuffer.memory)
         {
@@ -376,16 +365,16 @@ void* sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
              * The second parameter contains the payload, the last parameter is
              * for storing the CRC which is calculated by tx().
              */
-            ctx->frame.processed += tx(ctx, &ctx->writeBuffer,
-                                       length - ctx->frame.processed,
-                                       (uint8_t *) &ctx->frame.crc);
+            ctx->frame.remains -= tx(ctx, &ctx->writeBuffer,
+                                     ctx->frame.remains,
+                                     (uint8_t *) &ctx->frame.crc);
         }
 
         /**
-         * If the number of processed bytes is greater or equal then the length of payload
+         * If the number of processed bytes is greater or equal than the length of payload
          * the CRC has to be processed.
          */
-        if (ctx->frame.processed >= length)
+        if (ctx->crcBuffer.memory && !ctx->frame.remains)
         {
             UINT8_TO_UINT16(crc, ctx->frame.crc);
             crc = crc_finalize(crc);
@@ -408,29 +397,29 @@ void* sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
         if (ctx->readBuffer.memory)
         {
             if ( //TODO: signal buffer overflow
-                (ctx->readBuffer.byteProcessed < ctx->readBuffer.length))
+                (ctx->readBuffer.remains))
             {
                 int recv = 0;
                 do
                 {
                     recv = ctx->read(ctx->portHandle,
                                      (char *) (ctx->readBuffer.memory
-                                               + ctx->readBuffer.byteProcessed), 1);
+                                               + (ctx->readBuffer.length - ctx->readBuffer.remains)), 1);
                     if (recv > 0)
                     {
                         //TODO: here the parsing of data begins
                         if ('\n'
-                                == ctx->readBuffer.memory[ctx->readBuffer.byteProcessed]) // this is just a proof of concept
+                                == ctx->readBuffer.memory[(ctx->readBuffer.length - ctx->readBuffer.remains)]) // this is just a proof of concept
                         {
                             // end of line is reached - inform the app
                             ctx->readEvt(ctx->readBuffer.memory,
-                                         ctx->readBuffer.byteProcessed + recv);
+                                         (ctx->readBuffer.length - ctx->readBuffer.remains) + recv);
                             /** Leave the loop */
                             break; /** recv = 0; would have the same effect - at least now */
                         }
                         else
                         {
-                            ctx->readBuffer.byteProcessed += recv;
+                            ctx->readBuffer.remains -= recv;
                         }
 
                     }
