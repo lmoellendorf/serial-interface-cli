@@ -41,19 +41,19 @@ using namespace std;
 
 enum state
 {
-    IDLE,
-    SND_FRME,
-    FIN_FRME,
-
+    START_FRAME,
+    APPEND_FRAME,
 };
 
 struct app_ctx
 {
     int run = TRUE;
-    int status = IDLE;
+    int status = START_FRAME;
     struct sp_port *port = NULL;
     struct sf_serial_mac_ctx *mac_ctx;
     size_t iBuffLen = 0;
+    size_t oBuffRemains = 0;
+    size_t oBuffLength = 0;
     char iBuff[SF_SERIAL_INPUT_MAX_SIZE];
     char oBuff[SF_SERIAL_INPUT_MAX_SIZE];
 };
@@ -63,7 +63,7 @@ static struct app_ctx ctx;
 void read_evt(const char *frameBuffer, size_t frameBufferLength);
 void write_evt(void);
 void bufferTx_evt(int processed);
-void wait4userinput();
+void wait4userinput(void);
 void wait4halEvent(enum sp_event event,
                    void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
 void wait4halTxEvent();
@@ -88,40 +88,57 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
 
 void write_evt(size_t processed)
 {
-    ctx.status = IDLE;
+    ctx.status = START_FRAME;
 }
 
 void bufferTx_evt(size_t processed)
 {
+    ctx.oBuffRemains -= processed;
     thread userInputEventLoop(wait4userinput);
     userInputEventLoop.detach();
 }
 
-void wait4userinput()
+void wait4userinput(void)
 {
     SF_SERIAL_MAC_RETURN ret = SF_SERIAL_MAC_SUCCESS;
     string line = "";
-    printf("Input text:\n");
-    getline(cin, line);
+    const size_t frmLength = 9;
 
-    if (line.length() > 0)
+    if(!ctx.oBuffRemains)
     {
-        strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
+        printf("Input text:\n");
+        getline(cin, line);
+        if (line.length() > 0)
+        {
+            ctx.oBuffLength = ctx.oBuffRemains = line.length();
+            strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
+        }
+        else
+        {
+            /** Userinput was empty line -> STOP */
+            ctx.run = FALSE;
+            printf("Stop\n");
+        }
+    }
+    if(ctx.oBuffRemains)
+    {
         switch (ctx.status)
         {
-        case IDLE:
-            //line += "\n";
-            if((ret = sf_serial_mac_txFrameStart(ctx.mac_ctx, 9)) != SF_SERIAL_MAC_SUCCESS)
+        case START_FRAME:
+            if((ret = sf_serial_mac_txFrameStart(ctx.mac_ctx,
+                                                 frmLength)) != SF_SERIAL_MAC_SUCCESS)
             {
                 printf("Frame Error %i\n", ret);
             }
-            ctx.status = SND_FRME;
+            ctx.status = APPEND_FRAME;
         //break; omitted
-        case SND_FRME:
-            while((ret = sf_serial_mac_txFrameAppend(ctx.mac_ctx, ctx.oBuff,
-                         line.length())) != SF_SERIAL_MAC_SUCCESS)
+        case APPEND_FRAME:
+            while((ret = sf_serial_mac_txFrameAppend(ctx.mac_ctx,
+                         ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains),
+                         ctx.oBuffRemains)) != SF_SERIAL_MAC_SUCCESS)
             {
-                printf("TX Error %i\nline: %s\nlength: %zd\n", ret, ctx.oBuff, line.length());
+                printf("TX Error %i\nline: %s\nlength: %zd\n", ret,
+                       ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains), ctx.oBuffRemains);
                 sleep(1);
             }
             break;
@@ -129,12 +146,6 @@ void wait4userinput()
             printf("Exception Error\n");
             break;
         }
-    }
-    else
-    {
-        /** Userinput was empty line -> STOP */
-        ctx.run = FALSE;
-        printf("Stop\n");
     }
 }
 
@@ -188,7 +199,6 @@ int main(int argc, char **argv)
 
     uint8_t mac_ctx[sf_serial_mac_ctx_size()];
     ctx.mac_ctx = (struct sf_serial_mac_ctx*) mac_ctx;
-    ctx.status = IDLE;
 
     sp_return sp_ret = SP_OK;
 //    struct sp_port **availablePorts = NULL;

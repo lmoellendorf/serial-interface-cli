@@ -240,13 +240,16 @@ static void txProcHeaderCB(struct sf_serial_mac_ctx *ctx)
 static void txProcPayloadCB(struct sf_serial_mac_ctx *ctx)
 {
     /** inform upper layer that the buffer has been processed */
-    ctx->bufTxEvt(ctx->writeBuffer.remains);
+    ctx->bufTxEvt(ctx->writeBuffer.length - ctx->writeBuffer.remains);
 }
 
 static void txProcCrcCB(struct sf_serial_mac_ctx *ctx)
 {
+    uint16_t length = 0;
+    UINT8_TO_UINT16(length, ctx->frame.header +
+                    SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
     /** inform the upper layer that a frame has been completed */
-    ctx->writeEvt(0);
+    ctx->writeEvt(length);
     /**
      * Prepare the frame structure for the next frame.
      */
@@ -409,7 +412,8 @@ void* sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
                     {
                         //TODO: here the parsing of data begins
                         if ('\n'
-                                == ctx->readBuffer.memory[(ctx->readBuffer.length - ctx->readBuffer.remains)]) // this is just a proof of concept
+                                == ctx->readBuffer.memory[(ctx->readBuffer.length -
+                                                           ctx->readBuffer.remains)]) // this is just a proof of concept
                         {
                             // end of line is reached - inform the app
                             ctx->readEvt(ctx->readBuffer.memory,
