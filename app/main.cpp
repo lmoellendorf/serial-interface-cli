@@ -61,11 +61,12 @@ struct app_ctx
 static struct app_ctx ctx;
 
 void read_evt(const char *frameBuffer, size_t frameBufferLength);
+void bufferRx_evt(const char *frameBuffer, size_t frameBufferLength);
 void write_evt(void);
 void bufferTx_evt(int processed);
 void wait4userinput(void);
 void wait4halEvent(enum sp_event event,
-                   SF_SERIAL_MAC_RETURN (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
+                   enum sf_serial_mac_return (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
 void wait4halTxEvent();
 void wait4halRxEvent();
 
@@ -86,6 +87,12 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
     }
 }
 
+void bufferRx_evt(const char *frameBuffer, size_t frameBufferLength)
+{
+    sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
+                          sizeof(ctx.iBuff));
+}
+
 void write_evt(size_t processed)
 {
     ctx.status = START_FRAME;
@@ -100,7 +107,7 @@ void bufferTx_evt(size_t processed)
 
 void wait4userinput(void)
 {
-    SF_SERIAL_MAC_RETURN ret = SF_SERIAL_MAC_SUCCESS;
+    enum sf_serial_mac_return ret = SF_SERIAL_MAC_SUCCESS;
     string line = "";
     const size_t frmLength = 9;
 
@@ -175,7 +182,7 @@ void wait4halRxEvent()
  * </ul>
  */
 void wait4halEvent(enum sp_event event,
-                   SF_SERIAL_MAC_RETURN (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
+                   enum sf_serial_mac_return (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
 {
     struct sp_event_set * portEventSet = NULL;
     unsigned int portEventMask = event;
@@ -293,12 +300,9 @@ int main(int argc, char **argv)
 
     sf_serial_mac_init((struct sf_serial_mac_ctx *) ctx.mac_ctx,
                        (void *) ctx.port,
-                       (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read,
-                       (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt,
+                       (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read, (SF_SERIAL_MAC_HAL_READ_WAIT_FUNC) sp_input_waiting,
+                       (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt, bufferRx_evt,
                        write_evt, bufferTx_evt);
-
-    sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
-                          sizeof(ctx.iBuff));
 
     /** Start waiting for user input */
     thread userInputEventLoop(wait4userinput);

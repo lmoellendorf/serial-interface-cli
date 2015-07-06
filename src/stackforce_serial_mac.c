@@ -15,7 +15,7 @@ extern "C"
  * @version:
  *
  =============================================================================*/
-
+#define CRC_TABLE FALSE
 /*==============================================================================
  |                               INCLUDE FILES
  =============================================================================*/
@@ -51,6 +51,15 @@ extern "C"
 /*==============================================================================
  |                                   ENUMS
  =============================================================================*/
+/**
+ * RX state
+ */
+enum rxState {
+    HEADER,
+    PAYLOAD,
+    CRC,
+    UNKNOWN,
+};
 
 /*==============================================================================
  |                       STRUCTURES AND OTHER TYPEDEFS
@@ -65,7 +74,7 @@ typedef void (*SF_SERIAL_MAC_BUF_EVT)(struct sf_serial_mac_ctx *ctx);
 
 struct sf_serial_mac_buffer
 {
-    const char *memory;
+    char *memory;
     size_t length;
     size_t remains;
     SF_SERIAL_MAC_BUF_EVT callback;
@@ -84,15 +93,20 @@ struct sf_serial_mac_ctx
 {
     void *portHandle;
     SF_SERIAL_MAC_HAL_READ_FUNC read;
+    SF_SERIAL_MAC_HAL_READ_WAIT_FUNC readWait;
     SF_SERIAL_MAC_HAL_WRITE_FUNC write;
-    SF_SERIAL_MAC_READ_EVT readEvt;
-    SF_SERIAL_MAC_WRITE_EVT writeEvt;
-    SF_SERIAL_MAC_WRITE_EVT bufTxEvt;
+    SF_SERIAL_MAC_RX_EVT rxEvt;
+    SF_SERIAL_MAC_RX_EVT rxBufEvt;
+    SF_SERIAL_MAC_TX_EVT txEvt;
+    SF_SERIAL_MAC_TX_EVT txBufEvt;
     struct sf_serial_mac_buffer readBuffer;
     struct sf_serial_mac_buffer writeBuffer;
-    struct sf_serial_mac_buffer headerBuffer;
-    struct sf_serial_mac_buffer crcBuffer;
-    struct sf_serial_mac_frame frame;
+    struct sf_serial_mac_buffer txHeaderBuffer;
+    struct sf_serial_mac_buffer txCrcBuffer;
+    struct sf_serial_mac_buffer rxHeaderBuffer;
+    struct sf_serial_mac_buffer rxCrcBuffer;
+    struct sf_serial_mac_frame txFrame;
+    struct sf_serial_mac_frame rxFrame;
 };
 
 /*==============================================================================
@@ -107,22 +121,25 @@ struct sf_serial_mac_ctx
  |                         LOCAL FUNCTION PROTOTYPES
  =============================================================================*/
 static struct sf_serial_mac_buffer* initBuffer(
-    struct sf_serial_mac_buffer *buffer, const char *memory, size_t length,
+    struct sf_serial_mac_buffer *buffer, char *memory, size_t length,
     SF_SERIAL_MAC_BUF_EVT callback);
-static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
-              *buffer, size_t txAtMost, uint8_t *crc);
+static size_t tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
+                 *buffer, size_t txAtMost, uint8_t *crc);
 static void txProcHeaderCB(struct sf_serial_mac_ctx *ctx);
 static void txProcPayloadCB(struct sf_serial_mac_ctx *ctx);
 static void txProcCrcCB(struct sf_serial_mac_ctx *ctx);
-//static void rxProcHeaderCB(struct sf_serial_mac_ctx *ctx);
+static size_t rx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
+                 *buffer, size_t max, size_t min, size_t bytesWaiting);
+static void rxProcHeaderCB(struct sf_serial_mac_ctx *ctx);
 static void rxProcPayloadCB(struct sf_serial_mac_ctx *ctx);
-//static void rxProcCrcCB(struct sf_serial_mac_ctx *ctx);
+static void rxProcCrcCB(struct sf_serial_mac_ctx *ctx);
+static enum rxState checkRxState(struct sf_serial_mac_ctx *ctx);
 
 /*==============================================================================
  |                              LOCAL FUNCTIONS
  =============================================================================*/
 static struct sf_serial_mac_buffer *initBuffer(
-    struct sf_serial_mac_buffer *buffer, const char *memory, size_t length,
+    struct sf_serial_mac_buffer *buffer, char *memory, size_t length,
     SF_SERIAL_MAC_BUF_EVT callback)
 {
     if (buffer)
@@ -135,10 +152,12 @@ static struct sf_serial_mac_buffer *initBuffer(
     return buffer;
 }
 
-static void initFrame(struct sf_serial_mac_frame *frame)
+static void initFrame(struct sf_serial_mac_frame *frame, uint8_t syncWord)
 {
-    /** Set a pointer to the sync word for your convinience */
-    frame->header[0] = SF_SERIAL_MAC_PROTOCOL_SYNC_WORD;
+    /** zero buffer */
+    memset((void *) frame->header, 0, SF_SERIAL_MAC_PROTOCOL_HEADER_LEN);
+    /** Write the sync word into the buffer */
+    frame->header[0] = syncWord;
     frame->remains = 0;
     /** zero buffer */
     memset((void *) frame->crc, 0, SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN);
@@ -153,8 +172,8 @@ static void initFrame(struct sf_serial_mac_frame *frame)
  * @param *crc place to store crc value to. Set to null if crc shall not be
  *             calculated.
  */
-static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
-              *buffer, size_t txAtMost, uint8_t *crc)
+static size_t tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
+                 *buffer, size_t max, uint8_t *crc)
 {
     size_t byteToSend = 0;
     size_t byteSent = 0;
@@ -166,7 +185,7 @@ static int tx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
         /** Check if we (still) have bytes to send */
         if (buffer->remains)
         {
-            byteToSend = buffer->remains > txAtMost ? txAtMost : buffer->remains;
+            byteToSend = buffer->remains > max ? max : buffer->remains;
             /** Send the bytes */
             byteSent = ctx->write(ctx->portHandle,
                                   buffer->memory
@@ -213,25 +232,25 @@ static void txProcHeaderCB(struct sf_serial_mac_ctx *ctx)
      * TODO: Maybe we could handle the frame processing state using
      * these callbacks:
      *
-     * We could add a <code>struct sf_serial_mac_buffer *currentBuffer</code>
-     * to the <code>struct sf_serial_mac_frame</code> which is then always
-     * passed to <code>tx()</code>.
+     * We could add a struct sf_serial_mac_buffer *currentBuffer
+     * to the struct sf_serial_mac_frame which is then always
+     * passed to tx().
      *
-     * In <code>sf_serial_mac_txFrameStart</code> this pointer would then
-     * be set to <code>ctx->headerBuffer</code>.
-     * In <code>txProcHeaderCB()</code> the pointer would then be moved to
-     * <code>ctx->writeBuffer</code>.
-     * In <code>sf_serial_mac_halTxCb()</code> only one check would remain:
-     * <code>if(ctx->frame.processed >= length)</pre>. If true the current
-     * buffer would be switched to <code>ctx->crcBuffer</code>.
+     * In sf_serial_mac_txFrameStart this pointer would then
+     * be set to ctx->headerBuffer.
+     * In txProcHeaderCB() the pointer would then be moved to
+     * ctx->writeBuffer.
+     * In sf_serial_mac_halTxCb() only one check would remain:
+     * if(ctx->frame.processed >= length)</pre>. If true the current
+     * buffer would be switched to ctx->crcBuffer.
      *
      * However, there is one drawback:
      *
-     * Currently in <code>sf_serial_mac_halTxCb()</code> <code>tx()</code> is
+     * Currently in sf_serial_mac_halTxCb() tx() is
      * called often enough to process a whole frame in case all data is already
      * available. If the approach mentioned above is used
-     * <code>txProcHeaderCB()</code> and <code>txProcPayloadCB()</code> would
-     * have to call <code>tx()</code> directly to achieve the same effect.
+     * txProcHeaderCB() and txProcPayloadCB() would
+     * have to call tx() directly to achieve the same effect.
      *
      * I will commit the current state and then try this proposal.
      */
@@ -240,31 +259,126 @@ static void txProcHeaderCB(struct sf_serial_mac_ctx *ctx)
 static void txProcPayloadCB(struct sf_serial_mac_ctx *ctx)
 {
     /** inform upper layer that the buffer has been processed */
-    ctx->bufTxEvt(ctx->writeBuffer.length - ctx->writeBuffer.remains);
+    ctx->txBufEvt(ctx->writeBuffer.length - ctx->writeBuffer.remains);
 }
 
 static void txProcCrcCB(struct sf_serial_mac_ctx *ctx)
 {
     uint16_t length = 0;
-    UINT8_TO_UINT16(length, ctx->frame.header +
+    UINT8_TO_UINT16(length, ctx->txFrame.header +
                     SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
     /** inform the upper layer that a frame has been completed */
-    ctx->writeEvt(length);
+    ctx->txEvt(length);
     /**
      * Prepare the frame structure for the next frame.
      */
-    initFrame(&ctx->frame);
+    initFrame(&ctx->txFrame, SF_SERIAL_MAC_PROTOCOL_SYNC_WORD);
 }
 
-//static void rxProcHeaderCB(struct sf_serial_mac_ctx *ctx){
-//}
+//TODO: move into local rx() - add min. and max. bytes to receive, use callbacks to adjust state (just like in tx)
+static size_t rx(struct sf_serial_mac_ctx *ctx, struct sf_serial_mac_buffer
+                 *buffer, size_t max, size_t min, size_t bytesWaiting)
+{
+    size_t byteToReceive = 0;
+    size_t bytesReceived = 0;
+
+    /**
+     * TODO: maybe min is not needed?
+     */
+    if (bytesWaiting >= min)
+    {
+        max = buffer->remains > max ? max : buffer->remains;
+        byteToReceive = max > bytesWaiting ? bytesWaiting : max;
+        if((bytesReceived = ctx->read(ctx->portHandle,
+                                      (void*) (buffer->memory + buffer->length - buffer->remains),
+                                      byteToReceive)) < 0)
+        {
+//            return SF_SERIAL_MAC_ERROR_HAL_ERROR;
+            return 0;
+        }
+        if (byteToReceive != bytesReceived)
+        {
+            /** This should never happen, but if it does we can catch it. */
+//            return SF_SERIAL_MAC_ERROR_EXCEPTION;
+            return 0;
+        }
+        buffer->remains -= bytesReceived;
+        if(buffer->remains == 0)
+        {
+            buffer->callback(ctx);
+        }
+    }
+    return bytesReceived;
+}
+
+static void rxProcHeaderCB(struct sf_serial_mac_ctx *ctx)
+{
+    if(ctx->rxHeaderBuffer.memory[0] == (char) SF_SERIAL_MAC_PROTOCOL_SYNC_WORD)
+    {
+        /** Start the countdown */
+        UINT8_TO_UINT16(ctx->rxFrame.remains, ctx->rxFrame.header +
+                        SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
+        /** Inform upper layer that there has been a frame header received */
+        ctx->rxBufEvt(NULL, ctx->rxFrame.remains);
+    }
+}
 
 static void rxProcPayloadCB(struct sf_serial_mac_ctx *ctx)
 {
+    //FIXME: throw error here!!
+    if(ctx->rxFrame.remains <= 0)
+    {
+        initBuffer(&ctx->rxCrcBuffer, ctx->rxFrame.crc,
+                   SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN, rxProcCrcCB);
+    }
 }
 
-//static void rxProcCrcCB(struct sf_serial_mac_ctx *ctx){
-//}
+//FIXME: unify with txProcCrcCB!
+static void rxProcCrcCB(struct sf_serial_mac_ctx *ctx)
+{
+    uint16_t crc = 0;
+    uint16_t crcCheck = 0;
+    uint16_t length = 0;
+    UINT8_TO_UINT16(length, ctx->rxFrame.header +
+                    SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
+    UINT8_TO_UINT16(crc, ctx->rxCrcBuffer.memory);
+    if((crcCheck = crc_calc_finalize(ctx->readBuffer.memory,
+                                     length)) == crc)
+    {
+        /** inform the upper layer that a frame has been completed */
+        ctx->rxEvt(ctx->readBuffer.memory, length);
+        /**
+         * Prepare the frame structure for the next frame.
+         */
+        initFrame(&ctx->rxFrame, 0);
+    }
+}
+
+enum rxState checkRxState(struct sf_serial_mac_ctx *ctx)
+{
+    if(ctx->rxFrame.remains == 0 && ctx->rxCrcBuffer.memory == NULL)
+    {
+        return HEADER;
+    }
+    /**
+    * Check if a read buffer for reading the payload has been assigned.
+    * This works because the buffer is set to NULL if no payload is
+    * pending.
+    */
+    else if(ctx->rxFrame.remains > 0 && ctx->readBuffer.memory != NULL)
+    {
+        return PAYLOAD;
+    }
+    else if(ctx->rxFrame.remains == 0 && ctx->rxCrcBuffer.memory != NULL)
+    {
+        return CRC;
+    }
+    else
+    {
+        return UNKNOWN;
+    }
+};
+
 
 /*==============================================================================
  |                               API FUNCTIONS
@@ -274,59 +388,76 @@ size_t sf_serial_mac_ctx_size(void)
     return sizeof(struct sf_serial_mac_ctx);
 }
 
-SF_SERIAL_MAC_RETURN sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
-                                        void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC rx,
-                                        SF_SERIAL_MAC_HAL_WRITE_FUNC tx, SF_SERIAL_MAC_READ_EVT readEvt,
-                                        SF_SERIAL_MAC_WRITE_EVT writeEvt, SF_SERIAL_MAC_WRITE_EVT bufTxEvt)
+
+// TODO: split into local init rx and init tx functions
+enum sf_serial_mac_return sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
+        void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC read,
+        SF_SERIAL_MAC_HAL_READ_WAIT_FUNC readWaiting,
+        SF_SERIAL_MAC_HAL_WRITE_FUNC write, SF_SERIAL_MAC_RX_EVT rxEvt,
+        SF_SERIAL_MAC_RX_EVT rxBufEvt,
+        SF_SERIAL_MAC_TX_EVT txEvt, SF_SERIAL_MAC_TX_EVT txBufEvt)
 {
     if (!ctx)
     {
         return SF_SERIAL_MAC_ERROR_NPE;
     }
-    ctx->read = rx;
-    ctx->write = tx;
-    ctx->readEvt = readEvt;
-    ctx->writeEvt = writeEvt;
     ctx->portHandle = portHandle;
-    ctx->bufTxEvt = bufTxEvt;
+    ctx->read = read;
+    ctx->readWait = readWaiting;
+    ctx->write = write;
+    ctx->rxEvt = rxEvt;
+    ctx->rxBufEvt = rxBufEvt;
+    ctx->txEvt = txEvt;
+    ctx->txBufEvt = txBufEvt;
     initBuffer(&ctx->writeBuffer, NULL, 0, txProcPayloadCB);
+    initBuffer(&ctx->txHeaderBuffer, NULL, 0, txProcHeaderCB);
+    initBuffer(&ctx->txCrcBuffer, NULL, 0, txProcCrcCB);
+    initFrame(&ctx->txFrame, SF_SERIAL_MAC_PROTOCOL_SYNC_WORD);
     initBuffer(&ctx->readBuffer, NULL, 0, rxProcPayloadCB);
-    initBuffer(&ctx->headerBuffer, NULL, 0, txProcHeaderCB);
-    initBuffer(&ctx->crcBuffer, NULL, 0, txProcCrcCB);
-    initFrame(&ctx->frame);
+    /**
+     * By assigning memory to the header buffer MAC is ready to receive a new frame
+     * with the next call to sf_serial_mac_halTxCb().
+     */
+    initBuffer(&ctx->rxHeaderBuffer, (uint8_t*) &ctx->rxFrame.header,
+               sizeof ctx->rxFrame.header, rxProcHeaderCB);
+    initBuffer(&ctx->rxCrcBuffer, NULL, 0, rxProcCrcCB);
+    initFrame(&ctx->rxFrame, 0);
+
     return SF_SERIAL_MAC_SUCCESS;
 }
 
-SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx *ctx,
-        size_t len)
+enum sf_serial_mac_return sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx
+        *ctx, size_t len)
 {
     if (!ctx)
     {
         return SF_SERIAL_MAC_ERROR_NPE;
     }
-    if(ctx->crcBuffer.memory)
+    if(ctx->txCrcBuffer.memory)
     {
         return SF_SERIAL_MAC_ERROR_FRM_PENDING;
     }
     /**
      * By assigning memory to the header buffer a new frame is started with the
-     * next call to <code>sf_serial_mac_halTxCb()</code>.
+     * next call to sf_serial_mac_halTxCb().
      */
-    initBuffer(&ctx->headerBuffer, (const char*) &ctx->frame.header,
-               sizeof ctx->frame.header, txProcHeaderCB);
+    initBuffer(&ctx->txHeaderBuffer, (uint8_t*) &ctx->txFrame.header,
+               sizeof ctx->txFrame.header, txProcHeaderCB);
     /**
      * By assigning memory to the CRC buffer starting a new frame is prevented
-     * untill <code>sf_serial_mac_halTxCb()</code> processed the whole frame.
+     * untill sf_serial_mac_halTxCb() processed the whole frame.
      */
-    initBuffer(&ctx->crcBuffer, (char*) &ctx->frame.crc, sizeof ctx->frame.crc,
-               txProcCrcCB);
+    initBuffer(&ctx->txCrcBuffer, (uint8_t*) &ctx->txFrame.crc,
+               sizeof ctx->txFrame.crc, txProcCrcCB);
     /** Write frame length into the length field of the frame header */
-    UINT16_TO_UINT8(ctx->frame.header + SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN, len);
-    ctx->frame.remains = len;
+    UINT16_TO_UINT8(ctx->txFrame.header + SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN,
+                    len);
+    ctx->txFrame.remains = len;
     return SF_SERIAL_MAC_SUCCESS;
 }
 
-SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx *ctx,
+enum sf_serial_mac_return sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx
+        *ctx,
         const char *frmBufLoc, size_t frmBufSize)
 {
     if (!ctx)
@@ -335,39 +466,47 @@ SF_SERIAL_MAC_RETURN sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx *ctx,
     }
     if(ctx->writeBuffer.memory)
     {
-        return SF_SERIAL_MAC_ERROR_TX_PENDING;
+        return SF_SERIAL_MAC_ERROR_RW_PENDING;
     }
     /**
      * By assigning memory to the payload buffer the payload is transmitted with
-     * the next call to <code>sf_serial_mac_halTxCb()</code> and consecutive tries
+     * the next call to sf_serial_mac_halTxCb() and consecutive tries
      * to assign payload buffers are prevented untill the currently assigned
      * buffer has been processed.
      */
-    initBuffer(&ctx->writeBuffer, frmBufLoc, frmBufSize, txProcPayloadCB);
+    initBuffer(&ctx->writeBuffer, (char*) frmBufLoc, frmBufSize, txProcPayloadCB);
     return SF_SERIAL_MAC_SUCCESS;
 }
 
-SF_SERIAL_MAC_RETURN sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx,
+enum sf_serial_mac_return sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx,
         size_t frmLen, const char *frmBufLoc, size_t frmBufSize)
 {
     sf_serial_mac_txFrameStart(ctx, frmLen);
     return sf_serial_mac_txFrameAppend(ctx, frmBufLoc, frmBufSize);
 }
 
-SF_SERIAL_MAC_RETURN sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx,
+enum sf_serial_mac_return sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx,
         char *frmBufLoc,
         size_t frmBufSize)
 {
-    if (!ctx)
+    if (!ctx || !frmBufLoc)
     {
         return SF_SERIAL_MAC_ERROR_NPE;
+    }
+    if(ctx->readBuffer.memory != NULL)
+    {
+        return SF_SERIAL_MAC_ERROR_RW_PENDING;
+    }
+    if(frmBufSize < ctx->rxFrame.remains)
+    {
+        return SF_SERIAL_MAC_ERROR_BUFFER;
     }
     initBuffer(&ctx->readBuffer, frmBufLoc, frmBufSize, rxProcPayloadCB);
     memset((void *) ctx->readBuffer.memory, 0, ctx->readBuffer.length);
     return SF_SERIAL_MAC_SUCCESS;
 }
 
-SF_SERIAL_MAC_RETURN sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
+enum sf_serial_mac_return sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
 {
     uint16_t crc = 0;
     /** Do nothing if there is no context. */
@@ -376,11 +515,12 @@ SF_SERIAL_MAC_RETURN sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
         return SF_SERIAL_MAC_ERROR_NPE;
     }
     /** If memory has been assigned, then there is a header to process */
-    if (ctx->headerBuffer.memory)
+    if (ctx->txHeaderBuffer.memory)
     {
-        tx(ctx, &ctx->headerBuffer, SF_SERIAL_MAC_PROTOCOL_HEADER_LEN, NULL);
+        tx(ctx, &ctx->txHeaderBuffer, SF_SERIAL_MAC_PROTOCOL_HEADER_LEN, NULL);
     }
 
+    //TODO: add a getState method for tx just like in rx
     /**
      * If a write buffer has been assigned process it.
      */
@@ -391,73 +531,71 @@ SF_SERIAL_MAC_RETURN sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
          * The second parameter contains the payload, the last parameter is
          * for storing the CRC which is calculated by tx().
          */
-        ctx->frame.remains -= tx(ctx, &ctx->writeBuffer,
-                                 ctx->frame.remains,
-                                 (uint8_t *) &ctx->frame.crc);
+        ctx->txFrame.remains -= tx(ctx, &ctx->writeBuffer,
+                                   ctx->txFrame.remains,
+                                   (uint8_t *) &ctx->txFrame.crc);
     }
 
     /**
      * If the number of processed bytes is greater or equal than the length of payload
      * the CRC has to be processed.
      */
-    if (ctx->crcBuffer.memory && !ctx->frame.remains)
+    if (ctx->txCrcBuffer.memory && !ctx->txFrame.remains)
     {
-        UINT8_TO_UINT16(crc, ctx->frame.crc);
+        UINT8_TO_UINT16(crc, ctx->txFrame.crc);
         crc = crc_finalize(crc);
-        UINT16_TO_UINT8(ctx->frame.crc, crc);
-        tx(ctx, &ctx->crcBuffer, SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN, NULL);
+        UINT16_TO_UINT8(ctx->txFrame.crc, crc);
+        tx(ctx, &ctx->txCrcBuffer, SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN, NULL);
     }
 
     return SF_SERIAL_MAC_SUCCESS;
 }
 
-SF_SERIAL_MAC_RETURN sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
+enum sf_serial_mac_return sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
 {
+    size_t bytesWaiting = 0;
+    size_t bytesMaximum = 0;
+    uint16_t length = 0;
+
     /** Do nothing if there is no context. */
     if (!ctx)
     {
         return SF_SERIAL_MAC_ERROR_NPE;
     }
+
     /**
-     * Check if a read buffer has been assigned - otherwise this means
-     * there is nothing to do.
+     * Check if there are bytes to be read.
      */
-    if (ctx->readBuffer.memory)
+    if((bytesWaiting = ctx->readWait(ctx->portHandle)) < 0)
     {
-        if ( //TODO: signal buffer overflow
-            (ctx->readBuffer.remains))
+        return SF_SERIAL_MAC_ERROR_HAL_ERROR;
+    }
+    /** Is there anything to receive? */
+    if (bytesWaiting > 0)
+    {
+
+        switch (checkRxState(ctx))
         {
-            int recv = 0;
-            do
-            {
-                recv = ctx->read(ctx->portHandle,
-                                 (char *) (ctx->readBuffer.memory
-                                           + (ctx->readBuffer.length - ctx->readBuffer.remains)), 1);
-                if (recv > 0)
-                {
-                    //TODO: here the parsing of data begins
-                    if ('\n'
-                            == ctx->readBuffer.memory[(ctx->readBuffer.length -
-                                                       ctx->readBuffer.remains)]) // this is just a proof of concept
-                    {
-                        // end of line is reached - inform the app
-                        ctx->readEvt(ctx->readBuffer.memory,
-                                     (ctx->readBuffer.length - ctx->readBuffer.remains) + recv);
-                        /** Leave the loop */
-                        break; /** recv = 0; would have the same effect - at least now */
-                    }
-                    else
-                    {
-                        ctx->readBuffer.remains -= recv;
-                    }
-
-                }
-
-            }
-            while (recv);
+        case HEADER:
+            rx(ctx, &ctx->rxHeaderBuffer,SF_SERIAL_MAC_PROTOCOL_HEADER_LEN,
+               SF_SERIAL_MAC_PROTOCOL_HEADER_LEN, bytesWaiting);
+            //TODO checkState here and fall through if state is PAYLOAD
+            break;
+        case PAYLOAD:
+            ctx->rxFrame.remains -= rx(ctx, &ctx->readBuffer,ctx->rxFrame.remains, 1,
+                                       bytesWaiting);
+            /** In order to switch the state according to remaining bytes in frame: */
+            rxProcPayloadCB(ctx);
+            break;
+        case CRC:
+            rx(ctx, &ctx->rxCrcBuffer,SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN,
+               SF_SERIAL_MAC_PROTOCOL_CRC_FIELD_LEN, bytesWaiting);
+            break;
+        default:
+            /** This should never happen, but if it does we can catch it. */
+            return SF_SERIAL_MAC_ERROR_EXCEPTION;
         }
     }
-
     return SF_SERIAL_MAC_SUCCESS;
 }
 
