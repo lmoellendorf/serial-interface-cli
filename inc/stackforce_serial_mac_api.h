@@ -87,9 +87,11 @@ enum sf_serial_mac_return
      * Wait for SF_SERIAL_MAC_WRITE_EVT() before starting a new frame.
      */
     SF_SERIAL_MAC_ERROR_FRM_PENDING,
+    /** The HAL is busy (or you are too fast ;)). */
+    SF_SERIAL_MAC_ERROR_HAL_BUSY,
     /** The HAL reports an error. */
     SF_SERIAL_MAC_ERROR_HAL_ERROR,
-    /** There was an error that should never have happend ;). */
+    /** There was an error that should never have happened ;). */
     SF_SERIAL_MAC_ERROR_EXCEPTION,
     /** There was an error in buffer handling */
     SF_SERIAL_MAC_ERROR_BUFFER,

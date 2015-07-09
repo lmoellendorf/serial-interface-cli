@@ -81,8 +81,6 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
         else
         {
             printf(":%s:%zd\n", frameBuffer, frameBufferLength);
-            sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx,
-                                  ctx.iBuff, sizeof(ctx.iBuff));
         }
     }
 }
