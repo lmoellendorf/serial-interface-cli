@@ -237,6 +237,8 @@ static enum sf_serial_mac_return tx(struct sf_serial_mac_ctx *ctx,
                                     *buffer, uint8_t *crc)
 {
     size_t byteSent = 0;
+    uint16_t crcRead = 0;
+    uint16_t crcCalc = 0;
 
     /** Check if we (still) have bytes to send */
     if (buffer->remains)
@@ -255,8 +257,10 @@ static enum sf_serial_mac_return tx(struct sf_serial_mac_ctx *ctx,
         }
         if(crc)
         {
-            UINT16_TO_UINT8(crc, crc_calc(UINT8_TO_UINT16(crc), (uint8_t*) buffer->memory
-                                          + (buffer->length - buffer->remains), byteSent));
+            crcRead = UINT8_TO_UINT16(crc);
+            crcCalc = crc_calc(crcRead, (uint8_t*) buffer->memory
+                                          + (buffer->length - buffer->remains), byteSent);
+            UINT16_TO_UINT8(crc, crcCalc);
         }
 
         /** update to the number of byte already sent */
@@ -282,20 +286,23 @@ static void txProcHeaderCB(struct sf_serial_mac_ctx *ctx)
 
 static void txProcPayloadCB(struct sf_serial_mac_ctx *ctx)
 {
+    uint16_t crcRead = 0;
+    uint16_t crcCalc = 0;
     size_t processed = ctx->txFrame.payloadBuffer.length -
                        ctx->txFrame.payloadBuffer.remains;
+    ctx->txFrame.remains -= processed;
+    if(ctx->txFrame.remains <= 0)
+    {
+        crcRead = UINT8_TO_UINT16(ctx->txFrame.crcMemory);
+        crcCalc = crc_finalize(crcRead);
+        UINT16_TO_UINT8(ctx->txFrame.crcMemory, crcCalc);
+        ctx->txFrame.state = CRC;
+    }
     /**
      * Clear the buffer, so the write event won't be called again
      * and again for this buffer.
      */
     initBuffer(&ctx->txFrame.payloadBuffer, NULL, 0, txProcPayloadCB);
-    ctx->txFrame.remains -= processed;
-    if(ctx->txFrame.remains <= 0)
-    {
-        UINT16_TO_UINT8(ctx->txFrame.crcMemory,
-                        crc_finalize(UINT8_TO_UINT16(ctx->txFrame.crcMemory)));
-        ctx->txFrame.state = CRC;
-    }
     /** inform upper layer that the buffer has been processed */
     ctx->txBufEvt(processed);
 }
@@ -372,12 +379,16 @@ static void rxProcPayloadCB(struct sf_serial_mac_ctx *ctx)
 static void rxProcCrcCB(struct sf_serial_mac_ctx *ctx)
 {
     uint16_t length = 0;
+    uint16_t crcRx = 0;
+    uint16_t crcCalc = 0;
     /** The length is needed for calculating the CRC and for signaling the upper layer. */
     length = UINT8_TO_UINT16(ctx->rxFrame.headerMemory +
                              SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
     /** The received CRC has to checked. */
-    if(crc_calc_finalize(ctx->rxFrame.payloadBuffer.memory,
-                         length) == UINT8_TO_UINT16(ctx->rxFrame.crcBuffer.memory))
+    crcRx = UINT8_TO_UINT16(ctx->rxFrame.crcBuffer.memory);
+    crcCalc = crc_calc_finalize((uint8_t*) ctx->rxFrame.payloadBuffer.memory,
+                                length);
+    if(crcRx == crcCalc)
     {
         /** inform the upper layer that a frame has been completed */
         ctx->rxEvt(ctx->rxFrame.payloadBuffer.memory, length);
