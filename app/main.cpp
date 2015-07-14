@@ -26,6 +26,7 @@ extern "C"
 #define SF_SERIAL_BAUDRATE 115200
 #define SF_SERIAL_BITS 8
 #define SF_SERIAL_STOPBITS 1
+#define SF_SERIAL_FLOWCTRL SP_FLOWCONTROL_NONE
 #define SF_SERIAL_INPUT_MAX_SIZE 255
 #define FALSE 0
 #define TRUE 1
@@ -293,6 +294,14 @@ int main(int argc, char **argv)
     {
         printf("Could not set number of bits to %u on port \"%s\"!\n",
                SF_SERIAL_STOPBITS, portname);
+        return sp_ret;
+    }
+
+    sp_ret = sp_set_flowcontrol(ctx.port, SF_SERIAL_FLOWCTRL);
+    if (SP_OK > sp_ret)
+    {
+        printf("Could not set rts to %u on port \"%s\"!\n",
+               SF_SERIAL_FLOWCTRL, portname);
         return sp_ret;
     }
 
