@@ -236,7 +236,8 @@ static enum sf_serial_mac_return tx(struct sf_serial_mac_ctx *ctx,
                                     struct sf_serial_mac_buffer
                                     *buffer, uint8_t *crc)
 {
-    size_t byteSent = 0;
+    /** We need a signed integer to handle negative return values that indicate an error */
+    int byteSent = 0;
     uint16_t crcRead = 0;
     uint16_t crcCalc = 0;
 
@@ -248,6 +249,7 @@ static enum sf_serial_mac_return tx(struct sf_serial_mac_ctx *ctx,
                                   buffer->memory
                                   + (buffer->length - buffer->remains), buffer->remains)) < 0)
         {
+            /** Negative return values indicate an HAL error */
             return SF_SERIAL_MAC_ERROR_HAL_ERROR;
         }
         if (buffer->remains < byteSent)
