@@ -87,8 +87,13 @@ enum sf_serial_mac_return
      * Wait for SF_SERIAL_MAC_WRITE_EVT() before starting a new frame.
      */
     SF_SERIAL_MAC_ERROR_FRM_PENDING,
-    /** The HAL is busy (or you are too fast ;)). */
+    /** The HAL is busy (or you are too fast ;)) and did send nothing. */
     SF_SERIAL_MAC_ERROR_HAL_BUSY,
+    /**
+     * The HAL is slow (or you are too fast ;)) but did send at least one byte
+     * (this is needed to work around slow serial handlers on Windows).
+     */
+    SF_SERIAL_MAC_ERROR_HAL_SLOW,
     /** The HAL reports an error. */
     SF_SERIAL_MAC_ERROR_HAL_ERROR,
     /** There was an error that should never have happened ;). */

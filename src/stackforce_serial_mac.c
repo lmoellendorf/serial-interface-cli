@@ -252,7 +252,12 @@ static enum sf_serial_mac_return tx(struct sf_serial_mac_ctx *ctx,
             /** Negative return values indicate an HAL error */
             return SF_SERIAL_MAC_ERROR_HAL_ERROR;
         }
-        if (buffer->remains < byteSent)
+        else if (byteSent == 0)
+        {
+            /** No error, but nothing sent. */
+            return SF_SERIAL_MAC_ERROR_HAL_BUSY;
+        }
+        else if (buffer->remains < byteSent)
         {
             /** This should never happen, but if it does we can catch it. */
             return SF_SERIAL_MAC_ERROR_EXCEPTION;
@@ -261,7 +266,7 @@ static enum sf_serial_mac_return tx(struct sf_serial_mac_ctx *ctx,
         {
             crcRead = UINT8_TO_UINT16(crc);
             crcCalc = crc_calc(crcRead, (uint8_t*) buffer->memory
-                                          + (buffer->length - buffer->remains), byteSent);
+                               + (buffer->length - buffer->remains), byteSent);
             UINT16_TO_UINT8(crc, crcCalc);
         }
 
@@ -277,7 +282,27 @@ static enum sf_serial_mac_return tx(struct sf_serial_mac_ctx *ctx,
     }
     else
     {
-        return SF_SERIAL_MAC_ERROR_HAL_BUSY;
+        /**
+         * A special return value has been added here to work-around
+         * the Windows specific serial interface API problems.
+         * The Windows I/O model is based on async requests so one can do a
+         * write with a pointer and a count and have it execute in the background.
+         * But the caller needs to keep that buffer untouched until it's done and
+         * the write will take as large as a request as you like, no relation whether
+         * the device is actually ready for new data.
+         * Libserialport (the lib used on Windows) tries to offer the
+         * same nonblocking semantics as on UNIX. To do so it just sends one byte
+         * at a time and immediately checks whether the byte has been send or not
+         * using HasOverlappedIoCompleted().
+         * Actually this HasOverlappedIoCompleted() always returned false in my test.
+         * However, an immediate retry to send succeeds in most cases. So if any byte
+         * has been send on Windows it is worth to immediately retry and not hand the
+         * control back to main().
+         * If Libserialport can't hand the single byte over to the serial interface it
+         * returns 0 which indicates that the serial interface buffer is full.
+         * See Libserialport's sp_nonblocking_write() function for details.
+         */
+        return SF_SERIAL_MAC_ERROR_HAL_SLOW;
     }
 }
 
@@ -525,32 +550,42 @@ enum sf_serial_mac_return sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx)
         return SF_SERIAL_MAC_ERROR_NPE;
     }
 
-    switch (ctx->txFrame.state)
+    /** Try to process a whole frame at once before handing control back to main() */
+    do
     {
-    case IDLE:
-        /** Nothing to do. */
-        break;
-    case HEADER:
-        ret = tx(ctx, &ctx->txFrame.headerBuffer, NULL);
-        break;
-    case PAYLOAD:
-        /**
-         * If a write buffer has been assigned process it.
-         */
-        if (ctx->txFrame.payloadBuffer.memory)
+        switch (ctx->txFrame.state)
         {
+        case IDLE:
+            /** Nothing to do. */
+            break;
+        case HEADER:
+            ret = tx(ctx, &ctx->txFrame.headerBuffer, NULL);
+            break;
+        case PAYLOAD:
             /**
-             * Send the payload and calculate the CRC.
-             * The second parameter contains the payload, the last parameter is
-             * for storing the CRC which is calculated by tx().
+             * If a write buffer has been assigned process it.
              */
-            ret = tx(ctx, &ctx->txFrame.payloadBuffer, (uint8_t *) &ctx->txFrame.crcMemory);
+            if (ctx->txFrame.payloadBuffer.memory)
+            {
+                /**
+                 * Send the payload and calculate the CRC.
+                 * The second parameter contains the payload, the last parameter is
+                 * for storing the CRC which is calculated by tx().
+                 */
+                ret = tx(ctx, &ctx->txFrame.payloadBuffer, (uint8_t *) &ctx->txFrame.crcMemory);
+            }
+            break;
+        case CRC:
+            ret = tx(ctx, &ctx->txFrame.crcBuffer, NULL);
+            break;
         }
-        break;
-    case CRC:
-        ret = tx(ctx, &ctx->txFrame.crcBuffer, NULL);
-        break;
     }
+    while ( /** In case a frame has been processed give other processes a chance to jump in */
+        ctx->txFrame.state != IDLE &&
+        /** If the last action has been successful we proceed */
+        (ret == SF_SERIAL_MAC_SUCCESS
+         /** This is a workaround for slow serial ports. */
+         || ret == SF_SERIAL_MAC_ERROR_HAL_SLOW));
 
     return ret;
 }
