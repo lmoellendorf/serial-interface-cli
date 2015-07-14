@@ -601,37 +601,54 @@ enum sf_serial_mac_return sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx)
         return SF_SERIAL_MAC_ERROR_NPE;
     }
 
-    /** Is there anything to receive? FIXME: prevent DOS attack */
-    while ((bytesWaiting = ctx->readWait(ctx->portHandle)) > 0
-            && ret == SF_SERIAL_MAC_SUCCESS)
+
+
+    /** Try to process a whole frame at once before handing control back to main() */
+    do
     {
-
-        switch (ctx->rxFrame.state)
+        /** Is there anything to receive? */
+        if((bytesWaiting = ctx->readWait(ctx->portHandle)) > 0)
         {
-        case IDLE:
-            ret = rx(ctx, &ctx->rxFrame.headerBuffer, SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
-            /** FIXME: this only works for sync words of 1 byte length! */
-            if(ctx->rxFrame.headerBuffer.memory[0] == (char)
-                    SF_SERIAL_MAC_PROTOCOL_SYNC_WORD)
-            {
-                ctx->rxFrame.state = HEADER;
-            }
 
-            break;
-        case HEADER:
-            ret = rx(ctx, &ctx->rxFrame.headerBuffer, bytesWaiting);
-            break;
-        case PAYLOAD:
-            ret = rx(ctx, &ctx->rxFrame.payloadBuffer, bytesWaiting);
-            break;
-        case CRC:
-            ret = rx(ctx, &ctx->rxFrame.crcBuffer, bytesWaiting);
-            break;
-        default:
-            /** This should never happen, but if it does we can catch it. */
-            ret = SF_SERIAL_MAC_ERROR_EXCEPTION;
+            switch (ctx->rxFrame.state)
+            {
+            case IDLE:
+                ret = rx(ctx, &ctx->rxFrame.headerBuffer, SF_SERIAL_MAC_PROTOCOL_SYNC_WORD_LEN);
+                /** FIXME: this only works for sync words of 1 byte length! */
+                if(ctx->rxFrame.headerBuffer.memory[0] == (char)
+                        SF_SERIAL_MAC_PROTOCOL_SYNC_WORD)
+                {
+                    ctx->rxFrame.state = HEADER;
+                }
+                else
+                {
+                    initBuffer(&ctx->rxFrame.headerBuffer, (uint8_t*) &ctx->rxFrame.headerMemory,
+                               SF_SERIAL_MAC_PROTOCOL_HEADER_LEN, rxProcHeaderCB);
+                }
+
+                break;
+            case HEADER:
+                ret = rx(ctx, &ctx->rxFrame.headerBuffer, bytesWaiting);
+                break;
+            case PAYLOAD:
+                ret = rx(ctx, &ctx->rxFrame.payloadBuffer, bytesWaiting);
+                break;
+            case CRC:
+                ret = rx(ctx, &ctx->rxFrame.crcBuffer, bytesWaiting);
+                break;
+            default:
+                /** This should never happen, but if it does we can catch it. */
+                ret = SF_SERIAL_MAC_ERROR_EXCEPTION;
+            }
         }
     }
+    while (/** Hand the control back to main() if there is nothing to do */
+        bytesWaiting  > 0
+        /** or in case of errors */
+        && ret == SF_SERIAL_MAC_SUCCESS
+        /** or if a whole frame has been processed (also to prevent DOS attacks). */
+        && ctx->rxFrame.state != IDLE);
+
     /** Check for HAL error. */
     if(bytesWaiting < 0)
     {
