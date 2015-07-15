@@ -31,12 +31,6 @@ include_directories(
     "${PROJECT_BINARY_DIR}/libserialport-prefix/include/"
     )
 
-set(SERIAL_INTERFACE_SOURCES
-    ${PROJECT_SOURCE_DIR}/main
-    ${PROJECT_BINARY_DIR}/version.h
-    )
-
-
 find_library(LIBSERIALPORTLIB serialport
     ${PROJECT_BINARY_DIR}/libserialport-prefix/lib/)
 
@@ -86,8 +80,17 @@ set(LIBSERIALPORT_HEADER
 
 set_source_files_properties(${LIBSERIALPORT_HEADER} PROPERTIES GENERATED TRUE)
 
-add_executable(stackforce-serial-interface  ${SERIAL_INTERFACE_SOURCES}
-    ${LIBSERIALPORT_HEADER})
+set(SERIAL_INTERFACE_HEADERS
+    ${LIBSERIALPORT_HEADER}
+    ${PROJECT_BINARY_DIR}/version.h
+    )
+
+set(SERIAL_INTERFACE_SOURCES
+    ${PROJECT_SOURCE_DIR}/main
+    ${SERIAL_INTERFACE_HEADERS}
+    )
+
+add_executable(stackforce-serial-interface  ${SERIAL_INTERFACE_SOURCES})
 
 add_dependencies(stackforce-serial-interface serialport serial-interface-lib)
 

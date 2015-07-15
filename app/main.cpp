@@ -26,11 +26,12 @@ extern "C"
 #define SF_SERIAL_BAUDRATE 115200
 #define SF_SERIAL_BITS 8
 #define SF_SERIAL_STOPBITS 1
+#define SF_SERIAL_FLOWCTRL SP_FLOWCONTROL_NONE
 #define SF_SERIAL_INPUT_MAX_SIZE 255
 #define FALSE 0
 #define TRUE 1
 #ifdef __linux__
-#define SF_SERIAL_PORT_NAME "/dev/ttyUSB0"
+#define SF_SERIAL_PORT_NAME "/dev/ttyUSB1"
 #else
 #ifdef _WIN32
 #define SF_SERIAL_PORT_NAME "COM1"
@@ -39,12 +40,21 @@ extern "C"
 
 using namespace std;
 
+enum state
+{
+    START_FRAME,
+    APPEND_FRAME,
+};
+
 struct app_ctx
 {
     int run = TRUE;
+    int status = START_FRAME;
     struct sp_port *port = NULL;
     struct sf_serial_mac_ctx *mac_ctx;
     size_t iBuffLen = 0;
+    size_t oBuffRemains = 0;
+    size_t oBuffLength = 0;
     char iBuff[SF_SERIAL_INPUT_MAX_SIZE];
     char oBuff[SF_SERIAL_INPUT_MAX_SIZE];
 };
@@ -52,10 +62,12 @@ struct app_ctx
 static struct app_ctx ctx;
 
 void read_evt(const char *frameBuffer, size_t frameBufferLength);
-void write_evt(const char *frameBuffer, size_t frameBufferLength);
-void wait4userinput();
+void bufferRx_evt(const char *frameBuffer, size_t frameBufferLength);
+void write_evt(void);
+void bufferTx_evt(int processed);
+void wait4userinput(void);
 void wait4halEvent(enum sp_event event,
-        void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
+                   enum sf_serial_mac_return (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx));
 void wait4halTxEvent();
 void wait4halRxEvent();
 
@@ -70,32 +82,84 @@ void read_evt(const char *frameBuffer, size_t frameBufferLength)
         else
         {
             printf(":%s:%zd\n", frameBuffer, frameBufferLength);
-            sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx,
-                    ctx.iBuff, sizeof(ctx.iBuff));
         }
     }
 }
 
-void write_evt(const char *frameBuffer, size_t frameBufferLength)
+void bufferRx_evt(const char *frameBuffer, size_t frameBufferLength)
 {
+    sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
+                          sizeof(ctx.iBuff));
+}
+
+void write_evt(size_t processed)
+{
+    ctx.status = START_FRAME;
+}
+
+void bufferTx_evt(size_t processed)
+{
+    ctx.oBuffRemains -= processed;
     thread userInputEventLoop(wait4userinput);
     userInputEventLoop.detach();
 }
 
-void wait4userinput()
+void wait4userinput(void)
 {
-    string line;
-    getline(cin, line);
-    if (line.length() > 0)
+    enum sf_serial_mac_return ret = SF_SERIAL_MAC_SUCCESS;
+    string line = "";
+    const size_t frmLength = 9;
+
+    if(!ctx.oBuffRemains)
     {
-        line += "\n";
-        strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
-        sf_serial_mac_txFrame(ctx.mac_ctx, ctx.oBuff, line.length());
+        printf("Input text:\n");
+        getline(cin, line);
+        if (line.length() > 0)
+        {
+            ctx.oBuffLength = ctx.oBuffRemains = line.length();
+            strncpy(ctx.oBuff,line.c_str(),sizeof ctx.oBuff);
+        }
+        else
+        {
+            /** Userinput was empty line -> STOP */
+            ctx.run = FALSE;
+            printf("Stop\n");
+        }
     }
-    else
+    if(ctx.oBuffRemains)
     {
-        /** Userinput was empty line -> STOP */
-        ctx.run = FALSE;
+        while((ret = sf_serial_mac_txFrame(ctx.mac_ctx, frmLength,
+                                           ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains),
+                                           ctx.oBuffRemains)) != SF_SERIAL_MAC_SUCCESS)
+        {
+            printf("TX Error %i\nline: %s\nlength: %zd\n", ret,
+                   ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains), ctx.oBuffRemains);
+            sleep(1);
+        }
+        //        switch (ctx.status)
+//        {
+//        case START_FRAME:
+//            if((ret = sf_serial_mac_txFrameStart(ctx.mac_ctx,
+//                                                 frmLength)) != SF_SERIAL_MAC_SUCCESS)
+//            {
+//                printf("Frame Error %i\n", ret);
+//            }
+//            ctx.status = APPEND_FRAME;
+//        //break; omitted
+//        case APPEND_FRAME:
+//            while((ret = sf_serial_mac_txFrameAppend(ctx.mac_ctx,
+//                         ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains),
+//                         ctx.oBuffRemains)) != SF_SERIAL_MAC_SUCCESS)
+//            {
+//                printf("TX Error %i\nline: %s\nlength: %zd\n", ret,
+//                       ctx.oBuff + (ctx.oBuffLength - ctx.oBuffRemains), ctx.oBuffRemains);
+//                sleep(1);
+//            }
+//            break;
+//        default:
+//            printf("Exception Error\n");
+//            break;
+//        }
     }
 }
 
@@ -117,7 +181,7 @@ void wait4halRxEvent()
  * </ul>
  */
 void wait4halEvent(enum sp_event event,
-        void* (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
+                   enum sf_serial_mac_return (*sf_serial_mac_halCb)(struct sf_serial_mac_ctx *ctx))
 {
     struct sp_event_set * portEventSet = NULL;
     unsigned int portEventMask = event;
@@ -128,7 +192,7 @@ void wait4halEvent(enum sp_event event,
 
         if (SP_OK
                 <= sp_add_port_events(portEventSet, ctx.port,
-                        (enum sp_event) portEventMask))
+                                      (enum sp_event) portEventMask))
         {
             while (SP_OK <= sp_wait(portEventSet, timeout))
             {
@@ -190,14 +254,14 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Config of port \"%s\" could not be saved! (Out of memory?)\n",
-                portname);
+               portname);
         return sp_ret;
     }
     sp_ret = sp_get_config(ctx.port, savedPortConfig);
     if (SP_OK > sp_ret)
     {
         printf("Config of port \"%s\" could not be saved! (Read error?)\n",
-                portname);
+               portname);
         return sp_ret;
     }
 
@@ -205,7 +269,7 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Could not set baudrate to %u on port \"%s\"!\n",
-                SF_SERIAL_BAUDRATE, portname);
+               SF_SERIAL_BAUDRATE, portname);
         return sp_ret;
     }
 
@@ -213,7 +277,7 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Could not set number of bits to %u on port \"%s\"!\n",
-                SF_SERIAL_BITS, portname);
+               SF_SERIAL_BITS, portname);
         return sp_ret;
     }
 
@@ -221,7 +285,7 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Could not set number of bits to %u on port \"%s\"!\n",
-                SP_PARITY_NONE, portname);
+               SP_PARITY_NONE, portname);
         return sp_ret;
     }
 
@@ -229,27 +293,27 @@ int main(int argc, char **argv)
     if (SP_OK > sp_ret)
     {
         printf("Could not set number of bits to %u on port \"%s\"!\n",
-                SF_SERIAL_STOPBITS, portname);
+               SF_SERIAL_STOPBITS, portname);
+        return sp_ret;
+    }
+
+    sp_ret = sp_set_flowcontrol(ctx.port, SF_SERIAL_FLOWCTRL);
+    if (SP_OK > sp_ret)
+    {
+        printf("Could not set rts to %u on port \"%s\"!\n",
+               SF_SERIAL_FLOWCTRL, portname);
         return sp_ret;
     }
 
     sf_serial_mac_init((struct sf_serial_mac_ctx *) ctx.mac_ctx,
-            (void *) ctx.port,
-            (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read,
-            (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt,
-            write_evt);
-
-    sf_serial_mac_rxFrame((struct sf_serial_mac_ctx *) ctx.mac_ctx, ctx.iBuff,
-            sizeof(ctx.iBuff));
+                       (void *) ctx.port,
+                       (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read, (SF_SERIAL_MAC_HAL_READ_WAIT_FUNC) sp_input_waiting,
+                       (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt, bufferRx_evt,
+                       write_evt, bufferTx_evt);
 
     /** Start waiting for user input */
-    write_evt(NULL, 0);
-
-//    thread txEventLoop(wait4halTxEvent);
-//    txEventLoop.detach();
-//
-//    thread rxEventLoop(wait4halRxEvent);
-//    rxEventLoop.detach();
+    thread userInputEventLoop(wait4userinput);
+    userInputEventLoop.detach();
 
     /* Loop until the user quits */
     while (ctx.run)
