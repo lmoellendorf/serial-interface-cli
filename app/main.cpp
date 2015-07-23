@@ -63,7 +63,7 @@ static struct app_ctx ctx;
 
 void read_evt(const char *frameBuffer, size_t frameBufferLength);
 void bufferRx_evt(const char *frameBuffer, size_t frameBufferLength);
-void write_evt(void);
+void write_evt(size_t processed);
 void bufferTx_evt(int processed);
 void wait4userinput(void);
 void wait4halEvent(enum sp_event event,
@@ -284,7 +284,7 @@ int main(int argc, char **argv)
     sp_ret = sp_set_parity(ctx.port, SP_PARITY_NONE);
     if (SP_OK > sp_ret)
     {
-        printf("Could not set number of bits to %u on port \"%s\"!\n",
+        printf("Could not set parity to %u on port \"%s\"!\n",
                SP_PARITY_NONE, portname);
         return sp_ret;
     }
@@ -292,7 +292,7 @@ int main(int argc, char **argv)
     sp_ret = sp_set_stopbits(ctx.port, SF_SERIAL_STOPBITS);
     if (SP_OK > sp_ret)
     {
-        printf("Could not set number of bits to %u on port \"%s\"!\n",
+        printf("Could not set stop-bits to %u on port \"%s\"!\n",
                SF_SERIAL_STOPBITS, portname);
         return sp_ret;
     }
@@ -300,12 +300,12 @@ int main(int argc, char **argv)
     sp_ret = sp_set_flowcontrol(ctx.port, SF_SERIAL_FLOWCTRL);
     if (SP_OK > sp_ret)
     {
-        printf("Could not set rts to %u on port \"%s\"!\n",
+        printf("Could not set flow-control to %u on port \"%s\"!\n",
                SF_SERIAL_FLOWCTRL, portname);
         return sp_ret;
     }
 
-    sf_serial_mac_init((struct sf_serial_mac_ctx *) ctx.mac_ctx,
+    sf_serial_mac_init(ctx.mac_ctx,
                        (void *) ctx.port,
                        (SF_SERIAL_MAC_HAL_READ_FUNC) sp_nonblocking_read, (SF_SERIAL_MAC_HAL_READ_WAIT_FUNC) sp_input_waiting,
                        (SF_SERIAL_MAC_HAL_WRITE_FUNC) sp_nonblocking_write, read_evt, bufferRx_evt,
