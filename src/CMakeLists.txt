@@ -1,10 +1,10 @@
 cmake_minimum_required (VERSION 2.6)
-project (serial-interface-lib)
+project (serialinterface)
 
 # The version number.
-set (SERIAL_INTERFACE_LIB_VERSION_MAJOR 1)
-set (SERIAL_INTERFACE_LIB_VERSION_MINOR 0)
-set (SERIAL_INTERFACE_LIB_VERSION_PATCH 0)
+set (SERIALINTERFACE_VERSION_MAJOR 1)
+set (SERIALINTERFACE_VERSION_MINOR 0)
+set (SERIALINTERFACE_VERSION_PATCH 0)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -18,18 +18,18 @@ include_directories(${PROJECT_SOURCE_DIR}/../inc/
 # build a shared library
 set(BUILD_SHARED_LIBS OFF)
 
-list (APPEND SERIAL_INTERFACE_LIB_HEADERS
-    ${PROJECT_SOURCE_DIR}/../inc/stackforce_serial_mac_api.h
+list (APPEND SERIALINTERFACE_HEADERS
+    ${PROJECT_SOURCE_DIR}/../inc/sf_serialmac.h
     ${PROJECT_SOURCE_DIR}/../lib/crc/sf_crc.h
     )
 
-set (SERIAL_INTERFACE_LIB_SOURCES
-     ${PROJECT_SOURCE_DIR}/stackforce_serial_mac
+set (SERIALINTERFACE_SOURCES
+     ${PROJECT_SOURCE_DIR}/sf_serialmac.c
      ${PROJECT_SOURCE_DIR}/../lib/crc/sf_crc.c
-     ${SERIAL_INTERFACE_LIB_HEADERS}
+     ${SERIALINTERFACE_HEADERS}
      )
 
-add_library(serial-interface-lib ${SERIAL_INTERFACE_LIB_SOURCES})
+add_library(serialinterface ${SERIALINTERFACE_SOURCES})
 
 # add a target to generate API documentation with Doxygen
 
@@ -37,7 +37,7 @@ find_package(Doxygen)
 
 if(DOXYGEN_FOUND)
 
-    foreach(loop_var IN LISTS SERIAL_INTERFACE_LIB_HEADERS)
+    foreach(loop_var IN LISTS SERIALINTERFACE_HEADERS)
         string(CONCAT DOXYFILE_INPUT ${DOXYFILE_INPUT} " " ${loop_var})
     endforeach(loop_var)
     MESSAGE(STATUS "doxyfile input: ${DOXYFILE_INPUT}")
@@ -55,3 +55,6 @@ if(DOXYGEN_FOUND)
         )
 
 endif(DOXYGEN_FOUND)
+
+install (TARGETS serialinterface DESTINATION lib)
+install (FILES ${PROJECT_SOURCE_DIR}/../inc/sf_serialmac.h DESTINATION include)

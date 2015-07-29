@@ -21,7 +21,7 @@ extern "C"
 {
 #include <libserialport.h>
 }
-#include <stackforce_serial_mac_api.h>
+#include <sf_serialmac.h>
 
 #define SF_SERIAL_BAUDRATE 115200
 #define SF_SERIAL_BITS 8

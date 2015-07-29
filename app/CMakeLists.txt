@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 include(ExternalProject)
 
-project (serial-interface)
+project (serialinterface-bin)
 
 # The version number.
 set (SERIAL_INTERFACE_VERSION_MAJOR 1)
@@ -92,14 +92,14 @@ set(SERIAL_INTERFACE_SOURCES
 
 add_executable(stackforce-serial-interface  ${SERIAL_INTERFACE_SOURCES})
 
-add_dependencies(stackforce-serial-interface serialport serial-interface-lib)
+add_dependencies(stackforce-serial-interface serialport serialinterface)
 
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
 
 if(LIBSERIALPORTLIB)
     target_link_libraries(stackforce-serial-interface
-        serial-interface-lib
+        serialinterface
         ${LIBSERIALPORTLIB}
         ${CMAKE_THREAD_LIBS_INIT}
         )

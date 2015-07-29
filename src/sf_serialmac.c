@@ -26,7 +26,7 @@ extern "C"
 #include <string.h>
 #include <sf_crc.h>
 
-#include "stackforce_serial_mac_api.h"
+#include "sf_serialmac.h"
 
 /*==============================================================================
  |                                   MACROS
