@@ -15,9 +15,6 @@ configure_file(${PROJECT_SOURCE_DIR}/version.h.in
 include_directories(${PROJECT_SOURCE_DIR}/../inc/
                     ${PROJECT_SOURCE_DIR}/../lib/crc/)
 
-# build a shared library
-set(BUILD_SHARED_LIBS OFF)
-
 list (APPEND SERIALINTERFACE_HEADERS
     ${PROJECT_SOURCE_DIR}/../inc/sf_serialmac.h
     ${PROJECT_SOURCE_DIR}/../lib/crc/sf_crc.h
