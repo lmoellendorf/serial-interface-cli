@@ -1,2 +1,4 @@
 # ignore cmake generated stuff
 bin/
+# ignore KDevelop files
+*.kdev4
