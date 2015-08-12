@@ -2,26 +2,94 @@
 extern "C"
 {
 #endif
-/*! ============================================================================
+/**
+ * @file
+ * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
+ * @author     STACKFORCE
+ * @author     Lars Möllendorf
+ * @brief      STACKFORCE Serial MAC Module
+ * @section Introduction Introduction
  *
- * @file:    stackforce_serial_mac_api.h
+ * @subsection Purpose Purpose
  *
- * @date:    08.12.2014
- * @author:  © by STACKFORCE, Heitersheim, Germany, http://www.stackforce.de
- * @author:  Lars Möllendorf
+ * The STACKFORCE Serial MAC provides framing for serial interfaces.
  *
- * @brief:   Sample header of the source code
+ * On TX the STACKFORCE Serial MAC takes over the task to wrap up data in frames
+ * before sending them over the serial interface.
+ * On RX the STACKFORCE Serial MAC listens for incoming frames, verifies their
+ * CRC and provides the payload to the upper layer.
  *
- * @version:
+ * @subsection Frame Frame format
  *
- =============================================================================*/
-
-#ifndef __STACKFORCE_SERIAL_MAC_API_H_
-#define __STACKFORCE_SERIAL_MAC_API_H_
-
-/*==============================================================================
- |                               INCLUDE FILES
- =============================================================================*/
+ * The Frame format is:
+ *
+ * <pre>
+ * +--------------+--------+-- - - --+-----+
+ * | SYNC BYTE(S) | LENGTH | payload | CRC |
+ * +--------------+--------+-- - - --+-----+
+ * </pre>
+ *
+ * @subsection Features Features
+ *
+ * The STACKFORCE Serial MAC is written with cross-platform portability in mind.
+ * It should be usable within operating systems as well as bare metal devices.
+ *
+ * <ul>
+ * <li>All API functions are non-blocking.</li>
+ * <li>The MAC has no direct dependencies (besides standard C libs and
+ * STACKFORCE utilities that are hardware/OS independent, e.g. CRC module).</li>
+ * <li>The MAC is usable with any HAL library that provides non-blocking
+ * functions to read from and write to the serial interface and a function
+ * which returns the number of bytes waiting on input.</li>
+ * <li>Buffer allocation and management is completely left to the upper
+ * layer.</li>
+ * </ul>
+ *
+ * @section Usage Usage
+ *
+ * @subsection Init Initialization
+ *
+ * To use the STACKFORCE Serial MAC you have to initialize it using
+ * sf_serialmac_init()
+ *
+ * @subsection Events Reacting to events
+ *
+ * The STACKFORCE Serial MAC is event driven. You can use the MAC by calling
+ * sf_serialmac_entry() periodically.
+ *
+ * Or you can add sf_serialmac_hal_tx_callback() and
+ * sf_serialmac_hal_rx_callback() as callback function to the corresponding
+ * serial port events. (TODO: How to?)
+ *
+ * @subsection Rx Receiving frames
+ *
+ * Whenever the STACKFORCE Serial MAC receives the header of a frame it calls
+ * the upper layers callback function registered as SF_SERIALMAC_RX_EVENT
+ * rx_buffer_event() on Initialization. To receive the frame the upper layer has
+ * to provide a memory location for the payload passed to the MAC by calling
+ * sf_serialmac_rx_frame(). As soon as the frame has been completed or rejected
+ * due to CRC error or time out, the upper layer's callback function is called
+ * which has been registered as SF_SERIALMAC_RX_EVENT rx_event() on
+ * initialization.
+ *
+ * @subsection Tx Transmitting frames
+ *
+ * Frames can be transmitted at once using sf_serialmac_tx_frame(). Or by
+ * starting a frame with sf_serialmac_tx_frame_start() and successively
+ * appending the payload using sf_serialmac_tx_frame_append() until the frame
+ * is filled.
+ *
+ * Whenever the MAC completed the transmission of a frame the upper layer's
+ * callback called that has been registered as SF_SERIALMAC_TX_EVENT tx_event()
+ * on initialization.
+ *
+ * Whenever the MAC processed a buffer with payload the upper layer's callback
+ * is called which has been registered as SF_SERIALMAC_TX_EVENT tx_buf_event on
+ * initialization. The upper layer must not touch the buffer memory passed with
+ * sf_serialmac_tx_frame() or sf_serialmac_tx_frame_append() before this
+ * callback has been called. Also all calls to sf_serialmac_tx_frame_append()
+ * are ignored until the previously provided buffer has been processed.
+ */
 
 #include <stdint.h>
 #include <sys/types.h>
