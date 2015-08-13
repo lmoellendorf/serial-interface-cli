@@ -31,7 +31,7 @@ extern "C"
 #define FALSE 0
 #define TRUE 1
 #ifdef __linux__
-#define SF_SERIAL_PORT_NAME "/dev/ttyUSB1"
+#define SF_SERIAL_PORT_NAME "/dev/ttyUSB0"
 #else
 #ifdef _WIN32
 #define SF_SERIAL_PORT_NAME "COM1"
