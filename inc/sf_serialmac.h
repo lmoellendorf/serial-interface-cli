@@ -91,198 +91,223 @@ extern "C"
  * are ignored until the previously provided buffer has been processed.
  */
 
-#include <stdint.h>
-#include <sys/types.h>
+#ifndef __STACKFORCE_SERIALMAC_H_
+#define __STACKFORCE_SERIALMAC_H_
 
-/******************************************************************************/
-/*! @defgroup STACKFORCE_SERIAL_MAC_API STACKFORCE Serial MAC Module
- This section describes the STACKFORCE Example module.
- This group will always be the "root group" of the software module.
- A text describing the group. This text will be displayed at the beginning
- of the chapter. Preferably, the description should always be located here
- and not at the "@addtogroup" tag in order to easily find the text add
- some more description.
- @{  */
+/** This API makes use of size_t */
+#include <stddef.h>
 
-/* ****************************************************************************/
-/* ! @defgroup STACKFORCE_SERIAL_MAC_API_COMPILE_TIME_SET Compile time settings
- @ingroup  STACKFORCE_SERIAL_MAC_API
- This section describes the compile time settings for this STACKFORCE Example
- implementation.
+/**
+ * @defgroup STACKFORCE_SERIALMAC_API STACKFORCE Serial MAC Module
+ * The API of the STACKFORCE Serial MAC Module.
+ * @{
  */
 
-/* ! @addtogroup STACKFORCE_SERIAL_MAC_API_COMPILE_TIME_SET
- @{ */
-
-/* !@} end of STACKFORCE_SERIAL_MAC_API_COMPILE_TIME_SET */
-
-/* *****************************************************************************/
-/* !
- @defgroup STACKFORCE_SERIAL_MAC_API_MACROS Macros
- @ingroup  STACKFORCE_SERIAL_MAC_API
- This section describes the macros used by the STACKFORCE Example implementation.
+/**
+ * @defgroup STACKFORCE_SERIALMAC_API_ENUMS Enumerations
+ * @ingroup  STACKFORCE_SERIALMAC_API
+ * This section describes the enumerations used by the STACKFORCE Serial MAC.
  */
 
-/* ! @addtogroup STACKFORCE_SERIAL_MAC_API_MACROS
- *  @{ */
-
-/* !@} end of STACKFORCE_SERIAL_MAC_API_MACROS */
-
-/******************************************************************************/
-/*!
- @defgroup STACKFORCE_SERIAL_MAC_API_ENUMS Enumerations
- @ingroup  STACKFORCE_SERIAL_MAC_API
- This section describes the enums used by the STACKFORCE Example implementation.
+/**
+ * @addtogroup STACKFORCE_SERIALMAC_API_ENUMS
+ * @{
  */
 
-/*! @addtogroup STACKFORCE_SERIAL_MAC_API_ENUMS
- * @{ */
 /**
  * Return values.
  */
-enum sf_serial_mac_return
+enum sf_serialmac_return
 {
-    /** No error occured (always equals 0). */
-    SF_SERIAL_MAC_SUCCESS = 0,
+    /** No error occurred (always equals 0). */
+    SF_SERIALMAC_SUCCESS = 0,
     /** Null pointer exception */
-    SF_SERIAL_MAC_ERROR_NPE,
+    SF_SERIALMAC_ERROR_NPE,
     /**
      * There is already an operation in progress. Retry later.
      */
-    SF_SERIAL_MAC_ERROR_RW_PENDING,
+    SF_SERIALMAC_ERROR_RW_PENDING,
     /**
-     * A previously started frame is still processed.
-     * Wait for SF_SERIAL_MAC_WRITE_EVT() before starting a new frame.
+     * A previously started frame is still being processed.
+     * Wait for for the TX callback before starting a new frame.
      */
-    SF_SERIAL_MAC_ERROR_FRM_PENDING,
+    SF_SERIALMAC_ERROR_FRM_PENDING,
     /** The HAL is busy (or you are too fast ;)) and did send nothing. */
-    SF_SERIAL_MAC_ERROR_HAL_BUSY,
+    SF_SERIALMAC_ERROR_HAL_BUSY,
     /**
      * The HAL is slow (or you are too fast ;)) but did send at least one byte
      * (this is needed to work around slow serial handlers on Windows).
      */
-    SF_SERIAL_MAC_ERROR_HAL_SLOW,
+    SF_SERIALMAC_ERROR_HAL_SLOW,
     /** The HAL reports an error. */
-    SF_SERIAL_MAC_ERROR_HAL_ERROR,
+    SF_SERIALMAC_ERROR_HAL_ERROR,
     /** There was an error that should never have happened ;). */
-    SF_SERIAL_MAC_ERROR_EXCEPTION,
+    SF_SERIALMAC_ERROR_EXCEPTION,
     /** There was an error in buffer handling */
-    SF_SERIAL_MAC_ERROR_BUFFER,
+    SF_SERIALMAC_ERROR_BUFFER,
 };
-/*! @} end of STACKFORCE_SERIAL_MAC_API_ENUMS */
+/** @} end of STACKFORCE_SERIALMAC_API_ENUMS */
 
-/******************************************************************************/
-/*! @defgroup STACKFORCE_SERIAL_MAC_API_STRUCTS Structures
- @ingroup  STACKFORCE_SERIAL_MAC_API
- This section describes the structures used by the STACKFORCE serial MAC.
+/**
+ * @defgroup STACKFORCE_SERIALMAC_API_STRUCTS Structures
+ * @ingroup  STACKFORCE_SERIALMAC_API
+ * This section describes the structures used by the STACKFORCE Serial MAC.
  */
-/*! @addtogroup STACKFORCE_SERIAL_MAC_API_STRUCTS
- *  @{ */
+/**
+ * @addtogroup STACKFORCE_SERIALMAC_API_STRUCTS
+ * @{
+ */
 
 /**
  * Structure used by the MAC to store its context.
  */
-struct sf_serial_mac_ctx;
+struct sf_serialmac_ctx;
 
-/*! @} end of STACKFORCE_SERIAL_MAC_API_STRUCTS */
+/** @} end of STACKFORCE_SERIALMAC_API_STRUCTS */
 
-/******************************************************************************/
-/*!
- @defgroup STACKFORCE_SERIAL_MAC_API_TYPEDEFS Type definitions
- @ingroup  STACKFORCE_SERIAL_MAC_API
- This section describes the type definitions provided and used by the STACKFORCE
- serial MAC.
+/**
+ * @defgroup STACKFORCE_SERIALMAC_API_TYPEDEFS Type definitions
+ * @ingroup  STACKFORCE_SERIALMAC_API
+ * This section describes the type definitions provided and used by the
+ * STACKFORCE Serial MAC.
  */
-/*! @addtogroup STACKFORCE_SERIAL_MAC_API_TYPEDEFS
- *  @{ */
+/**
+ * @addtogroup STACKFORCE_SERIALMAC_API_TYPEDEFS
+ * @{
+ */
 
 /**
  * Signature of HAL's read function to be used by the MAC for RX.
+ * This has to be passed on @ref initialization to sf_serialmac_init().
  */
-typedef ssize_t (*SF_SERIAL_MAC_HAL_READ_FUNC)(void *portHandle,
-        char *frameBuffer, size_t frameBufferLength);
+typedef size_t ( *SF_SERIALMAC_HAL_READ_FUNCTION ) ( void *port_handle,
+        char *frame_buffer, size_t frame_buffer_length );
 /**
- * Signature of HAL's function which return the number of bytes waiting on input
- * to be used by the MAC for RX.
+ * Signature of HAL's function which returns the number of bytes waiting on
+ * input to be used by the MAC for RX.
+ * This has to be passed on @ref initialization to sf_serialmac_init().
  */
-typedef ssize_t (*SF_SERIAL_MAC_HAL_READ_WAIT_FUNC)(void *portHandle);
+typedef size_t ( *SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) ( void *port_handle );
 /**
  * Signature of HAL's write function to be used by the MAC for TX.
+ * This has to be passed on @ref initialization to sf_serialmac_init().
  *
- * @param portHandle Points to the port handle that may be needed by the HAL.
- * @param frameBuffer Points to the buffer that has to be written.
- * @param frameBufferLength Length of the buffer to be written in bytes.
+ * @param port_handle Points to the port handle that may be needed by the HAL.
+ * @param frame_buffer Points to the buffer that has to be written.
+ * @param frame_buffer_length Length of the buffer to be written in bytes.
  * @return Number of bytes successfully written.
  */
-typedef ssize_t (*SF_SERIAL_MAC_HAL_WRITE_FUNC)(void *portHandle,
-        const char *frameBuffer, size_t frameBufferLength);
+typedef size_t ( *SF_SERIALMAC_HAL_WRITE_FUNCTION ) ( void *port_handle,
+        const char *frame_buffer, size_t frame_buffer_length );
 /**
- * Signature of APP's callback function to be called by the MAC
- * when a whole frame has been received.
+ * Signature of upper layer's callback functions to be called by the MAC
+ * when a frame header has been received or when a whole frame has been
+ * received.
+ * These have to be passed on @ref initialization to sf_serialmac_init().
  */
-typedef void (*SF_SERIAL_MAC_RX_EVT)(const char *frameBuffer,
-                                     size_t frameBufferLength);
+typedef void ( *SF_SERIALMAC_RX_EVENT ) ( const char *frame_buffer,
+        size_t frame_buffer_length );
 /**
- * Signature of APP's callback function to be called by the MAC
- * when a whole frame has been sent.
+ * Signature of upper layer's callback functions to be called by the MAC
+ * when an outgoing payload buffer has been processed or when a whole frame has
+ * been sent.
+ * These have to be passed on @ref initialization to sf_serialmac_init().
  *
- * @param byteSent Number of bytes sent with the frame.
+ * @param bytes_sent Number of bytes sent with the frame.
  */
-typedef void (*SF_SERIAL_MAC_TX_EVT)(size_t byteSent);
+typedef void ( *SF_SERIALMAC_TX_EVENT ) ( size_t bytes_sent );
 
-/*! @} end of STACKFORCE_SERIAL_MAC_API_TYPEDEFS */
+/** @} end of STACKFORCE_SERIALMAC_API_TYPEDEFS */
 
-/* *****************************************************************************/
-/* ! @defgroup STACKFORCE_SERIAL_MAC_API_GLOBALS Global variables
- @ingroup  STACKFORCE_SERIAL_MAC_API
- This section describes the global variables.
- */
-/* ! @addtogroup STACKFORCE_SERIAL_MAC_API_GLOBALS
- *  @{ */
-
-/* !@} end of STACKFORCE_SERIAL_MAC_API_GLOBALS */
-
-/******************************************************************************/
-/*! @defgroup STACKFORCE_SERIAL_MAC_API_FUNCTIONS API
- @ingroup  STACKFORCE_SERIAL_MAC_API
- This section describes the functions provided by the STACKFORCE serial MAC.
+/**
+ * @defgroup STACKFORCE_SERIALMAC_API_FUNCTIONS Functions
+ * @ingroup  STACKFORCE_SERIALMAC_API
+ * This section describes the API functions provided by the STACKFORCE Serial
+ * MAC.
  */
 
-/*! @addtogroup STACKFORCE_SERIAL_MAC_API_FUNCTIONS
- *  @{ */
+/**
+ * @addtogroup STACKFORCE_SERIALMAC_API_FUNCTIONS
+ * @{
+ */
 
 /**
  * Returns the size of the MAC context structure.
  *
+ * On @ref initialization the upper layer has to provide memory the STACKFORCE
+ * Serial MAC uses to store its context into. This is done by passing a pointer
+ * memory allocated by the upper layer to sf_serialmac_init(). This function
+ * returns the size of memory that has to be provided.
+ *
  * @return The size of the MAC context structure.
  */
-size_t sf_serial_mac_ctx_size(void);
+size_t sf_serialmac_ctx_size ( void );
 
 /**
  * Initialization of STACKFORCE Serial MAC.
  *
- * This function must be called once before the MAC can be used and may be called
- * whenever the MAC should be reset.
+ * This function must be called once before the MAC can be used and may be
+ * called whenever the MAC should be reset.
  *
- * @param ctx Points to the memory region the MAC can use for its context. Please use
- * sf_serial_mac_ctx_size() to get the memory size needed by the MAC context.
- * @param portHandle Points to the handle of the serial port which is passed to the underlying HAL.
+ * @param ctx Points to the memory region the MAC can use for its context.
+ * Please use sf_serialmac_ctx_size() to get the memory size needed by the
+ * MAC context.
+ * @param port_handle Points to the handle of the serial port which is passed to
+ * the underlying HAL.
  * @param read Read function of the underlying HAL.
- * @param readWaiting Function of the underlying HAL, that returns the number of bytes waiting in the input buffer.
+ * @param read_wait Function of the underlying HAL, that returns the number of
+ * bytes waiting in the input buffer.
  * @param write Write function of the underlying HAL.
- * @param rxEvt Callback function to be called by the MAC when a whole frame has been received.
- * @param rxBufEvt Callback function to be called by the MAC when an ingoing buffer has to be provided.
- *                 If this function is called a frame is ready to be received using sf_serial_mac_rxFrame().
- * @param txEvt Callback function to be called by the MAC when a whole frame has been sent.
- * @param txBufEvt Callback function to be called by the MAC when an outgoing buffer has been processed.
+ * @param rx_event Callback function to be called by the MAC when a whole frame
+ * has been received.
+ * @param rx_buffer_event Callback function to be called by the MAC when an
+ * ingoing buffer has to be provided. If this function is called a frame is
+ * ready to be received using sf_serialmac_rxFrame().
+ * @param tx_event Callback function to be called by the MAC when a whole frame
+ * has been sent.
+ * @param tx_buffer_event Callback function to be called by the MAC when an
+ * outgoing buffer has been processed.
  * @return Error state.
  */
-enum sf_serial_mac_return sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
-        void *portHandle, SF_SERIAL_MAC_HAL_READ_FUNC read,
-        SF_SERIAL_MAC_HAL_READ_WAIT_FUNC readWaiting,
-        SF_SERIAL_MAC_HAL_WRITE_FUNC write, SF_SERIAL_MAC_RX_EVT rxEvt,
-        SF_SERIAL_MAC_RX_EVT rxBufEvt,
-        SF_SERIAL_MAC_TX_EVT txEvt, SF_SERIAL_MAC_TX_EVT txBufEvt);
+enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
+        void *port_handle, SF_SERIALMAC_HAL_READ_FUNCTION read,
+        SF_SERIALMAC_HAL_READ_WAIT_FUNCTION read_wait,
+        SF_SERIALMAC_HAL_WRITE_FUNCTION write, SF_SERIALMAC_RX_EVENT rx_event,
+        SF_SERIALMAC_RX_EVENT rx_buffer_event,
+        SF_SERIALMAC_TX_EVENT tx_event, SF_SERIALMAC_TX_EVENT tx_buffer_event );
+
+/**
+ * This function can be passed to the HAL layer as callback function to be
+ * called on TX events.
+ *
+ * This is an alternative to the usage of sf_serialmac_entry().
+ *
+ * @param ctx Points to the memory region the MAC uses to store its context.
+ * @return Error state.
+ */
+enum sf_serialmac_return sf_serialmac_hal_tx_callback ( struct sf_serialmac_ctx
+        *ctx );
+/**
+ * This function can be passed to the HAL layer as callback function to be
+ * called on RX events.
+ *
+ * This is an alternative to the usage of sf_serialmac_entry().
+ *
+ * @param ctx Points to the memory region the MAC uses for its context.
+ * @return Error state.
+ */
+enum sf_serialmac_return sf_serialmac_hal_rx_callback ( struct sf_serialmac_ctx
+        *ctx );
+
+/**
+ * This function has to be called periodically so the MAC can process incoming
+ * data from the underlying serial interface and outgoing data from the upper
+ * layer. Alternatively sf_serialmac_hal_tx_callback() and
+ * sf_serialmac_hal_rx_callback() can be used.
+ *
+ * @param ctx Points to the memory region the MAC uses to store its context.
+ */
+void sf_serialmac_entry ( struct sf_serialmac_ctx *ctx );
 
 /**
  * Start a MAC frame with given length, i.e. initialize frame buffers and send
@@ -290,84 +315,82 @@ enum sf_serial_mac_return sf_serial_mac_init(struct sf_serial_mac_ctx *ctx,
  *
  * This is a non-blocking function.
  *
- * Use sf_serial_mac_txFrameAppend() to append paylaod data.
+ * Use sf_serialmac_txFrameAppend() to append payload data.
  *
  * @param ctx Points to the memory region the MAC uses to store its context.
- * @param frmLen Length of the frame to send.
+ * @param frame_length Length of the frame to send.
  * @return Error state.
  */
-enum sf_serial_mac_return sf_serial_mac_txFrameStart(struct sf_serial_mac_ctx
-        *ctx, size_t frmLen);
+enum sf_serialmac_return sf_serialmac_tx_frame_start ( struct sf_serialmac_ctx
+        *ctx, size_t frame_length );
 
 /**
  * Append data to the current frame's payload.
- * Call sf_serial_mac_txFrameStart() first.
+ * Call sf_serialmac_tx_frame_start() first.
  *
  * This is a non-blocking function.
  *
- * As soon as all bytes in the buffer have been sent bufTxEvt() is
- * called. The number of processed buffer bytes is passed to bufTxEvt().
+ * As soon as all bytes in the buffer have been sent tx_buffer_event() is
+ * called. The number of processed buffer bytes is passed to tx_buffer_event().
  *
- * As soon as the payload length specified in sf_serial_mac_txFrameStart()
- * has been reached the frame is completed with an CRC and writeEvt()
+ * As soon as the payload length specified in sf_serialmac_tx_frame_start()
+ * has been reached the frame is completed with an CRC and tx_event()
  * is called.
  *
  * Remaining payload that did not fit into the frame is ignored. The number of
- * processed payload bytes is passed to writeEvt().
+ * processed payload bytes is passed to tx_event().
  *
  * @param ctx Points to the memory region the MAC uses to store its context.
- * @param frmBufLoc Points to the buffer containing the payload to be appent to the frame.
- * @param frmBufSize Length of the buffer containing the payload to be appent to the frame.
+ * @param frame_buffer Points to the buffer containing the payload to be
+ * appended to the frame.
+ * @param frame_buffer_size Length of the buffer containing the payload to be
+ * appended to the frame.
  * @return Error state.
  */
-enum sf_serial_mac_return sf_serial_mac_txFrameAppend(struct sf_serial_mac_ctx
-        *ctx, const char *frmBufLoc, size_t frmBufSize);
+enum sf_serialmac_return sf_serialmac_tx_frame_append ( struct sf_serialmac_ctx
+        *ctx, const char *frame_buffer, size_t frame_buffer_size );
 
 /**
  * Start a frame iff not already done and append given payload.
  * It is save to always use this function instead of
- * sf_serial_mac_txFrameStart() and
- * sf_serial_mac_txFrameAppend().
- * This function is a combination of sf_serial_mac_txFrameStart() and
- * sf_serial_mac_txFrameAppend().
+ * sf_serialmac_tx_frame_start() and sf_serialmac_tx_frame_append().
+ * This function is a combination of sf_serialmac_tx_frame_start() and
+ * sf_serialmac_tx_frame_append().
  *
  * This is a non-blocking function.
  *
  * @param ctx Points to the memory region the MAC uses to store its context.
- * @param frmLen Length of the frame to send.
- * @param frmBufLoc Points to the buffer containing the payload to be appent to the frame.
- * @param frmBufSize Length of the buffer containing the payload to be appent to the frame.
+ * @param frame_length Length of the frame to send.
+ * @param frame_buffer Points to the buffer containing the payload to be
+ * appended to the frame.
+ * @param frame_buffer_size Length of the buffer containing the payload to be
+ * appended to the frame.
  * @return Error state.
  */
-enum sf_serial_mac_return sf_serial_mac_txFrame(struct sf_serial_mac_ctx *ctx,
-        size_t frmLen, const char *frmBufLoc, size_t frmBufSize);
-
-enum sf_serial_mac_return sf_serial_mac_rxFrame(struct sf_serial_mac_ctx *ctx,
-        char *frmBufLoc, size_t frmBufSize);
+enum sf_serialmac_return sf_serialmac_tx_frame ( struct sf_serialmac_ctx *ctx,
+        size_t frame_length, const char *frame_buffer, size_t frame_buffer_size
+                                               );
 
 /**
+ * The upper layer has to call this function whenever the MAC has notified it
+ * about the reception of a frame header by calling the upper layers callback
+ * function registered on initialization as
+ * SF_SERIALMAC_RX_EVENT rx_buffer_event().
+ * The MAC expects a frame_buffer with a frame_buffer_size greater or equal
+ * the frame length.
  *
  * @param ctx Points to the memory region the MAC uses to store its context.
- * @return Error state.
+ * @param frame_buffer Points to the memory where the MAC shall store the
+ * payload of the expected frame.
+ * @param frame_buffer_size The size of the frame_buffer in bytes.
  */
-enum sf_serial_mac_return sf_serial_mac_halTxCb(struct sf_serial_mac_ctx *ctx);
-/**
- *
- * @param ctx Points to the memory region the MAC uses for its context.
- * @return Error state.
- */
-enum sf_serial_mac_return sf_serial_mac_halRxCb(struct sf_serial_mac_ctx *ctx);
+enum sf_serialmac_return sf_serialmac_rx_frame ( struct sf_serialmac_ctx *ctx,
+        char *frame_buffer, size_t frame_buffer_size );
 
-/**
- * @param ctx Points to the memory region the MAC uses to store its context.
- */
-void sf_serial_mac_entry(struct sf_serial_mac_ctx *ctx);
+/** @} end of STACKFORCE_SERIALMAC_API_FUNCTIONS */
 
-/*! @} end of STACKFORCE_SERIAL_MAC_API_FUNCTIONS */
-
-/*! @} end of STACKFORCE_SERIAL_MAC_API */
-/******************************************************************************/
-#endif /* STACKFORCE_SERIAL_MAC_API_H_ */
+/** @} end of STACKFORCE_SERIALMAC_API */
+#endif /* STACKFORCE_SERIALMAC_H_ */
 #ifdef __cplusplus
 }
 #endif
