@@ -1,12 +1,12 @@
 cmake_minimum_required (VERSION 2.8)
 include(ExternalProject)
 
-project (serialinterface-bin)
+project (serialcli)
 
 # The version number.
-set (SERIAL_INTERFACE_VERSION_MAJOR 1)
-set (SERIAL_INTERFACE_VERSION_MINOR 0)
-set (SERIAL_INTERFACE_VERSION_PATCH 0)
+set (SF_SERIALMACCLI_VERSION_MAJOR 0)
+set (SF_SERIALMACCLI_VERSION_MINOR 1)
+set (SF_SERIALMACCLI_VERSION_PATCH 0)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra -pedantic -fmessage-length=0")
 
@@ -31,10 +31,10 @@ include_directories(
     "${PROJECT_BINARY_DIR}/libserialport-prefix/include/"
     )
 
-find_library(LIBSERIALPORTLIB serialport
+find_library(LIBSERIALPORT serialport
     ${PROJECT_BINARY_DIR}/libserialport-prefix/lib/)
 
-if(NOT LIBSERIALPORTLIB)
+if(NOT LIBSERIALPORT)
     MESSAGE(STATUS "libserialport not found!")
     ExternalProject_Add(libserialport    # Name for custom target
         #PREFIX ${PROJECT_BINARY_DIR}
@@ -70,7 +70,7 @@ else()
     # this prevents cmake from rebuilding cache/projects on subsequent builds
     ## TODO: Would be nice to have a target for cleaning/updating
     ## libserialport
-    #add_custom_target(serialport ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS ${LIBSERIALPORTLIB})
+    #add_custom_target(serialport ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS ${LIBSERIALPORT})
     add_custom_target(serialport)
 endif()
 
@@ -80,27 +80,27 @@ set(LIBSERIALPORT_HEADER
 
 set_source_files_properties(${LIBSERIALPORT_HEADER} PROPERTIES GENERATED TRUE)
 
-set(SERIAL_INTERFACE_HEADERS
+set(SF_SERIALMACCLI_HEADERS
     ${LIBSERIALPORT_HEADER}
     ${PROJECT_BINARY_DIR}/version.h
     )
 
-set(SERIAL_INTERFACE_SOURCES
+set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/main
-    ${SERIAL_INTERFACE_HEADERS}
+    ${SF_SERIALMACCLI_HEADERS}
     )
 
-add_executable(stackforce-serial-interface  ${SERIAL_INTERFACE_SOURCES})
+add_executable(ssi  ${SF_SERIALMACCLI_SOURCES})
 
-add_dependencies(stackforce-serial-interface serialport serialinterface)
+add_dependencies(ssi serialport serialmac)
 
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
 
-if(LIBSERIALPORTLIB)
-    target_link_libraries(stackforce-serial-interface
-        serialinterface
-        ${LIBSERIALPORTLIB}
+if(LIBSERIALPORT)
+    target_link_libraries(ssi
+        serialmac
+        ${LIBSERIALPORT}
         ${CMAKE_THREAD_LIBS_INIT}
         )
 endif()
