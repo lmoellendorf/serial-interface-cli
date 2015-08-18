@@ -137,8 +137,11 @@ void wait4userinput ( void )
                                               ctx.oBuff + ( ctx.oBuffLength - ctx.oBuffRemains ),
                                               ctx.oBuffRemains ) ) != SF_SERIALMAC_SUCCESS )
         {
-          printf ( "TX Error %i\nline: %s\nlength: %zd\n", ret,
-                   ctx.oBuff + ( ctx.oBuffLength - ctx.oBuffRemains ), ctx.oBuffRemains );
+          cerr << "TX Error " << ret << "\nline: "
+          << ctx.oBuff + ( ctx.oBuffLength - ctx.oBuffRemains )
+          << "\nlength: "
+          << ctx.oBuffRemains
+          << endl;
           sleep ( 1 );
         }
       //        switch (ctx.status)
@@ -201,9 +204,6 @@ void wait4halEvent ( enum sp_event event,
         {
           while ( SP_OK <= sp_wait ( portEventSet, timeout ) )
             {
-//                printf("masks: %X\nnumber of handles: %u\n",
-//                        (unsigned int) *(portEventSet->masks),
-//                        portEventSet->count);
               sf_serialmac_halCb ( ctx.mac_ctx );
               sleep ( 1 );
             }
@@ -229,24 +229,38 @@ static int usage ( int exitCode, char *commandPath )
   char *productName = SERIALMACCLI_PRODUCT_NAME;
   char *protocolName = SERIALMAC_PRODUCT_NAME;
   char *commandName = basename ( commandPath );
+  ostream *out = &cout;
 
-  printf ( "Usage: %1$s [OPTIONS]\n\
-%2$s %3$s\n\
-Send and receive %2$s %4$s frames via the serial interface.\n\n\
-Default parameters:\n\n\
-\tRunning %1$s without parameters will use the following default values:\n\n\
-\tserial port : The first available serial port.\n\
-Optional arguments:\n\n\
-\t-p\t\tSerial port.\n\n\
-\t-d\t\tDebug information on stderr.\n\
-\t-h\t\tThis helpful blurb.\n\
-Exit status:\n\n\
-\t0 if OK\n\
-\t1 if error\n",
-           commandName,
-           companyName,
-           productName,
-           protocolName );
+  if ( 0 != exitCode )
+    {
+      out = &cerr;
+    }
+
+  *out << "Usage: "
+  << commandName
+  << " [OPTIONS]\n"
+  << companyName
+  << " "
+  << productName
+  << "\n"
+  << "Send and receive "
+  << companyName
+  << " "
+  << protocolName
+  << " frames via the serial interface.\n\n"
+  << "Default parameters:\n\n"
+  << "\tRunning "
+  << commandName
+  << " without parameters will use the following default values:\n\n"
+  << "\tserial port : The first available serial port.\n"
+  << "Optional arguments:\n\n"
+  << "\t-p\t\tSerial port.\n\n"
+  << "\t-d\t\tDebug information on stderr.\n"
+  << "\t-h\t\tThis helpful blurb.\n"
+  << "Exit status:\n\n"
+  << "\t0 if OK\n"
+  << "\t1 if error\n"
+  << endl;
   exit ( exitCode );
 }
 
@@ -284,7 +298,7 @@ int main ( int argc, char **argv )
 
         default:
           /* You won't actually get here. */
-          printf ( "Error: This shouldn't have happened!" );
+          cerr << "Error: This shouldn't have happened!" << endl;
           break;
         }
     }
@@ -307,8 +321,8 @@ int main ( int argc, char **argv )
         }
       if ( SP_OK > sp_ret  || NULL == ctx.port )
         {
-          printf ( "Could not find any serial port!\n" );
-          usage ( sp_ret, argv[0] );
+          cerr << "Could not find any serial port!\n" << endl;
+          usage ( (0 == sp_ret ? 1 : sp_ret), argv[0] );
         }
     }
   else
@@ -316,15 +330,15 @@ int main ( int argc, char **argv )
       sp_ret = sp_get_port_by_name ( portname, &ctx.port );
       if ( SP_OK > sp_ret || NULL == ctx.port )
         {
-          printf ( "Port \"%s\" could not be found!\n", portname );
-          usage ( sp_ret, argv[0] );
+          cerr << "Port \"" << portname << "\" could not be found!\n" << endl;
+          usage ( (0 == sp_ret ? 1 : sp_ret), argv[0] );
         }
     }
 
   sp_ret = sp_open ( ctx.port, SP_MODE_READ_WRITE );
   if ( SP_OK > sp_ret )
     {
-      printf ( "Port \"%s\" could not be opened!\n", portname );
+      cerr << "Port \"" << portname << "\" could not be opened!\n" << endl;
       usage ( sp_ret, argv[0] );
     }
 
@@ -332,55 +346,48 @@ int main ( int argc, char **argv )
   sp_ret = sp_new_config ( &savedPortConfig );
   if ( SP_OK > sp_ret )
     {
-      printf ( "Config of port \"%s\" could not be saved! (Out of memory?)\n",
-               portname );
+      cerr << "Config of port  \"" << portname << "\" could not be saved! (Out of memory?)\n" << endl;
       usage ( sp_ret, argv[0] );
     }
   sp_ret = sp_get_config ( ctx.port, savedPortConfig );
   if ( SP_OK > sp_ret )
     {
-      printf ( "Config of port \"%s\" could not be saved! (Read error?)\n",
-               portname );
+      cerr << "Config of port  \"" << portname << "\" could not be saved! (Read error?)\n" << endl;
       usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_baudrate ( ctx.port, SF_SERIAL_BAUDRATE );
   if ( SP_OK > sp_ret )
     {
-      printf ( "Could not set baudrate to %u on port \"%s\"!\n",
-               SF_SERIAL_BAUDRATE, portname );
+      cerr << "Could not set baudrate to " << SF_SERIAL_BAUDRATE << " on port \"" << portname << "\"!\n" << endl;
       usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_bits ( ctx.port, SF_SERIAL_BITS );
   if ( SP_OK > sp_ret )
     {
-      printf ( "Could not set number of bits to %u on port \"%s\"!\n",
-               SF_SERIAL_BITS, portname );
+      cerr << "Could not set number of bits to " << SF_SERIAL_BITS << " on port \"" << portname << "\"!\n" << endl;
       usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_parity ( ctx.port, SP_PARITY_NONE );
   if ( SP_OK > sp_ret )
     {
-      printf ( "Could not set parity to %u on port \"%s\"!\n",
-               SP_PARITY_NONE, portname );
+      cerr << "Could not set parity to " << SP_PARITY_NONE << " on port \"" << portname << "\"!\n" << endl;
       usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_stopbits ( ctx.port, SF_SERIAL_STOPBITS );
   if ( SP_OK > sp_ret )
     {
-      printf ( "Could not set stop-bits to %u on port \"%s\"!\n",
-               SF_SERIAL_STOPBITS, portname );
+      cerr << "Could not set stop-bits to " << SF_SERIAL_STOPBITS << " on port \"" << portname << "\"!\n" << endl;
       usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_flowcontrol ( ctx.port, SF_SERIAL_FLOWCTRL );
   if ( SP_OK > sp_ret )
     {
-      printf ( "Could not set flow-control to %u on port \"%s\"!\n",
-               SF_SERIAL_FLOWCTRL, portname );
+      cerr << "Could not set flow-control to " << SF_SERIAL_FLOWCTRL << " on port \"" << portname << "\"!\n" << endl;
       usage ( sp_ret, argv[0] );
     }
 
