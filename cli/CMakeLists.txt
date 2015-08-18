@@ -3,17 +3,9 @@ include(ExternalProject)
 
 project (serialcli)
 
-# The version number.
-set (SF_SERIALMACCLI_VERSION_MAJOR 0)
-set (SF_SERIALMACCLI_VERSION_MINOR 1)
-set (SF_SERIALMACCLI_VERSION_PATCH 0)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../ ${PROJECT_BINARY_DIR}/lib)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra -pedantic -fmessage-length=0")
-
-if (WIN32)
-    MESSAGE(STATUS "On Windows")
-    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-endif()
+set (SERIALMACCLI_PRODUCT_NAME "${SERIALMAC_PRODUCT_NAME} CLI" CACHE STRING "product")
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -22,7 +14,13 @@ configure_file (
     "${PROJECT_BINARY_DIR}/version.h"
     )
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/../ ${PROJECT_BINARY_DIR}/lib)
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra -pedantic -fmessage-length=0")
+
+if (WIN32)
+    MESSAGE(STATUS "On Windows")
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+endif()
 
 # add the binary tree to the search path for include files
 include_directories(

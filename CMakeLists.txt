@@ -2,9 +2,12 @@ cmake_minimum_required (VERSION 2.8)
 project (serialmac)
 
 # The version number.
-set (SERIALMAC_VERSION_MAJOR 0)
-set (SERIALMAC_VERSION_MINOR 1)
-set (SERIALMAC_VERSION_PATCH 0)
+set (SERIALMAC_VERSION_MAJOR 0 CACHE STRING "major version")
+set (SERIALMAC_VERSION_MINOR 1 CACHE STRING "minor version")
+set (SERIALMAC_VERSION_PATCH 0 CACHE STRING "patch version")
+set (SERIALMAC_PRODUCT_COMPANY "STACKFORCE" CACHE STRING "company")
+set (SERIALMAC_PRODUCT_NAME    "Serial MAC" CACHE STRING "product")
+
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -12,7 +15,8 @@ configure_file(${PROJECT_SOURCE_DIR}/src/version.h.in
                ${PROJECT_BINARY_DIR}/version.h)
 
 # add the binary tree to the search path for include files
-include_directories(${PROJECT_SOURCE_DIR}/src
+include_directories(${PROJECT_BINARY_DIR}/
+                    ${PROJECT_SOURCE_DIR}/src
                     ${PROJECT_SOURCE_DIR}/dep/crc/)
 
 list (APPEND SERIALMAC_HEADERS
