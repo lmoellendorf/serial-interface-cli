@@ -386,8 +386,10 @@ int main ( int argc, char **argv )
 
   sf_serialmac_init ( ctx.mac_ctx,
                       ( void * ) ctx.port,
-                      ( SF_SERIALMAC_HAL_READ_FUNCTION ) sp_nonblocking_read, ( SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) sp_input_waiting,
-                      ( SF_SERIALMAC_HAL_WRITE_FUNCTION ) sp_nonblocking_write, read_evt, bufferRx_evt,
+                      ( SF_SERIALMAC_HAL_READ_FUNCTION ) sp_nonblocking_read,
+                      ( SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) sp_input_waiting,
+                      ( SF_SERIALMAC_HAL_WRITE_FUNCTION ) sp_nonblocking_write,
+                      read_evt, bufferRx_evt,
                       write_evt, bufferTx_evt );
 
   /** Start waiting for user input */
