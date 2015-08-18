@@ -8,21 +8,22 @@ set (SERIALMAC_VERSION_PATCH 0)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
-configure_file(${PROJECT_SOURCE_DIR}/version.h.in
+configure_file(${PROJECT_SOURCE_DIR}/src/version.h.in
                ${PROJECT_BINARY_DIR}/version.h)
 
 # add the binary tree to the search path for include files
-include_directories(${PROJECT_SOURCE_DIR}/../inc/
-                    ${PROJECT_SOURCE_DIR}/../lib/crc/)
+include_directories(${PROJECT_SOURCE_DIR}/src
+                    ${PROJECT_SOURCE_DIR}/dep/crc/)
 
 list (APPEND SERIALMAC_HEADERS
-    ${PROJECT_SOURCE_DIR}/../inc/sf_serialmac.h
-    ${PROJECT_SOURCE_DIR}/../lib/crc/sf_crc.h
+    ${PROJECT_SOURCE_DIR}/src/sf_serialmac.h
+    ${PROJECT_SOURCE_DIR}/dep/crc/sf_crc.h
+    ${PROJECT_BINARY_DIR}/version.h
     )
 
 set (SERIALMAC_SOURCES
-     ${PROJECT_SOURCE_DIR}/sf_serialmac.c
-     ${PROJECT_SOURCE_DIR}/../lib/crc/sf_crc.c
+     ${PROJECT_SOURCE_DIR}/src/sf_serialmac.c
+     ${PROJECT_SOURCE_DIR}/dep/crc/sf_crc.c
      ${SERIALMAC_HEADERS}
      )
 
@@ -32,14 +33,14 @@ find_package(Doxygen)
 if(DOXYGEN_FOUND)
 
     string(CONCAT DOXYFILE_INPUT ${DOXYFILE_INPUT} " "
-        ${CMAKE_CURRENT_SOURCE_DIR}/../README.md)
+        ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
     foreach(loop_var IN LISTS SERIALMAC_HEADERS)
         string(CONCAT DOXYFILE_INPUT ${DOXYFILE_INPUT} " " ${loop_var})
     endforeach(loop_var)
 
     MESSAGE(STATUS "doxyfile input: ${DOXYFILE_INPUT}")
 
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../doc/Doxyfile.in
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in
 ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
     add_custom_target(doc
@@ -57,4 +58,4 @@ endif(DOXYGEN_FOUND)
 add_library(serialmac ${SERIALMAC_SOURCES})
 
 install (TARGETS serialmac DESTINATION lib)
-install (FILES ${PROJECT_SOURCE_DIR}/../inc/sf_serialmac.h DESTINATION include)
+install (FILES ${PROJECT_SOURCE_DIR}/src/sf_serialmac.h DESTINATION include)

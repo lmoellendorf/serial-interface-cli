@@ -22,12 +22,12 @@ configure_file (
     "${PROJECT_BINARY_DIR}/version.h"
     )
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/../src ${PROJECT_BINARY_DIR}/lib)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../ ${PROJECT_BINARY_DIR}/lib)
 
 # add the binary tree to the search path for include files
 include_directories(
     "${PROJECT_BINARY_DIR}"
-    "${PROJECT_SOURCE_DIR}/../inc/"
+    "${PROJECT_SOURCE_DIR}/../src"
     "${PROJECT_BINARY_DIR}/libserialport-prefix/include/"
     )
 
