@@ -35,13 +35,6 @@ extern "C"
 #define SF_SERIAL_INPUT_MAX_SIZE 255
 #define FALSE 0
 #define TRUE 1
-#ifdef __linux__
-#define SF_SERIAL_PORT_NAME "/dev/ttyUSB0"
-#else
-#ifdef _WIN32
-#define SF_SERIAL_PORT_NAME "COM1"
-#endif
-#endif
 
 using namespace std;
 
@@ -76,7 +69,7 @@ void wait4halEvent ( enum sp_event event,
                      enum sf_serialmac_return ( *sf_serialmac_halCb ) ( struct sf_serialmac_ctx *ctx ) );
 void wait4halTxEvent();
 void wait4halRxEvent();
-static int usage ( int exitCode, char *commandPath, char *serialPortName );
+static int usage ( int exitCode, char *commandPath );
 
 
 void read_evt ( const char *frameBuffer, size_t frameBufferLength )
@@ -230,7 +223,7 @@ static const struct option longOptString[] =
   {0, 0, 0, 0}
 };
 
-static int usage ( int exitCode, char *commandPath, char *serialPortName )
+static int usage ( int exitCode, char *commandPath )
 {
   char *companyName = SERIALMAC_PRODUCT_COMPANY;
   char *productName = SERIALMACCLI_PRODUCT_NAME;
@@ -242,7 +235,7 @@ static int usage ( int exitCode, char *commandPath, char *serialPortName )
 Send and receive %2$s %4$s frames via the serial interface.\n\n\
 Default parameters:\n\n\
 \tRunning %1$s without parameters will use the following default values:\n\n\
-\tserial port : %5$s\n\
+\tserial port : The first available serial port.\n\
 Optional arguments:\n\n\
 \t-p\t\tSerial port.\n\n\
 \t-d\t\tDebug information on stderr.\n\
@@ -253,8 +246,7 @@ Exit status:\n\n\
            commandName,
            companyName,
            productName,
-           protocolName,
-           serialPortName );
+           protocolName );
   exit ( exitCode );
 }
 
@@ -265,8 +257,8 @@ int main ( int argc, char **argv )
   ctx.mac_ctx = ( struct sf_serialmac_ctx * ) mac_ctx;
 
   sp_return sp_ret = SP_OK;
-//    struct sp_port **availablePorts = NULL;
-  const char portname[] = SF_SERIAL_PORT_NAME;
+  char *portname = NULL;
+  struct sp_port **availablePorts = NULL;
   struct sp_port_config *savedPortConfig = NULL;
 
   int opt = 0;
@@ -276,58 +268,64 @@ int main ( int argc, char **argv )
     {
       switch ( opt )
         {
+        case 'p':
+          portname=optarg;
+          break;
+
         case 'd':
           break;
 
-        case 'u':
-          break;
-
-        case 'p':
-          break;
-
-        case 'h':   /* fall-through is intentional */
-          usage ( 0, argv[0], SF_SERIAL_PORT_NAME );
+        case 'h':
+          usage ( 0, argv[0] );
           break;
         case '?':
-          usage ( 1, argv[0], SF_SERIAL_PORT_NAME );
+          usage ( 1, argv[0] );
           break;
 
         default:
           /* You won't actually get here. */
+          printf ( "Error: This shouldn't have happened!" );
           break;
         }
     }
 
-
-
-  //TODO: use sp_list_ports, look for valid port names and try to
-  //connect them or let the user choose.
-//    sp_ret = sp_list_ports(&availablePorts);
-//    if (SP_OK > sp_ret)
-//        return sp_ret;
-//    if (NULL != availablePorts[0])
-//    {
-//        sp_ret = sp_copy_port(availablePorts[0], &port);
-//    }
-//    if (NULL != availablePorts)
-//    {
-//        sp_free_port_list(availablePorts);
-//    }
-//    if (SP_OK > sp_ret)
-//        return sp_ret;
-
-  sp_ret = sp_get_port_by_name ( portname, &ctx.port );
-  if ( SP_OK > sp_ret || NULL == ctx.port )
+  /** If the user specified no port, choose any. */
+  if ( NULL == portname )
     {
-      printf ( "Port \"%s\" could not be found!\n", portname );
-      return sp_ret;
+      sp_ret = sp_list_ports ( &availablePorts );
+      if ( SP_OK > sp_ret )
+        {
+          usage ( sp_ret, argv[0] );
+        }
+      if ( NULL != availablePorts[0] )
+        {
+          sp_ret = sp_copy_port ( availablePorts[0], &ctx.port );
+        }
+      if ( NULL != availablePorts )
+        {
+          sp_free_port_list ( availablePorts );
+        }
+      if ( SP_OK > sp_ret  || NULL == ctx.port )
+        {
+          printf ( "Could not find any serial port!\n" );
+          usage ( sp_ret, argv[0] );
+        }
+    }
+  else
+    {
+      sp_ret = sp_get_port_by_name ( portname, &ctx.port );
+      if ( SP_OK > sp_ret || NULL == ctx.port )
+        {
+          printf ( "Port \"%s\" could not be found!\n", portname );
+          usage ( sp_ret, argv[0] );
+        }
     }
 
   sp_ret = sp_open ( ctx.port, SP_MODE_READ_WRITE );
   if ( SP_OK > sp_ret )
     {
       printf ( "Port \"%s\" could not be opened!\n", portname );
-      return sp_ret;
+      usage ( sp_ret, argv[0] );
     }
 
   /** Save current port configuration for later restoring */
@@ -336,14 +334,14 @@ int main ( int argc, char **argv )
     {
       printf ( "Config of port \"%s\" could not be saved! (Out of memory?)\n",
                portname );
-      return sp_ret;
+      usage ( sp_ret, argv[0] );
     }
   sp_ret = sp_get_config ( ctx.port, savedPortConfig );
   if ( SP_OK > sp_ret )
     {
       printf ( "Config of port \"%s\" could not be saved! (Read error?)\n",
                portname );
-      return sp_ret;
+      usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_baudrate ( ctx.port, SF_SERIAL_BAUDRATE );
@@ -351,7 +349,7 @@ int main ( int argc, char **argv )
     {
       printf ( "Could not set baudrate to %u on port \"%s\"!\n",
                SF_SERIAL_BAUDRATE, portname );
-      return sp_ret;
+      usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_bits ( ctx.port, SF_SERIAL_BITS );
@@ -359,7 +357,7 @@ int main ( int argc, char **argv )
     {
       printf ( "Could not set number of bits to %u on port \"%s\"!\n",
                SF_SERIAL_BITS, portname );
-      return sp_ret;
+      usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_parity ( ctx.port, SP_PARITY_NONE );
@@ -367,7 +365,7 @@ int main ( int argc, char **argv )
     {
       printf ( "Could not set parity to %u on port \"%s\"!\n",
                SP_PARITY_NONE, portname );
-      return sp_ret;
+      usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_stopbits ( ctx.port, SF_SERIAL_STOPBITS );
@@ -375,7 +373,7 @@ int main ( int argc, char **argv )
     {
       printf ( "Could not set stop-bits to %u on port \"%s\"!\n",
                SF_SERIAL_STOPBITS, portname );
-      return sp_ret;
+      usage ( sp_ret, argv[0] );
     }
 
   sp_ret = sp_set_flowcontrol ( ctx.port, SF_SERIAL_FLOWCTRL );
@@ -383,7 +381,7 @@ int main ( int argc, char **argv )
     {
       printf ( "Could not set flow-control to %u on port \"%s\"!\n",
                SF_SERIAL_FLOWCTRL, portname );
-      return sp_ret;
+      usage ( sp_ret, argv[0] );
     }
 
   sf_serialmac_init ( ctx.mac_ctx,
