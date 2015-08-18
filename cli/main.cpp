@@ -17,11 +17,16 @@
 #include <thread>
 #include <unistd.h>
 #include <string.h>
+#include <getopt.h>
+#include <libgen.h>
+
 extern "C"
 {
 #include <libserialport.h>
 }
-#include <sf_serialmac.h>
+
+#include "sf_serialmac.h"
+#include "version.h"
 
 #define SF_SERIAL_BAUDRATE 115200
 #define SF_SERIAL_BITS 8
@@ -71,6 +76,8 @@ void wait4halEvent ( enum sp_event event,
                      enum sf_serialmac_return ( *sf_serialmac_halCb ) ( struct sf_serialmac_ctx *ctx ) );
 void wait4halTxEvent();
 void wait4halRxEvent();
+static int usage ( int exitCode, char *commandPath, char *serialPortName );
+
 
 void read_evt ( const char *frameBuffer, size_t frameBufferLength )
 {
@@ -213,6 +220,44 @@ void wait4halEvent ( enum sp_event event,
   return;
 }
 
+/* allowed short and long options */
+static const char *shortOptString = "p:dh";
+static const struct option longOptString[] =
+{
+  {"port", required_argument,      NULL, 'p'},
+  {"debug",    optional_argument,      NULL, 'd'},
+  {"help",    no_argument,            NULL, 'h'},
+  {0, 0, 0, 0}
+};
+
+static int usage ( int exitCode, char *commandPath, char *serialPortName )
+{
+  char *companyName = SERIALMAC_PRODUCT_COMPANY;
+  char *productName = SERIALMACCLI_PRODUCT_NAME;
+  char *protocolName = SERIALMAC_PRODUCT_NAME;
+  char *commandName = basename ( commandPath );
+
+  printf ( "Usage: %1$s [OPTIONS]\n\
+%2$s %3$s\n\
+Send and receive %2$s %4$s frames via the serial interface.\n\n\
+Default parameters:\n\n\
+\tRunning %1$s without parameters will use the following default values:\n\n\
+\tserial port : %5$s\n\
+Optional arguments:\n\n\
+\t-p\t\tSerial port.\n\n\
+\t-d\t\tDebug information on stderr.\n\
+\t-h\t\tThis helpful blurb.\n\
+Exit status:\n\n\
+\t0 if OK\n\
+\t1 if error\n",
+           commandName,
+           companyName,
+           productName,
+           protocolName,
+           serialPortName );
+  exit ( exitCode );
+}
+
 int main ( int argc, char **argv )
 {
 
@@ -223,6 +268,37 @@ int main ( int argc, char **argv )
 //    struct sp_port **availablePorts = NULL;
   const char portname[] = SF_SERIAL_PORT_NAME;
   struct sp_port_config *savedPortConfig = NULL;
+
+  int opt = 0;
+  int long_index = 0;
+
+  while ( ( opt = getopt_long ( argc, argv, shortOptString, longOptString, &long_index ) ) != -1 )
+    {
+      switch ( opt )
+        {
+        case 'd':
+          break;
+
+        case 'u':
+          break;
+
+        case 'p':
+          break;
+
+        case 'h':   /* fall-through is intentional */
+          usage ( 0, argv[0], SF_SERIAL_PORT_NAME );
+          break;
+        case '?':
+          usage ( 1, argv[0], SF_SERIAL_PORT_NAME );
+          break;
+
+        default:
+          /* You won't actually get here. */
+          break;
+        }
+    }
+
+
 
   //TODO: use sp_list_ports, look for valid port names and try to
   //connect them or let the user choose.
