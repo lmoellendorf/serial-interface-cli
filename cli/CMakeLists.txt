@@ -4,6 +4,8 @@ include(ExternalProject)
 project (serialcli)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/../ ${PROJECT_BINARY_DIR}/lib)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer
+    ${PROJECT_BINARY_DIR}/observer)
 
 set (SERIALMACCLI_PRODUCT_NAME "${SERIALMAC_PRODUCT_NAME} CLI" CACHE STRING "product")
 
@@ -14,20 +16,12 @@ configure_file (
     "${PROJECT_BINARY_DIR}/version.h"
     )
 
-
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra -pedantic -fmessage-length=0")
 
 if (WIN32)
     MESSAGE(STATUS "On Windows")
     set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
 endif()
-
-# add the binary tree to the search path for include files
-include_directories(
-    "${PROJECT_BINARY_DIR}"
-    "${PROJECT_SOURCE_DIR}/../src"
-    "${PROJECT_BINARY_DIR}/libserialport-prefix/include/"
-    )
 
 find_library(LIBSERIALPORT serialport
     ${PROJECT_BINARY_DIR}/libserialport-prefix/lib/)
@@ -72,8 +66,26 @@ else()
     add_custom_target(serialport)
 endif()
 
+include_directories(
+    # add the binary tree to the search path for include files
+    ${PROJECT_BINARY_DIR}
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/../src
+    ${PROJECT_BINARY_DIR}/libserialport-prefix/include
+    ${PROJECT_SOURCE_DIR}/../dep/observer
+    )
+
+# This is only added to display the header in your IDE!
 set(LIBSERIALPORT_HEADER
     ${PROJECT_BINARY_DIR}/libserialport-prefix/include/libserialport.h
+    )
+
+# This is only added to display the files in your IDE!
+set(OBERSERVER_FILES
+    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_event.h
+    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_observer.h
+    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_subject.h
+    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_subject.cpp
     )
 
 set_source_files_properties(${LIBSERIALPORT_HEADER} PROPERTIES GENERATED TRUE)
@@ -86,11 +98,16 @@ set(SF_SERIALMACCLI_HEADERS
 set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/main
     ${SF_SERIALMACCLI_HEADERS}
+    ${OBERSERVER_FILES}
     )
 
 add_executable(ssi  ${SF_SERIALMACCLI_SOURCES})
 
-add_dependencies(ssi serialport serialmac)
+add_dependencies(ssi
+    serialport
+    serialmac
+    observer
+    )
 
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
@@ -99,6 +116,7 @@ if(LIBSERIALPORT)
     target_link_libraries(ssi
         serialmac
         ${LIBSERIALPORT}
+        observer
         ${CMAKE_THREAD_LIBS_INIT}
         )
 endif()
