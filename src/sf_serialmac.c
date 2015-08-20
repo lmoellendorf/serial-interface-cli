@@ -331,7 +331,7 @@ static void txProcPayloadCB(struct sf_serialmac_ctx *ctx)
      */
     initBuffer(&ctx->txFrame.payloadBuffer, NULL, 0, txProcPayloadCB);
     /** inform upper layer that the buffer has been processed */
-    ctx->txBufEvt(processed);
+    ctx->txBufEvt(ctx, processed);
 }
 
 static void txProcCrcCB(struct sf_serialmac_ctx *ctx)
@@ -340,7 +340,7 @@ static void txProcCrcCB(struct sf_serialmac_ctx *ctx)
                                     SF_SERIALMAC_PROTOCOL_SYNC_WORD_LEN);
     txInit(ctx);
     ctx->txFrame.state = IDLE;
-    ctx->txEvt(length);
+    ctx->txEvt(ctx, length);
 }
 
 static void rxInit(struct sf_serialmac_ctx *ctx)
@@ -389,7 +389,7 @@ static void rxProcHeaderCB(struct sf_serialmac_ctx *ctx)
     ctx->rxFrame.remains = UINT8_TO_UINT16(ctx->rxFrame.headerMemory +
                                            SF_SERIALMAC_PROTOCOL_SYNC_WORD_LEN);
     /** Inform upper layer that there has been a frame header received */
-    ctx->rxBufEvt(NULL, ctx->rxFrame.remains);
+    ctx->rxBufEvt(ctx, NULL, ctx->rxFrame.remains);
     ctx->rxFrame.state = PAYLOAD;
 }
 
@@ -422,7 +422,7 @@ static void rxProcCrcCB(struct sf_serialmac_ctx *ctx)
          * FIXME: Also call it when a frame has been rejected, so the upper
          * layer has a chance to free the memory.
          */
-        ctx->rxEvt(ctx->rxFrame.payloadBuffer.memory, length);
+        ctx->rxEvt(ctx, ctx->rxFrame.payloadBuffer.memory, length);
     }
     /** Regardless of the CRC, start waiting for the next frame. */
     rxInit(ctx);

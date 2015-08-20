@@ -128,7 +128,8 @@ typedef size_t ( *SF_SERIALMAC_HAL_WRITE_FUNCTION ) ( void *port_handle,
  * received.
  * These have to be passed on @ref initialization to sf_serialmac_init().
  */
-typedef void ( *SF_SERIALMAC_RX_EVENT ) ( const char *frame_buffer,
+typedef void ( *SF_SERIALMAC_RX_EVENT ) ( void *mac_context,
+        const char *frame_buffer,
         size_t frame_buffer_length );
 /**
  * Signature of upper layer's callback functions to be called by the MAC
@@ -138,7 +139,8 @@ typedef void ( *SF_SERIALMAC_RX_EVENT ) ( const char *frame_buffer,
  *
  * @param bytes_sent Number of bytes sent with the frame.
  */
-typedef void ( *SF_SERIALMAC_TX_EVENT ) ( size_t bytes_sent );
+typedef void ( *SF_SERIALMAC_TX_EVENT ) ( void *mac_context,
+        size_t bytes_sent );
 
 /** @} end of STACKFORCE_SERIALMAC_API_TYPEDEFS */
 
