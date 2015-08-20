@@ -121,7 +121,7 @@ typedef size_t ( *SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) ( void *port_handle );
  * @return Number of bytes successfully written.
  */
 typedef size_t ( *SF_SERIALMAC_HAL_WRITE_FUNCTION ) ( void *port_handle,
-        const char *frame_buffer, size_t frame_buffer_length );
+        char *frame_buffer, size_t frame_buffer_length );
 /**
  * Signature of upper layer's callback functions to be called by the MAC
  * when a frame header has been received or when a whole frame has been
@@ -129,7 +129,7 @@ typedef size_t ( *SF_SERIALMAC_HAL_WRITE_FUNCTION ) ( void *port_handle,
  * These have to be passed on @ref initialization to sf_serialmac_init().
  */
 typedef void ( *SF_SERIALMAC_RX_EVENT ) ( void *mac_context,
-        const char *frame_buffer,
+        char *frame_buffer,
         size_t frame_buffer_length );
 /**
  * Signature of upper layer's callback functions to be called by the MAC
