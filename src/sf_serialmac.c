@@ -398,12 +398,15 @@ static void rxProcCrcCB ( struct sf_serialmac_ctx *ctx )
                                   length );
     if ( crcRx == crcCalc ) {
         /**
-         * inform the upper layer that a frame has been completed
-         * FIXME: Also call it when a frame has been rejected, so the upper
-         * layer has a chance to free the memory.
+         * Inform the upper layer that a frame has been completed
          */
         ctx->rxEvt ( ctx, ctx->rxFrame.payloadBuffer.memory, length );
     }
+    /**
+     * Inform upper layer that the buffer can be freed.
+     */
+    ctx->rxBufEvt ( ctx, ctx->rxFrame.payloadBuffer.memory,
+                    ctx->rxFrame.payloadBuffer.length );
     /** Regardless of the CRC, start waiting for the next frame. */
     rxInit ( ctx );
     ctx->rxFrame.state = IDLE;
