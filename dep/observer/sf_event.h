@@ -6,14 +6,19 @@
 class Event
 {
 public:
-    Event(std::string, void*, void*, void*);
+    Event ( int identifier, void *source, void *content, size_t content_size );
     ~Event();
 
-    std::string Name;
-    void *Source;
-    void *NewState;
-    void *OldState;
+public:
+    virtual int GetIdentifier ( );
+    virtual void* GetSource ( );
+    virtual size_t GetDetails ( void **content );
+
+private:
+    int identifier;
+    void *source;
+    void *content;
+    size_t content_size;
 };
 
 #endif // EVENT_H
-

@@ -4,29 +4,35 @@
 #include "sf_observer.h"
 #include "sf_event.h"
 
+std::forward_list<Observer*> Subject::observers;
 
-Subject::Subject() :  observers() { }
+Subject::Subject()
+{
+
+}
 
 Subject::~Subject()
 {
 
 }
 
-void Subject::Attach ( Observer *observer)
+void Subject::Attach ( Observer *observer )
 {
-  observers.push_front ( observer );
+  Subject::observers.push_front ( observer );
 }
 
 void Subject::Detach ( Observer *observer )
 {
-  observers.remove ( observer );
+  Subject::observers.remove ( observer );
 }
 
-void Subject::Notify ( Event event )
+void Subject::Notify ( Event *event, Filter filter )
 {
   for ( auto it = observers.begin(); it != observers.end(); ++it )
     {
-      ( ( Observer* ) *it )->Update ( event );
-
+      if ( filter ( ( Observer* ) *it, event ) )
+        {
+          ( ( Observer* ) *it )->Update ( event );
+        }
     }
 }

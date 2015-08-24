@@ -8,14 +8,19 @@ class Event;
 
 class Subject
 {
-    std::forward_list<Observer*> observers;
+
+protected:
+    static std::forward_list<Observer*> observers;
 public:
     Subject();
     ~Subject();
 
-    virtual void Attach ( Observer* );
-    virtual void Detach ( Observer* );
-    virtual void Notify ( Event );
+    typedef bool (*Filter) ( Observer *observer, Event *event );
+    //TODO: overload Attach() to enable the Oberserver to pass a Event "id"
+    // it is interested in
+    static void Attach ( Observer *observer );
+    static void Detach ( Observer *observer );
+    static void Notify ( Event *event, Filter filter);
 };
 
 #endif // SUBJECT_H
