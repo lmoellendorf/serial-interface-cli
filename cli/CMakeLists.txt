@@ -83,6 +83,7 @@ set(LIBSERIALPORT_HEADER
 # This is only added to display the files in your IDE!
 set(OBERSERVER_FILES
     ${PROJECT_SOURCE_DIR}/../dep/observer/sf_event.h
+    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_event.cpp
     ${PROJECT_SOURCE_DIR}/../dep/observer/sf_observer.h
     ${PROJECT_SOURCE_DIR}/../dep/observer/sf_subject.h
     ${PROJECT_SOURCE_DIR}/../dep/observer/sf_subject.cpp
@@ -93,10 +94,14 @@ set_source_files_properties(${LIBSERIALPORT_HEADER} PROPERTIES GENERATED TRUE)
 set(SF_SERIALMACCLI_HEADERS
     ${LIBSERIALPORT_HEADER}
     ${PROJECT_BINARY_DIR}/version.h
+    ${PROJECT_SOURCE_DIR}/sf_serialmaccli.h
+    ${PROJECT_SOURCE_DIR}/sf_serialmachandler.h
     )
 
 set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/main
+    ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
+    ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
     ${SF_SERIALMACCLI_HEADERS}
     ${OBERSERVER_FILES}
     )
