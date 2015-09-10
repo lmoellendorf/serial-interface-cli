@@ -43,7 +43,6 @@ void* SerialMacCli::GetSerialMacContext()
 
 void** SerialMacCli::GetSerialPortContext()
 {
-  /** The serial port does its */
   return &port_context;
 }
 
@@ -140,7 +139,7 @@ void SerialMacCli::Update ( Event *event )
       size_t frame_buffer_length;
 
     case SerialMacHandler::READ:
-      frame_buffer_length = event->GetDetails ( (void**) &frame_buffer );
+      frame_buffer_length = event->GetDetails ( ( void** ) &frame_buffer );
       if ( frame_buffer && frame_buffer_length )
         {
 

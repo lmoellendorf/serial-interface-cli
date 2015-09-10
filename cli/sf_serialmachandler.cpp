@@ -64,18 +64,18 @@ void SerialMacHandler::Detach ( SerialMacCli* serialmaccli )
 
 bool SerialMacHandler::filter ( Observer *observer, Event *event )
 {
-  return ( ((SerialMacCli*) observer)->GetSerialMacContext() == event->GetSource() ) ? true : false;
+  return ( ( ( SerialMacCli* ) observer )->GetSerialMacContext() == event->GetSource() ) ? true : false;
 }
 
 void SerialMacHandler::ReadEvent ( void *mac_context, char *frame_buffer, size_t frame_buffer_length )
 {
   std::forward_list<Observer*> filtered_observers;
-  Event event ( READ, mac_context, (void*) frame_buffer, frame_buffer_length );
+  Event event ( READ, mac_context, ( void* ) frame_buffer, frame_buffer_length );
 
   if ( frame_buffer && frame_buffer_length )
     {
       //TODO: lambda function?
-      Subject::Notify ( &event, (Filter) filter );
+      Subject::Notify ( &event, ( Filter ) filter );
     }
 }
 
