@@ -36,8 +36,10 @@ int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
                                    ( SF_SERIALMAC_HAL_READ_FUNCTION ) sp_nonblocking_read,
                                    ( SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) sp_input_waiting,
                                    ( SF_SERIALMAC_HAL_WRITE_FUNCTION ) sp_nonblocking_write,
-                                   ReadEvent, BufferRxEvent,
-                                   WriteEvent, BufferTxEvent ) ) )
+                                   ( SF_SERIALMAC_RX_EVENT ) ReadEvent,
+                                   ( SF_SERIALMAC_RX_EVENT ) BufferRxEvent,
+                                   ( SF_SERIALMAC_TX_EVENT ) WriteEvent,
+                                   ( SF_SERIALMAC_TX_EVENT ) BufferTxEvent ) ) )
     {
       return ret;
     }
