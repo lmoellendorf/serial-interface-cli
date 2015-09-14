@@ -70,6 +70,7 @@ int SerialMacCli::Run()
 //   /** Start waiting for user input */
 //   std::thread userInputEvent ( &SerialMacCli::Wait4UserInput, this );
 //   userInputEvent.detach();
+  return ret;
 }
 
 
