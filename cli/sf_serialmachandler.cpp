@@ -15,8 +15,9 @@
 #define SF_SERIAL_STOPBITS 1
 #define SF_SERIAL_FLOWCTRL SP_FLOWCONTROL_NONE
 
-void SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
+int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
 {
+  int ret = 0;
   /** Here the memory is allocated by serialmaccli */
   struct sf_serialmac_ctx *mac_ctx = ( struct sf_serialmac_ctx* ) serialmaccli->CreateSerialMacContext ( sf_serialmac_ctx_size() );
   const char *portname = serialmaccli->GetSerialPortName();
@@ -26,23 +27,27 @@ void SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
   struct sp_port_config **saved_port_config = ( struct sp_port_config** ) serialmaccli->GetSerialPortConfig();
   struct sp_event_set **port_events = ( struct sp_event_set** ) serialmaccli->GetSerialPortRxEvents();
 
-  if ( InitSerialPort ( port, portname, saved_port_config, port_events ) )
+  if ( ( ret =  InitSerialPort ( port, portname, saved_port_config, port_events ) ) )
     {
-      return;
+      return ret;
     }
-  sf_serialmac_init ( mac_ctx,
-                      ( void * ) *port,
-                      ( SF_SERIALMAC_HAL_READ_FUNCTION ) sp_nonblocking_read,
-                      ( SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) sp_input_waiting,
-                      ( SF_SERIALMAC_HAL_WRITE_FUNCTION ) sp_nonblocking_write,
-                      ReadEvent, BufferRxEvent,
-                      WriteEvent, BufferTxEvent );
+  if ( ( ret = sf_serialmac_init ( mac_ctx,
+                                   ( void * ) *port,
+                                   ( SF_SERIALMAC_HAL_READ_FUNCTION ) sp_nonblocking_read,
+                                   ( SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) sp_input_waiting,
+                                   ( SF_SERIALMAC_HAL_WRITE_FUNCTION ) sp_nonblocking_write,
+                                   ReadEvent, BufferRxEvent,
+                                   WriteEvent, BufferTxEvent ) ) )
+    {
+      return ret;
+    }
 
   /** Start waiting for serial input */
   std::thread halRxEvent ( &SerialMacHandler::Wait4HalEvent, *port, *port_events, SP_EVENT_RX_READY, mac_ctx, sf_serialmac_hal_rx_callback );
   halRxEvent.detach();
 
   Subject::Attach ( serialmaccli );
+  return ret;
 }
 
 void SerialMacHandler::Detach ( SerialMacCli* serialmaccli )

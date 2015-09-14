@@ -15,7 +15,6 @@ SerialMacCli::SerialMacCli ( const char* portname ) //: port_name()TODO why does
   port_name = portname;
   input_buffer = ( char* ) std::malloc ( SF_SERIAL_INPUT_MAX_SIZE );
   output_buffer = ( char* ) std::malloc ( SF_SERIAL_INPUT_MAX_SIZE );
-  SerialMacHandler::Attach ( this );
 }
 
 SerialMacCli::~SerialMacCli ( )
@@ -61,11 +60,16 @@ const char* SerialMacCli::GetSerialPortName()
   return port_name;
 }
 
-void SerialMacCli::Run()
+int SerialMacCli::Run()
 {
-  /** Start waiting for user input */
-  std::thread userInputEvent ( &SerialMacCli::Wait4UserInput, this );
-  userInputEvent.detach();
+  int ret = 0;
+  if ( ( ret=SerialMacHandler::Attach ( this ) ) )
+    {
+      return ret;
+    }
+//   /** Start waiting for user input */
+//   std::thread userInputEvent ( &SerialMacCli::Wait4UserInput, this );
+//   userInputEvent.detach();
 }
 
 

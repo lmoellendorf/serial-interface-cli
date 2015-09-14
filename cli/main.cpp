@@ -121,6 +121,11 @@ int main ( int argc, char **argv )
 
   SerialMacCli cli ( portname );
 
+  if ( cli.Run() )
+    {
+      return 1;
+    }
+
   while ( 1 );
 
   return 0;

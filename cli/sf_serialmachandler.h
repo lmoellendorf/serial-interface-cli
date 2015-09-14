@@ -11,7 +11,7 @@ public:
         READ,
         WRITE,
     };
-    static void Attach ( SerialMacCli* serialmaccli );
+    static int Attach ( SerialMacCli* serialmaccli );
     static void Detach ( SerialMacCli* serialmaccli );
     static void Notify ( Event *event );
 

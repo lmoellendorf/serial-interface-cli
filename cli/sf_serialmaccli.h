@@ -25,7 +25,7 @@ public:
     void** GetSerialPortConfig();
     void** GetSerialPortRxEvents();
 
-    void Run ( void );
+    int Run ( void );
 
 private:
     void *port_config;
