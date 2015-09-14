@@ -40,8 +40,6 @@ private:
     };
     int run = true;
     int status = START_FRAME;
-    //struct sp_port *port = NULL;
-    struct sf_serialmac_ctx *mac_ctx;
     size_t iBuffLen = 0;
     size_t oBuffRemains = 0;
     size_t oBuffLength = 0;

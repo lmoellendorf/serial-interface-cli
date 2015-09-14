@@ -85,7 +85,6 @@ int main ( int argc, char **argv )
 {
 
   char *portname = NULL;
-  SerialMacCli serialmac();
 
   int opt = 0;
   int long_index = 0;
