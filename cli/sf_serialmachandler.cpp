@@ -44,11 +44,12 @@ int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
       return ret;
     }
 
+  Subject::Attach ( serialmaccli );
+
   /** Start waiting for serial input */
   std::thread halRxEvent ( &SerialMacHandler::Wait4HalEvent, *port, *port_events, SP_EVENT_RX_READY, mac_ctx, sf_serialmac_hal_rx_callback );
   halRxEvent.detach();
 
-  Subject::Attach ( serialmaccli );
   return ret;
 }
 
