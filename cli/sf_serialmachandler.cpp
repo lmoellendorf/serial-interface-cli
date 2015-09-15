@@ -19,23 +19,35 @@ int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
 {
   int ret = 0;
   /** Here the memory is allocated by serialmaccli */
-  struct sf_serialmac_ctx *mac_ctx = ( struct sf_serialmac_ctx* ) serialmaccli->CreateSerialMacContext ( sf_serialmac_ctx_size() );
+  struct sf_serialmac_ctx *mac_ctx = ( struct sf_serialmac_ctx* )
+                                     serialmaccli->CreateSerialMacContext (
+                                       sf_serialmac_ctx_size() );
   const char *portname = serialmaccli->GetSerialPortName();
 
-  /** Here we need a pointer to pointer because the memory will be allocated by libserialport */
-  struct sp_port **port = ( struct sp_port** ) serialmaccli->GetSerialPortContext();
-  struct sp_port_config **saved_port_config = ( struct sp_port_config** ) serialmaccli->GetSerialPortConfig();
-  struct sp_event_set **port_events = ( struct sp_event_set** ) serialmaccli->GetSerialPortRxEvents();
+  /**
+   * Here we need a pointer to pointer because the memory will be allocated by
+   * libserialport
+   */
+  struct sp_port **port = ( struct sp_port** )
+                          serialmaccli->GetSerialPortContext();
+  struct sp_port_config **saved_port_config = ( struct sp_port_config** )
+      serialmaccli->GetSerialPortConfig();
+  struct sp_event_set **port_events = ( struct sp_event_set** )
+                                      serialmaccli->GetSerialPortRxEvents();
 
-  if ( ( ret =  InitSerialPort ( port, portname, saved_port_config, port_events ) ) )
+  if ( ( ret =
+           InitSerialPort ( port, portname, saved_port_config, port_events ) ) )
     {
       return ret;
     }
   if ( ( ret = sf_serialmac_init ( mac_ctx,
                                    ( void * ) *port,
-                                   ( SF_SERIALMAC_HAL_READ_FUNCTION ) sp_nonblocking_read,
-                                   ( SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) sp_input_waiting,
-                                   ( SF_SERIALMAC_HAL_WRITE_FUNCTION ) sp_nonblocking_write,
+                                   ( SF_SERIALMAC_HAL_READ_FUNCTION )
+                                   sp_nonblocking_read,
+                                   ( SF_SERIALMAC_HAL_READ_WAIT_FUNCTION )
+                                   sp_input_waiting,
+                                   ( SF_SERIALMAC_HAL_WRITE_FUNCTION )
+                                   sp_nonblocking_write,
                                    ( SF_SERIALMAC_RX_EVENT ) ReadEvent,
                                    ( SF_SERIALMAC_RX_EVENT ) BufferRxEvent,
                                    ( SF_SERIALMAC_TX_EVENT ) WriteEvent,
@@ -55,9 +67,12 @@ int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
 
 void SerialMacHandler::Detach ( SerialMacCli* serialmaccli )
 {
-  struct sp_port **port = ( struct sp_port** ) serialmaccli->GetSerialPortContext();
-  struct sp_port_config **saved_port_config = ( struct sp_port_config** ) serialmaccli->GetSerialPortConfig();
-  struct sp_event_set **port_events = ( struct sp_event_set** ) serialmaccli->GetSerialPortRxEvents();
+  struct sp_port **port = ( struct sp_port** )
+                          serialmaccli->GetSerialPortContext();
+  struct sp_port_config **saved_port_config = ( struct sp_port_config** )
+      serialmaccli->GetSerialPortConfig();
+  struct sp_event_set **port_events = ( struct sp_event_set** )
+                                      serialmaccli->GetSerialPortRxEvents();
 
   if ( NULL !=  port && NULL != *port )
     {
@@ -72,13 +87,17 @@ void SerialMacHandler::Detach ( SerialMacCli* serialmaccli )
 
 bool SerialMacHandler::filter ( Observer *observer, Event *event )
 {
-  return ( ( ( SerialMacCli* ) observer )->GetSerialMacContext() == event->GetSource() ) ? true : false;
+  return ( ( ( SerialMacCli* ) observer )->GetSerialMacContext() ==
+           event->GetSource() ) ? true : false;
 }
 
-void SerialMacHandler::ReadEvent ( void *mac_context, char *frame_buffer, size_t frame_buffer_length )
+void SerialMacHandler::ReadEvent ( void *mac_context,
+                                   char *frame_buffer,
+                                   size_t frame_buffer_length )
 {
   std::forward_list<Observer*> filtered_observers;
-  Event event ( READ, mac_context, ( void* ) frame_buffer, frame_buffer_length );
+  Event event ( READ, mac_context, ( void* ) frame_buffer, frame_buffer_length
+              );
 
   if ( frame_buffer && frame_buffer_length )
     {
@@ -119,7 +138,9 @@ void SerialMacHandler::BufferTxEvent ( void *mac_context, size_t processed ) //F
   //userInputEventLoop.detach();
 }
 
-int SerialMacHandler::InitSerialPort ( sp_port **port, const char *portname, sp_port_config **saved_port_config, sp_event_set **port_events )
+int SerialMacHandler::InitSerialPort ( sp_port **port, const char *portname,
+                                       sp_port_config **saved_port_config,
+                                       sp_event_set **port_events )
 {
   sp_return sp_ret = SP_OK;
   struct sp_port **available_ports = NULL;
@@ -151,7 +172,8 @@ int SerialMacHandler::InitSerialPort ( sp_port **port, const char *portname, sp_
       sp_ret = sp_get_port_by_name ( portname, port );
       if ( SP_OK > sp_ret || ( NULL !=  port && NULL == *port ) )
         {
-//           cerr << "Port \"" << portname << "\" could not be found!\n" << endl;
+//           cerr << "Port \"" << portname << "\" could not be found!\n" <<
+// endl;
           return ( 0 == sp_ret ? 1 : sp_ret );
         }
     }
@@ -167,48 +189,55 @@ int SerialMacHandler::InitSerialPort ( sp_port **port, const char *portname, sp_
   sp_ret = sp_new_config ( saved_port_config );
   if ( SP_OK > sp_ret )
     {
-//       cerr << "Config of port  \"" << portname << "\" could not be saved! (Out of memory?)\n" << endl;
+//       cerr << "Config of port  \"" << portname << "\" could not be saved!
+// (Out of memory?)\n" << endl;
       return sp_ret;
     }
   sp_ret = sp_get_config ( *port, *saved_port_config );
   if ( SP_OK > sp_ret )
     {
-//       cerr << "Config of port  \"" << portname << "\" could not be saved! (Read error?)\n" << endl;
+//       cerr << "Config of port  \"" << portname << "\" could not be saved!
+// (Read error?)\n" << endl;
       return sp_ret;
     }
 
   sp_ret = sp_set_baudrate ( *port, SF_SERIAL_BAUDRATE );
   if ( SP_OK > sp_ret )
     {
-//       cerr << "Could not set baudrate to " << SF_SERIAL_BAUDRATE << " on port \"" << portname << "\"!\n" << endl;
+//       cerr << "Could not set baudrate to " << SF_SERIAL_BAUDRATE << " on port
+// \"" << portname << "\"!\n" << endl;
       return sp_ret;
     }
 
   sp_ret = sp_set_bits ( *port, SF_SERIAL_BITS );
   if ( SP_OK > sp_ret )
     {
-//       cerr << "Could not set number of bits to " << SF_SERIAL_BITS << " on port \"" << portname << "\"!\n" << endl;
+//       cerr << "Could not set number of bits to " << SF_SERIAL_BITS << " on
+// port \"" << portname << "\"!\n" << endl;
       return sp_ret;
     }
 
   sp_ret = sp_set_parity ( *port, SP_PARITY_NONE );
   if ( SP_OK > sp_ret )
     {
-//       cerr << "Could not set parity to " << SP_PARITY_NONE << " on port \"" << portname << "\"!\n" << endl;
+//       cerr << "Could not set parity to " << SP_PARITY_NONE << " on port \""
+// << portname << "\"!\n" << endl;
       return sp_ret;
     }
 
   sp_ret = sp_set_stopbits ( *port, SF_SERIAL_STOPBITS );
   if ( SP_OK > sp_ret )
     {
-//       cerr << "Could not set stop-bits to " << SF_SERIAL_STOPBITS << " on port \"" << portname << "\"!\n" << endl;
+//       cerr << "Could not set stop-bits to " << SF_SERIAL_STOPBITS << " on
+// port \"" << portname << "\"!\n" << endl;
       return sp_ret;
     }
 
   sp_ret = sp_set_flowcontrol ( *port, SF_SERIAL_FLOWCTRL );
   if ( SP_OK > sp_ret )
     {
-//       cerr << "Could not set flow-control to " << SF_SERIAL_FLOWCTRL << " on port \"" << portname << "\"!\n" << endl;
+//       cerr << "Could not set flow-control to " << SF_SERIAL_FLOWCTRL << " on
+// port \"" << portname << "\"!\n" << endl;
       return sp_ret;
     }
 

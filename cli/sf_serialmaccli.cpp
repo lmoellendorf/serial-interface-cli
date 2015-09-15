@@ -10,7 +10,8 @@
 
 #define SF_SERIAL_INPUT_MAX_SIZE 255
 
-SerialMacCli::SerialMacCli ( const char* portname ) //: port_name()TODO why does this not work?
+SerialMacCli::SerialMacCli ( const char* portname )
+//: port_name()TODO why does this not work?
 {
   port_name = portname;
   input_buffer = ( char* ) std::malloc ( SF_SERIAL_INPUT_MAX_SIZE );

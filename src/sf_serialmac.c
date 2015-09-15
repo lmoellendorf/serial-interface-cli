@@ -232,7 +232,10 @@ static enum sf_serialmac_return tx ( struct sf_serialmac_ctx *ctx,
                                      struct sf_serialmac_buffer
                                      *buffer, uint8_t *crc )
 {
-    /** We need a signed integer to handle negative return values that indicate an error */
+    /**
+     * We need a signed integer to handle negative return values that indicate
+     * an error
+     */
     int byteSent = 0;
     uint16_t crcRead = 0;
     uint16_t crcCalc = 0;
@@ -242,7 +245,8 @@ static enum sf_serialmac_return tx ( struct sf_serialmac_ctx *ctx,
         /** Send the bytes */
         if ( ( byteSent = ctx->write ( ctx->portHandle,
                                        buffer->memory
-                                       + ( buffer->length - buffer->remains ), buffer->remains ) ) < 0 ) {
+                                       + ( buffer->length - buffer->remains ),
+                                       buffer->remains ) ) < 0 ) {
             /** Negative return values indicate an HAL error */
             return SF_SERIALMAC_ERROR_HAL_ERROR;
         } else if ( byteSent == 0 ) {
