@@ -87,7 +87,7 @@ void SerialMacCli::Wait4UserInput ( void )
       if ( line.length() > 0 )
         {
           oBuffLength = oBuffRemains = line.length();
-          strncpy ( output_buffer, line.c_str(), sizeof output_buffer );//FIXME
+          strncpy ( output_buffer, line.c_str(), SF_SERIAL_INPUT_MAX_SIZE );
         }
       else
         {
