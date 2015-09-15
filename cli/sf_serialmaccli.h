@@ -32,7 +32,7 @@ private:
     const char *port_name;
     void *port_context;
     void *port_rx_events;
-    void *mac_context = NULL;
+    struct sf_serialmac_ctx *mac_context = NULL;
 
     enum state {
         START_FRAME,

@@ -29,7 +29,7 @@ void* SerialMacCli::CreateSerialMacContext ( size_t size )
   if ( NULL==mac_context )
     {
       /** The serial MAC does not do any memory management */
-      mac_context = std::malloc ( size );
+      mac_context = ( struct sf_serialmac_ctx* ) std::malloc ( size );
     }
   return mac_context;
 }
