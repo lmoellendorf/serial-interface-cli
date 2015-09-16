@@ -34,13 +34,8 @@ private:
     void *port_rx_events;
     struct sf_serialmac_ctx *mac_context = NULL;
 
-    enum state {
-        START_FRAME,
-        APPEND_FRAME,
-    };
     int run = true;
-    int status = START_FRAME;
-    size_t iBuffLen = 0;
+
     size_t oBuffRemains = 0;
     size_t oBuffLength = 0;
     char *input_buffer;
