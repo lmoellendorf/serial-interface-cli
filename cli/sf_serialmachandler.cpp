@@ -19,9 +19,9 @@ int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
 {
   int ret = 0;
   /** Here the memory is allocated by serialmaccli */
-  struct sf_serialmac_ctx *mac_ctx = ( struct sf_serialmac_ctx* )
-                                     serialmaccli->CreateSerialMacContext (
-                                       sf_serialmac_ctx_size() );
+  struct sf_serialmac_ctx *mac_context = ( struct sf_serialmac_ctx* )
+                                         serialmaccli->GetSerialMacContext (
+                                             sf_serialmac_ctx_size() );
   const char *portname = serialmaccli->GetSerialPortName();
 
   /**

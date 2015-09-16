@@ -25,7 +25,7 @@ SerialMacCli::~SerialMacCli ( )
   free ( output_buffer );
 }
 
-void* SerialMacCli::CreateSerialMacContext ( size_t size )
+void* SerialMacCli::GetSerialMacContext ( size_t size )
 {
   if ( NULL==mac_context )
     {

@@ -18,7 +18,7 @@ public:
 
     //TODO: API
     void Update ( Event *event );
-    void* CreateSerialMacContext ( size_t size );
+    void* GetSerialMacContext ( size_t size );
     void* GetSerialMacContext ( );
     const char* GetSerialPortName();
     void** GetSerialPortContext();
