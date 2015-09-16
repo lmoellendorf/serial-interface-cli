@@ -29,12 +29,10 @@ find_library(LIBSERIALPORT serialport
 if(NOT LIBSERIALPORT)
     MESSAGE(STATUS "libserialport not found!")
     ExternalProject_Add(libserialport    # Name for custom target
-        #PREFIX ${PROJECT_BINARY_DIR}
         #--Download step--------------
         GIT_REPOSITORY git://sigrok.org/libserialport
         GIT_TAG master
         #--Configure step-------------
-        #SOURCE_DIR ${PROJECT_SOURCE_DIR}/../lib/libserialport/src
         # set prefix to the default install dir
         # (libserialport-prefix in this case)
         CONFIGURE_COMMAND ./autogen.sh && ./configure --disable-shared --prefix=<INSTALL_DIR>
@@ -60,9 +58,6 @@ else()
     MESSAGE(STATUS "libserialport found!")
     # serialport becomes a dummy target after first build
     # this prevents cmake from rebuilding cache/projects on subsequent builds
-    ## TODO: Would be nice to have a target for cleaning/updating
-    ## libserialport
-    #add_custom_target(serialport ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS ${LIBSERIALPORT})
     add_custom_target(serialport)
 endif()
 
