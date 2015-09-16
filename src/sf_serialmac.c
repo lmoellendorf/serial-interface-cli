@@ -140,13 +140,13 @@ struct sf_serialmac_ctx {
     /** Write function of the lower HAL. */
     SF_SERIALMAC_HAL_WRITE_FUNCTION write;
     /** Function to be called when a whole buffer has been received. */
-    SF_SERIALMAC_RX_EVENT rxEvt;
+    SF_SERIALMAC_EVENT rxEvt;
     /** Function to be called when a RX buffer is needed to receive a frame. */
-    SF_SERIALMAC_RX_EVENT rxBufEvt;
+    SF_SERIALMAC_EVENT rxBufEvt;
     /** Function to be called when a whole buffer has been sent. */
-    SF_SERIALMAC_TX_EVENT txEvt;
+    SF_SERIALMAC_EVENT txEvt;
     /** Function to be called when a TX buffer has been processed. */
-    SF_SERIALMAC_TX_EVENT txBufEvt;
+    SF_SERIALMAC_EVENT txBufEvt;
     /** Context of the frame to send. */
     struct sf_serialmac_frame txFrame;
     /** Context of the frame to receive. */
@@ -303,6 +303,11 @@ static void txProcHeaderCB ( struct sf_serialmac_ctx *ctx )
 
 static void txProcPayloadCB ( struct sf_serialmac_ctx *ctx )
 {
+    /**
+     * Save a pointer to the buffer_memory for the callback function.
+     * This pointer is passed to the upper layer so it can free the memory.
+     */
+    char *buffer_memory = ctx->txFrame.payloadBuffer.memory;
     uint16_t crcRead = 0;
     uint16_t crcCalc = 0;
     size_t processed = ctx->txFrame.payloadBuffer.length -
@@ -320,7 +325,7 @@ static void txProcPayloadCB ( struct sf_serialmac_ctx *ctx )
      */
     initBuffer ( &ctx->txFrame.payloadBuffer, NULL, 0, txProcPayloadCB );
     /** inform upper layer that the buffer has been processed */
-    ctx->txBufEvt ( ctx, processed );
+    ctx->txBufEvt ( ctx, buffer_memory, processed );
 }
 
 static void txProcCrcCB ( struct sf_serialmac_ctx *ctx )
@@ -329,7 +334,12 @@ static void txProcCrcCB ( struct sf_serialmac_ctx *ctx )
                                       SF_SERIALMAC_PROTOCOL_SYNC_WORD_LEN );
     txInit ( ctx );
     ctx->txFrame.state = IDLE;
-    ctx->txEvt ( ctx, length );
+    /**
+     * There is no buffer associated to frame as such (only to its payload).
+     * Therefore there is now pointer that can be passed here to the upper
+     * layer.
+     */
+    ctx->txEvt ( ctx, NULL, length );
 }
 
 static void rxInit ( struct sf_serialmac_ctx *ctx )
@@ -428,9 +438,9 @@ size_t sf_serialmac_ctx_size ( void )
 enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
         void *portHandle, SF_SERIALMAC_HAL_READ_FUNCTION read,
         SF_SERIALMAC_HAL_READ_WAIT_FUNCTION readWaiting,
-        SF_SERIALMAC_HAL_WRITE_FUNCTION write, SF_SERIALMAC_RX_EVENT rxEvt,
-        SF_SERIALMAC_RX_EVENT rxBufEvt,
-        SF_SERIALMAC_TX_EVENT txEvt, SF_SERIALMAC_TX_EVENT txBufEvt )
+        SF_SERIALMAC_HAL_WRITE_FUNCTION write, SF_SERIALMAC_EVENT rxEvt,
+        SF_SERIALMAC_EVENT rxBufEvt,
+        SF_SERIALMAC_EVENT txEvt, SF_SERIALMAC_EVENT txBufEvt )
 {
     if ( !ctx ) {
         return SF_SERIALMAC_ERROR_NPE;

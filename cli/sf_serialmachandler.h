@@ -40,8 +40,14 @@ private:
                                 char *frame_buffer,
                                 size_t frame_buffer_length
                               );
-    static void WriteEvent ( void *mac_context, size_t processed );
-    static void BufferTxEvent ( void *mac_context, size_t processed );
+    static void WriteEvent ( void *mac_context,
+                             char *nullpointer,
+                             size_t frame_length
+                           );
+    static void BufferTxEvent ( void *mac_context,
+                                char *frame_buffer,
+                                size_t frame_buffer_length
+                              );
     static bool filter ( Observer *observer, Event *event );
 
 };

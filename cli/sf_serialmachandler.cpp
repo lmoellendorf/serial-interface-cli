@@ -48,10 +48,10 @@ int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
                                    sp_input_waiting,
                                    ( SF_SERIALMAC_HAL_WRITE_FUNCTION )
                                    sp_nonblocking_write,
-                                   ( SF_SERIALMAC_RX_EVENT ) ReadEvent,
-                                   ( SF_SERIALMAC_RX_EVENT ) BufferRxEvent,
-                                   ( SF_SERIALMAC_TX_EVENT ) WriteEvent,
-                                   ( SF_SERIALMAC_TX_EVENT ) BufferTxEvent ) ) )
+                                   ( SF_SERIALMAC_EVENT ) ReadEvent,
+                                   ( SF_SERIALMAC_EVENT ) BufferRxEvent,
+                                   ( SF_SERIALMAC_EVENT ) WriteEvent,
+                                   ( SF_SERIALMAC_EVENT ) BufferTxEvent ) ) )
     {
       return ret;
     }
@@ -125,11 +125,10 @@ void SerialMacHandler::BufferRxEvent ( void *mac_context,
 }
 
 //Callback function to be called by the MAC when a whole frame has been sent.
-void SerialMacHandler::WriteEvent ( void *mac_context, size_t processed )
+void SerialMacHandler::WriteEvent ( void *mac_context, char *nullpointer,
+size_t processed )
 {
-  Event event ( WRITE, mac_context, NULL /* ( void* ) frame_buffer */,
-                processed
-              );
+  Event event ( WRITE, mac_context, nullpointer, processed );
 
   if ( processed )
     {
@@ -139,7 +138,8 @@ void SerialMacHandler::WriteEvent ( void *mac_context, size_t processed )
 
 // Callback function to be called by the MAC when an outgoing buffer has been
 // processed.
-void SerialMacHandler::BufferTxEvent ( void *mac_context, size_t processed )
+void SerialMacHandler::BufferTxEvent ( void *mac_context, char *frame_buffer,
+size_t processed )
 {
   //TODO: implement malloc/free or object based buffer handling.
 }

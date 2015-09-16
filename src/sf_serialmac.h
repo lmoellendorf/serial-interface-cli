@@ -124,23 +124,13 @@ typedef size_t ( *SF_SERIALMAC_HAL_WRITE_FUNCTION ) ( void *port_handle,
         char *frame_buffer, size_t frame_buffer_length );
 /**
  * Signature of upper layer's callback functions to be called by the MAC
- * when a frame header has been received or when a whole frame has been
- * received.
- * These have to be passed on @ref initialization to sf_serialmac_init().
+ * on events.
+ * These functions have to be passed on @ref initialization to
+ * sf_serialmac_init().
  */
-typedef void ( *SF_SERIALMAC_RX_EVENT ) ( void *mac_context,
+typedef void ( *SF_SERIALMAC_EVENT ) ( void *mac_context,
         char *frame_buffer,
         size_t frame_buffer_length );
-/**
- * Signature of upper layer's callback functions to be called by the MAC
- * when an outgoing payload buffer has been processed or when a whole frame has
- * been sent.
- * These have to be passed on @ref initialization to sf_serialmac_init().
- *
- * @param bytes_sent Number of bytes sent with the frame.
- */
-typedef void ( *SF_SERIALMAC_TX_EVENT ) ( void *mac_context,
-        size_t bytes_sent );
 
 /** @} end of STACKFORCE_SERIALMAC_API_TYPEDEFS */
 
@@ -197,9 +187,9 @@ size_t sf_serialmac_ctx_size ( void );
 enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
         void *port_handle, SF_SERIALMAC_HAL_READ_FUNCTION read,
         SF_SERIALMAC_HAL_READ_WAIT_FUNCTION read_wait,
-        SF_SERIALMAC_HAL_WRITE_FUNCTION write, SF_SERIALMAC_RX_EVENT rx_event,
-        SF_SERIALMAC_RX_EVENT rx_buffer_event,
-        SF_SERIALMAC_TX_EVENT tx_event, SF_SERIALMAC_TX_EVENT tx_buffer_event );
+        SF_SERIALMAC_HAL_WRITE_FUNCTION write, SF_SERIALMAC_EVENT rx_event,
+        SF_SERIALMAC_EVENT rx_buffer_event,
+        SF_SERIALMAC_EVENT tx_event, SF_SERIALMAC_EVENT tx_buffer_event );
 
 /**
  * This function can be passed to the HAL layer as callback function to be
