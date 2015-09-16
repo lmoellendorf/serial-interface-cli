@@ -20,6 +20,7 @@ SerialMacCli::SerialMacCli ( const char* portname )
 
 SerialMacCli::~SerialMacCli ( )
 {
+  SerialMacHandler::Detach ( this );
   free ( mac_context );
   free ( input_buffer );
   free ( output_buffer );
@@ -68,18 +69,16 @@ int SerialMacCli::Run()
     {
       return ret;
     }
-//   /** Start waiting for user input */
-//   std::thread userInputEvent ( &SerialMacCli::Wait4UserInput, this );
-//   userInputEvent.detach();
+  /** Start waiting for user input */
+  std::thread userInputEvent ( &SerialMacCli::Wait4UserInput, this );
+  userInputEvent.detach();
   return ret;
 }
 
 
 void SerialMacCli::Wait4UserInput ( void )
 {
-  enum sf_serialmac_return ret = SF_SERIALMAC_SUCCESS;
   std::string line = "";
-  const size_t frmLength = 9;
 
   if ( !oBuffRemains )
     {
@@ -99,41 +98,7 @@ void SerialMacCli::Wait4UserInput ( void )
     }
   if ( oBuffRemains )
     {
-      while ( ( ret = sf_serialmac_tx_frame ( mac_ctx, frmLength,
-                                              output_buffer + ( oBuffLength - oBuffRemains ),
-                                              oBuffRemains ) ) != SF_SERIALMAC_SUCCESS )
-        {
-          std::cerr << "TX Error " << ret << "\nline: "
-                    << output_buffer + ( oBuffLength - oBuffRemains )
-                    << "\nlength: "
-                    << oBuffRemains
-                    << std::endl;
-          sleep ( 1 );
-        }
-      //        switch (status)
-//        {
-//        case START_FRAME:
-//            if((ret = sf_serialmac_txFrameStart(mac_ctx,
-//                                                 frmLength)) != SF_SERIALMAC_SUCCESS)
-//            {
-//                printf("Frame Error %i\n", ret);
-//            }
-//            status = APPEND_FRAME;
-//        //break; omitted
-//        case APPEND_FRAME:
-//            while((ret = sf_serialmac_txFrameAppend(mac_ctx,
-//                         oBuff + (oBuffLength - oBuffRemains),
-//                         oBuffRemains)) != SF_SERIALMAC_SUCCESS)
-//            {
-//                printf("TX Error %i\nline: %s\nlength: %zd\n", ret,
-//                       oBuff + (oBuffLength - oBuffRemains), oBuffRemains);
-//                sleep(1);
-//            }
-//            break;
-//        default:
-//            printf("Exception Error\n");
-//            break;
-//        }
+      SerialMacHandler::Tx ( this, output_buffer, oBuffRemains );
     }
 }
 
@@ -160,6 +125,9 @@ void SerialMacCli::Update ( Event *event )
         }
       break;
     case SerialMacHandler::WRITE:
+      void *dummy = NULL;//FIXME
+      oBuffRemains -= event->GetDetails ( &dummy );
+      Wait4UserInput();
       break;
     }
 }

@@ -40,7 +40,7 @@ int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
     {
       return ret;
     }
-  if ( ( ret = sf_serialmac_init ( mac_ctx,
+  if ( ( ret = sf_serialmac_init ( mac_context,
                                    ( void * ) *port,
                                    ( SF_SERIALMAC_HAL_READ_FUNCTION )
                                    sp_nonblocking_read,
@@ -59,7 +59,9 @@ int SerialMacHandler::Attach ( SerialMacCli* serialmaccli )
   Subject::Attach ( serialmaccli );
 
   /** Start waiting for serial input */
-  std::thread halRxEvent ( &SerialMacHandler::Wait4HalEvent, *port, *port_events, SP_EVENT_RX_READY, mac_ctx, sf_serialmac_hal_rx_callback );
+  std::thread halRxEvent ( &SerialMacHandler::Wait4HalEvent, *port,
+                           *port_events, SP_EVENT_RX_READY, mac_context,
+                           sf_serialmac_hal_rx_callback, 100000000 );
   halRxEvent.detach();
 
   return ret;
@@ -95,13 +97,11 @@ void SerialMacHandler::ReadEvent ( void *mac_context,
                                    char *frame_buffer,
                                    size_t frame_buffer_length )
 {
-  std::forward_list<Observer*> filtered_observers;
   Event event ( READ, mac_context, ( void* ) frame_buffer, frame_buffer_length
               );
 
   if ( frame_buffer && frame_buffer_length )
     {
-      //TODO: lambda function?
       Subject::Notify ( &event, ( Filter ) filter );
     }
 }
@@ -124,18 +124,24 @@ void SerialMacHandler::BufferRxEvent ( void *mac_context,
     }
 }
 
-void SerialMacHandler::WriteEvent ( void *mac_context, size_t processed ) //FIXME
+//Callback function to be called by the MAC when a whole frame has been sent.
+void SerialMacHandler::WriteEvent ( void *mac_context, size_t processed )
 {
+  Event event ( WRITE, mac_context, NULL /* ( void* ) frame_buffer */,
+                processed
+              );
 
-  //status = START_FRAME;
+  if ( processed )
+    {
+      Subject::Notify ( &event, ( Filter ) filter );
+    }
 }
 
-void SerialMacHandler::BufferTxEvent ( void *mac_context, size_t processed ) //FIXME
+// Callback function to be called by the MAC when an outgoing buffer has been
+// processed.
+void SerialMacHandler::BufferTxEvent ( void *mac_context, size_t processed )
 {
-
-  //oBuffRemains -= processed;
-  //thread userInputEventLoop ( Wait4UserInput, this );
-  //userInputEventLoop.detach();
+  //TODO: implement malloc/free or object based buffer handling.
 }
 
 int SerialMacHandler::InitSerialPort ( sp_port **port, const char *portname,
@@ -250,40 +256,58 @@ int SerialMacHandler::InitSerialPort ( sp_port **port, const char *portname,
   return 0;
 }
 
+void SerialMacHandler::Tx ( SerialMacCli* serialmaccli, char *buffer,
+                            size_t length )
+{
+  int ret = 0;
+  /** Here the memory is allocated by serialmaccli */
+  struct sf_serialmac_ctx *mac_context = ( struct sf_serialmac_ctx* )
+                                         serialmaccli->GetSerialMacContext ();
+  /**
+   * Here we need a pointer to pointer because the memory will be allocated by
+   * libserialport
+   */
+  struct sp_port **port = ( struct sp_port** )
+                          serialmaccli->GetSerialPortContext();
+  struct sp_event_set **port_events = ( struct sp_event_set** )
+                                      serialmaccli->GetSerialPortRxEvents();
+
+
+  /** Start waiting for serial input */
+  std::thread halTxEvent ( &SerialMacHandler::Wait4HalEvent, *port,
+                           *port_events, SP_EVENT_TX_READY, mac_context,
+                           sf_serialmac_hal_tx_callback, 100000000 );
+  halTxEvent.detach();
+
+  //TODO: add error handling
+  ret = sf_serialmac_tx_frame ( mac_context, length,
+                                buffer/*+ ( oBuffLength - oBuffRemains ) */,
+                                length );
+  /** Call the callback to trigger transmission. */
+  sf_serialmac_hal_tx_callback ( mac_context );
+
+}
+
+
 void SerialMacHandler::Wait4HalEvent ( sp_port *port,
                                        sp_event_set *port_events,
                                        enum sp_event event,
-                                       struct sf_serialmac_ctx *mac_ctx,
-                                       enum sf_serialmac_return ( *sf_serialmac_hal_callback ) ( struct sf_serialmac_ctx *ctx ) )
+                                       struct sf_serialmac_ctx *mac_context,
+                                       enum sf_serialmac_return
+                                       ( *sf_serialmac_hal_callback )
+                                       ( struct sf_serialmac_ctx* ctx ),
+                                       int nanonap
+                                     )
 {
-//   struct timespec
-//   {
-//     time_t tv_sec;        /* seconds */
-//     long   tv_nsec;       /* nanoseconds */
-//   };
-
-  const struct timespec nap = { 0, 100000000};
+  const struct timespec nap = { /* seconds */ 0, /* nanoseconds */ nanonap};
 
   if ( SP_OK <= sp_add_port_events ( port_events, port, event ) )
     {
       while ( SP_OK <= sp_wait ( port_events, 0 ) )
         {
-          sf_serialmac_hal_callback ( mac_ctx );
-          nanosleep ( &nap, NULL ); // TODO really needed?
+          sf_serialmac_hal_callback ( mac_context );
+          nanosleep ( &nap, NULL );
         }
     }
   return;
 }
-
-/* TODO This would be an alternative */
-//  thread runSerialMacLoop ( &SerialMacCli::RunSerialMac, this );
-//  runSerialMacLoop.detach();
-
-// void SerialMacCli::RunSerialMac ( ) //T
-// {
-//   /* Loop until the user quits */
-//   while ( run )
-//     {
-//       sf_serialmac_entry ( ( struct sf_serialmac_ctx * ) mac_ctx );
-//     }
-// }
