@@ -129,8 +129,8 @@ typedef size_t ( *SF_SERIALMAC_HAL_WRITE_FUNCTION ) ( void *port_handle,
  * sf_serialmac_init().
  */
 typedef void ( *SF_SERIALMAC_EVENT ) ( void *mac_context,
-        char *frame_buffer,
-        size_t frame_buffer_length );
+                                       char *frame_buffer,
+                                       size_t frame_buffer_length );
 
 /** @} end of STACKFORCE_SERIALMAC_API_TYPEDEFS */
 
