@@ -1,51 +1,35 @@
 #ifndef SERIALMACCLI_H
 #define SERIALMACCLI_H
 
-#include <string>
 extern "C"
 {
 #include <libserialport.h>
 }
-#include "sf_serialmac.h"
 #include "sf_observer.h"
-class Observer;
 
 class SerialMacCli: public Observer
 {
 public:
-    SerialMacCli (const char* portname);
+    SerialMacCli ( const char* portname );
     ~SerialMacCli ( );
 
-    //TODO: API
+    int InitSerialPort ();
+    void DeInitSerialPort();
     void Update ( Event *event );
-    void* GetSerialMacContext ( size_t size );
-    void* GetSerialMacContext ( );
-    const char* GetSerialPortName();
-    void** GetSerialPortContext();
-    void** GetSerialPortConfig();
-    void** GetSerialPortRxEvents();
 
     int Run ( void );
 
 private:
-    void *port_config;
+    struct sp_port_config *saved_port_config;
     const char *port_name;
-    void *port_context;
-    void *port_rx_events;
+    struct sp_port *port_context = NULL;
+    struct sp_event_set *port_events = NULL;
     struct sf_serialmac_ctx *mac_context = NULL;
 
     int run = true;
 
-    size_t oBuffRemains = 0;
-    size_t oBuffLength = 0;
-    char *input_buffer;
-    char *output_buffer;
-    void RunSerialMac ( void );
     void Wait4UserInput ( void );
-    void Wait4HalTxEvent ( void );
-    void Wait4HalRxEvent ( void );
-    void Wait4HalEvent ( enum sp_event event,
-                         enum sf_serialmac_return ( *sf_serialmac_halCb ) ( struct sf_serialmac_ctx *ctx ) );
+    void Wait4HalEvent ( int nano_nap );
 };
 
 #endif // SERIALMACCLI_H

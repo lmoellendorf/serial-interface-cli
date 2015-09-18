@@ -1,7 +1,7 @@
 #include <forward_list>
 
-#include "sf_subject.h"
 #include "sf_observer.h"
+#include "sf_subject.h"
 #include "sf_event.h"
 
 std::forward_list<Observer*> Subject::observers;

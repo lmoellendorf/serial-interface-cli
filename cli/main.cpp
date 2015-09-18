@@ -12,18 +12,12 @@
  *
  =============================================================================*/
 
-#include <iostream>
 #include <getopt.h>
+#include <cstddef>
+#include <string>
 #include <libgen.h>
+#include <iostream>
 
-#include "sf_subject.h"
-
-extern "C"
-{
-#include <libserialport.h>
-}
-
-#include "sf_serialmac.h"
 #include "version.h"
 #include "sf_serialmaccli.h"
 

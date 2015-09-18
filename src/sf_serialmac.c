@@ -141,14 +141,14 @@ struct sf_serialmac_ctx {
     SF_SERIALMAC_HAL_READ_WAIT_FUNCTION readWait;
     /** Write function of the lower HAL. */
     SF_SERIALMAC_HAL_WRITE_FUNCTION write;
-    /** Function to be called when a whole buffer has been received. */
-    SF_SERIALMAC_EVENT rxEvt;
+    /** Function to be called when a whole frame has been received. */
+    SF_SERIALMAC_EVENT rx_frame_event;
     /** Function to be called when a RX buffer is needed to receive a frame. */
-    SF_SERIALMAC_EVENT rxBufEvt;
-    /** Function to be called when a whole buffer has been sent. */
-    SF_SERIALMAC_EVENT txEvt;
+    SF_SERIALMAC_EVENT rx_buffer_event;
+    /** Function to be called when a whole frame has been sent. */
+    SF_SERIALMAC_EVENT tx_frame_event;
     /** Function to be called when a TX buffer has been processed. */
-    SF_SERIALMAC_EVENT txBufEvt;
+    SF_SERIALMAC_EVENT tx_buffer_event;
     /** Context of the frame to send. */
     struct sf_serialmac_frame txFrame;
     /** Context of the frame to receive. */
@@ -329,7 +329,7 @@ static void txProcPayloadCB ( struct sf_serialmac_ctx *ctx )
      */
     initBuffer ( &ctx->txFrame.payloadBuffer, NULL, 0, txProcPayloadCB );
     /** inform upper layer that the buffer has been processed */
-    ctx->txBufEvt ( ctx, buffer_memory, processed );
+    ctx->tx_buffer_event ( ctx, buffer_memory, processed );
 }
 
 static void txProcCrcCB ( struct sf_serialmac_ctx *ctx )
@@ -343,7 +343,7 @@ static void txProcCrcCB ( struct sf_serialmac_ctx *ctx )
      * Therefore there is now pointer that can be passed here to the upper
      * layer.
      */
-    ctx->txEvt ( ctx, NULL, length );
+    ctx->tx_frame_event ( ctx, NULL, length );
 }
 
 static void rxInit ( struct sf_serialmac_ctx *ctx )
@@ -392,7 +392,7 @@ static void rxProcHeaderCB ( struct sf_serialmac_ctx *ctx )
     ctx->rxFrame.remains = UINT8_TO_UINT16 ( ctx->rxFrame.headerMemory +
                            SF_SERIALMAC_PROTOCOL_SYNC_WORD_LEN );
     /** Inform upper layer that there has been a frame header received */
-    ctx->rxBufEvt ( ctx, NULL, ctx->rxFrame.remains );
+    ctx->rx_buffer_event ( ctx, NULL, ctx->rxFrame.remains );
     ctx->rxFrame.state = PAYLOAD;
 }
 
@@ -422,17 +422,20 @@ static void rxProcCrcCB ( struct sf_serialmac_ctx *ctx )
     crcCalc = crc_calc_finalize ( ( uint8_t* )
                                   ctx->rxFrame.payloadBuffer.memory,
                                   length );
-    if ( crcRx == crcCalc ) {
+    if ( crcRx != crcCalc ) {
         /**
-         * Inform the upper layer that a frame has been completed
+         * A frame of length 0 indicates an CRC error.
+         * Which means this MAC does not support zero length frames.
+         * However, I cannot think of any use case where someone would need
+         * to distinguish between broken frames and frames with zero length.
+         * Who needs frames without payload at all?
          */
-        ctx->rxEvt ( ctx, ctx->rxFrame.payloadBuffer.memory, length );
+        length = 0;
     }
     /**
-     * Inform upper layer that the buffer can be freed.
+     * Inform the upper layer that a frame has been completed.
      */
-    ctx->rxBufEvt ( ctx, ctx->rxFrame.payloadBuffer.memory,
-                    ctx->rxFrame.payloadBuffer.length );
+    ctx->rx_frame_event ( ctx, ctx->rxFrame.payloadBuffer.memory, length );
     /** Regardless of the CRC, start waiting for the next frame. */
     rxInit ( ctx );
     ctx->rxFrame.state = IDLE;
@@ -461,10 +464,10 @@ enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
     ctx->read = read;
     ctx->readWait = readWaiting;
     ctx->write = write;
-    ctx->rxEvt = rxEvt;
-    ctx->rxBufEvt = rxBufEvt;
-    ctx->txEvt = txEvt;
-    ctx->txBufEvt = txBufEvt;
+    ctx->rx_frame_event = rxEvt;
+    ctx->rx_buffer_event = rxBufEvt;
+    ctx->tx_frame_event = txEvt;
+    ctx->tx_buffer_event = txBufEvt;
     txInit ( ctx );
     ctx->txFrame.state = IDLE;
     rxInit ( ctx );

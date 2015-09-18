@@ -8,43 +8,30 @@ class SerialMacHandler : public Subject
 {
 public:
     enum event_identifier {
-        READ,
-        WRITE,
+        READ_BUFFER,
+        READ_FRAME,
+        WRITE_FRAME,
+        WRITE_BUFFER,
     };
-    static int Attach ( SerialMacCli* serialmaccli );
-    static void Detach ( SerialMacCli* serialmaccli );
-    static void Notify ( Event *event );
-    static void Tx ( SerialMacCli* serialmaccli, char *buffer, size_t length );
+    static int Attach ( SerialMacCli *serialmaccli,
+                        struct sp_port *port_context,
+                        struct sf_serialmac_ctx *mac_context
+                      );
 
 private:
-    static int InitSerialPort ( sp_port **port,
-                                const char *portname,
-                                sp_port_config **saved_port_config,
-                                sp_event_set **port_events
-                              );
-    static void Wait4HalEvent ( sp_port *port,
-                                sp_event_set *port_events,
-                                enum sp_event event,
-                                struct sf_serialmac_ctx
-                                *mac_context,
-                                enum sf_serialmac_return
-                                ( *sf_serialmac_hal_callback )
-                                ( struct sf_serialmac_ctx* ctx ),
-                                int nanonap
-                              );
-    static void ReadEvent ( void *mac_context,
+    static void ReadFrameEvent ( void *mac_context,
                             char *frame_buffer,
                             size_t frame_buffer_length
                           );
-    static void BufferRxEvent ( void *mac_context,
+    static void ReadBufferEvent ( void *mac_context,
                                 char *frame_buffer,
                                 size_t frame_buffer_length
                               );
-    static void WriteEvent ( void *mac_context,
+    static void WriteFrameEvent ( void *mac_context,
                              char *nullpointer,
                              size_t frame_length
                            );
-    static void BufferTxEvent ( void *mac_context,
+    static void WriteBufferEvent ( void *mac_context,
                                 char *frame_buffer,
                                 size_t frame_buffer_length
                               );
