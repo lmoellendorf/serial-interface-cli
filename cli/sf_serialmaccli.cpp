@@ -36,22 +36,22 @@ int SerialMacCli::InitSerialPort ()
   struct sp_port **available_ports = NULL;
 
   /** If the user specified no port, choose any. */
-  if ( NULL == port_name )
+  if ( !port_name )
     {
       sp_ret = sp_list_ports ( &available_ports );
       if ( SP_OK > sp_ret )
         {
           return  sp_ret;
         }
-      if ( NULL != available_ports[0] )
+      if ( available_ports[0] )
         {
           sp_ret = sp_copy_port ( available_ports[0], &port_context );
         }
-      if ( NULL != available_ports )
+      if ( available_ports )
         {
           sp_free_port_list ( available_ports );
         }
-      if ( SP_OK > sp_ret  || ( NULL ==  port_context ) )
+      if ( SP_OK > sp_ret  || ( !port_context ) )
         {
           std::cerr << "Could not find any serial port!\n" << std::endl;
           return ( 0 == sp_ret ? 1 : sp_ret );
@@ -60,7 +60,7 @@ int SerialMacCli::InitSerialPort ()
   else
     {
       sp_ret = sp_get_port_by_name ( port_name, &port_context );
-      if ( SP_OK > sp_ret || ( NULL !=  port_context ) )
+      if ( SP_OK > sp_ret || !port_context  )
         {
           std::cerr << "Port \"" << port_name << "\" could not be found!\n"  <<
                     std::endl;
@@ -144,21 +144,21 @@ int SerialMacCli::InitSerialPort ()
                                     ( int ) SP_EVENT_RX_READY ) );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Could not set TX event on port \"" << port_name << "\"!\n"
+      std::cerr << "Could not set events on port \"" << port_name << "\"!\n"
                 << std::endl;
       return sp_ret;
     }
-
+  std::cout << "Opened port: \"" << port_name << "\"!\n";
   return sp_ret;
 }
 
 void SerialMacCli::DeInitSerialPort()
 {
-  if ( NULL != port_events )
+  if ( port_events )
     {
       sp_free_event_set ( port_events );
     }
-  if ( NULL !=  port_context )
+  if ( port_context )
     {
       /** Restore previous port configuration */
       sp_set_config ( port_context, saved_port_config );
@@ -186,9 +186,7 @@ int SerialMacCli::Run()
   halEvent.detach();
 
 
-  /** Start waiting for user input */
-  std::thread userInputEvent ( &SerialMacCli::Wait4UserInput, this );
-  userInputEvent.detach();
+  Wait4UserInput();
 
   return ret;
 }
@@ -230,7 +228,7 @@ void SerialMacCli::Wait4HalEvent ( int nano_nap )
 {
   const struct timespec nap = { /* seconds */ 0, /* nanoseconds */ nano_nap};
 
-  while ( SP_OK <= sp_wait ( port_events, 0 ) )
+  while ( SP_OK <= sp_wait ( port_events, 0 ) && run )
     {
       sf_serialmac_entry ( mac_context );
       nanosleep ( &nap, NULL );
