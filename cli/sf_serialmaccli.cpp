@@ -148,7 +148,13 @@ int SerialMacCli::InitSerialPort ()
                 << std::endl;
       return sp_ret;
     }
-  std::cout << "Opened port: \"" << port_name << "\"!\n";
+
+  port_name = sp_get_port_name(port_context);
+  if ( port_name )
+    {
+      std::cout << "Opened port: \"" << port_name << "\""  << std::endl;
+    }
+
   return sp_ret;
 }
 
