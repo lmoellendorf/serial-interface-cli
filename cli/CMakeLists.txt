@@ -21,6 +21,8 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra -pedantic -fme
 if (WIN32)
     MESSAGE(STATUS "On Windows")
     set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+    find_library ( SETUPAPI setupapi )
+    set(WIN32_DEPS ${SETUPAPI})
 endif()
 
 find_library(LIBSERIALPORT serialport
@@ -118,6 +120,7 @@ if(LIBSERIALPORT)
         ${LIBSERIALPORT}
         observer
         ${CMAKE_THREAD_LIBS_INIT}
+        ${WIN32_DEPS}
         )
 endif()
 
