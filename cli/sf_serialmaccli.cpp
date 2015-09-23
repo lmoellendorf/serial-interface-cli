@@ -53,7 +53,7 @@ int SerialMacCli::InitSerialPort ()
         }
       if ( SP_OK > sp_ret  || ( !port_context ) )
         {
-          std::cerr << "Could not find any serial port!\n" << std::endl;
+          std::cerr << "Could not find any serial port!" << std::endl;
           return ( 0 == sp_ret ? 1 : sp_ret );
         }
     }
@@ -62,7 +62,7 @@ int SerialMacCli::InitSerialPort ()
       sp_ret = sp_get_port_by_name ( port_name, &port_context );
       if ( SP_OK > sp_ret || !port_context  )
         {
-          std::cerr << "Port \"" << port_name << "\" could not be found!\n"  <<
+          std::cerr << "Port \"" << port_name << "\" could not be found!"  <<
                     std::endl;
           return ( 0 == sp_ret ? 1 : sp_ret );
         }
@@ -71,7 +71,7 @@ int SerialMacCli::InitSerialPort ()
   sp_ret = sp_open ( port_context, SP_MODE_READ_WRITE );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Port \"" << port_name << "\" could not be opened!\n" <<
+      std::cerr << "Port \"" << port_name << "\" could not be opened!" <<
                 std::endl;
       return sp_ret;
     }
@@ -81,14 +81,14 @@ int SerialMacCli::InitSerialPort ()
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Config of port  \"" << port_name
-                << "\" could not be saved! (Out of memory?)\n" << std::endl;
+                << "\" could not be saved! (Out of memory?)" << std::endl;
       return sp_ret;
     }
   sp_ret = sp_get_config ( port_context, saved_port_config );
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Config of port  \"" << port_name
-                << "\" could not be saved! (Read error?)\n" << std::endl;
+                << "\" could not be saved! (Read error?)" << std::endl;
       return sp_ret;
     }
 
@@ -96,7 +96,7 @@ int SerialMacCli::InitSerialPort ()
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Could not set baudrate to " << SF_SERIAL_BAUDRATE
-                << " on port \"" << port_name << "\"!\n" << std::endl;
+                << " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
@@ -104,7 +104,7 @@ int SerialMacCli::InitSerialPort ()
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Could not set number of bits to " << SF_SERIAL_BITS
-                << " on port \"" << port_name << "\"!\n" << std::endl;
+                << " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
@@ -112,7 +112,7 @@ int SerialMacCli::InitSerialPort ()
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Could not set parity to " << SP_PARITY_NONE
-                << " on port \"" << port_name << "\"!\n" << std::endl;
+                << " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
@@ -120,7 +120,7 @@ int SerialMacCli::InitSerialPort ()
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Could not set stop-bits to " << SF_SERIAL_STOPBITS <<
-                " on port \"" << port_name << "\"!\n" << std::endl;
+                " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
@@ -128,7 +128,7 @@ int SerialMacCli::InitSerialPort ()
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Could not set flow-control to " << SF_SERIAL_FLOWCTRL <<
-                " on port \"" << port_name << "\"!\n" << std::endl;
+                " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
@@ -144,7 +144,7 @@ int SerialMacCli::InitSerialPort ()
                                     ( int ) SP_EVENT_RX_READY ) );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Could not set events on port \"" << port_name << "\"!\n"
+      std::cerr << "Could not set events on port \"" << port_name << "\"!"
                 << std::endl;
       return sp_ret;
     }
