@@ -121,24 +121,16 @@ typedef size_t ( *SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) ( void *port_handle );
  * @return Number of bytes successfully written.
  */
 typedef size_t ( *SF_SERIALMAC_HAL_WRITE_FUNCTION ) ( void *port_handle,
-        const char *frame_buffer, size_t frame_buffer_length );
+        char *frame_buffer, size_t frame_buffer_length );
 /**
  * Signature of upper layer's callback functions to be called by the MAC
- * when a frame header has been received or when a whole frame has been
- * received.
- * These have to be passed on @ref initialization to sf_serialmac_init().
+ * on events.
+ * These functions have to be passed on @ref initialization to
+ * sf_serialmac_init().
  */
-typedef void ( *SF_SERIALMAC_RX_EVENT ) ( const char *frame_buffer,
-        size_t frame_buffer_length );
-/**
- * Signature of upper layer's callback functions to be called by the MAC
- * when an outgoing payload buffer has been processed or when a whole frame has
- * been sent.
- * These have to be passed on @ref initialization to sf_serialmac_init().
- *
- * @param bytes_sent Number of bytes sent with the frame.
- */
-typedef void ( *SF_SERIALMAC_TX_EVENT ) ( size_t bytes_sent );
+typedef void ( *SF_SERIALMAC_EVENT ) ( void *mac_context,
+                                       char *frame_buffer,
+                                       size_t frame_buffer_length );
 
 /** @} end of STACKFORCE_SERIALMAC_API_TYPEDEFS */
 
@@ -195,9 +187,9 @@ size_t sf_serialmac_ctx_size ( void );
 enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
         void *port_handle, SF_SERIALMAC_HAL_READ_FUNCTION read,
         SF_SERIALMAC_HAL_READ_WAIT_FUNCTION read_wait,
-        SF_SERIALMAC_HAL_WRITE_FUNCTION write, SF_SERIALMAC_RX_EVENT rx_event,
-        SF_SERIALMAC_RX_EVENT rx_buffer_event,
-        SF_SERIALMAC_TX_EVENT tx_event, SF_SERIALMAC_TX_EVENT tx_buffer_event );
+        SF_SERIALMAC_HAL_WRITE_FUNCTION write, SF_SERIALMAC_EVENT rx_event,
+        SF_SERIALMAC_EVENT rx_buffer_event,
+        SF_SERIALMAC_EVENT tx_event, SF_SERIALMAC_EVENT tx_buffer_event );
 
 /**
  * This function can be passed to the HAL layer as callback function to be
@@ -206,7 +198,13 @@ enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
  * This is an alternative to the usage of sf_serialmac_entry().
  *
  * @param ctx Points to the memory region the MAC uses to store its context.
- * @return Error state.
+ * @return Error state:
+ *         - SF_SERIALMAC_ERROR_HAL_ERROR: The HAL reported an error.
+ *         - SF_SERIALMAC_ERROR_HAL_BUSY: The HAL is busy.
+ *         - SF_SERIALMAC_ERROR_HAL_SLOW: The HAL is busy, but you may retry
+ *                                        immediatly (Workaround for slow HALs).
+ *         - SF_SERIALMAC_SUCCESS: The payload buffer has been processed.
+ *         - SF_SERIALMAC_ERROR_EXCEPTION: You hit a bug.
  */
 enum sf_serialmac_return sf_serialmac_hal_tx_callback ( struct sf_serialmac_ctx
         *ctx );
@@ -242,7 +240,10 @@ void sf_serialmac_entry ( struct sf_serialmac_ctx *ctx );
  *
  * @param ctx Points to the memory region the MAC uses to store its context.
  * @param frame_length Length of the frame to send.
- * @return Error state.
+ * @return Error state:
+ *         - SF_SERIALMAC_ERROR_NPE: ctx is NULL
+ *         - SF_SERIALMAC_ERROR_FRM_PENDING: A frame has been started already
+ *                                           and not completed yet.
  */
 enum sf_serialmac_return sf_serialmac_tx_frame_start ( struct sf_serialmac_ctx
         *ctx, size_t frame_length );
@@ -268,7 +269,10 @@ enum sf_serialmac_return sf_serialmac_tx_frame_start ( struct sf_serialmac_ctx
  * appended to the frame.
  * @param frame_buffer_size Length of the buffer containing the payload to be
  * appended to the frame.
- * @return Error state.
+ * @return Error state:
+ *         - SF_SERIALMAC_ERROR_NPE: ctx is NULL
+ *         - SF_SERIALMAC_ERROR_RW_PENDING: There is still a payload buffer in
+ *                                          progress.
  */
 enum sf_serialmac_return sf_serialmac_tx_frame_append ( struct sf_serialmac_ctx
         *ctx, const char *frame_buffer, size_t frame_buffer_size );
@@ -288,7 +292,12 @@ enum sf_serialmac_return sf_serialmac_tx_frame_append ( struct sf_serialmac_ctx
  * appended to the frame.
  * @param frame_buffer_size Length of the buffer containing the payload to be
  * appended to the frame.
- * @return Error state.
+ * @return Error state:
+ *         - SF_SERIALMAC_ERROR_NPE: ctx is NULL
+ *         - SF_SERIALMAC_ERROR_FRM_PENDING: A frame has been started already
+ *                                           and not processed yet.
+ *         - SF_SERIALMAC_ERROR_RW_PENDING: There is still a payload buffer in
+ *                                          progress.
  */
 enum sf_serialmac_return sf_serialmac_tx_frame ( struct sf_serialmac_ctx *ctx,
         size_t frame_length, const char *frame_buffer, size_t frame_buffer_size
