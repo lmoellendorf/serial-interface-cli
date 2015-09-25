@@ -6,7 +6,7 @@
 class Observer
 {
 public:
-    virtual void Update ( Event *event )=0;
+    virtual void Update ( Event *event ) = 0;
 };
 
 #endif // OBSERVER_H
