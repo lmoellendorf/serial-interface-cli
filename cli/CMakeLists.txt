@@ -73,9 +73,10 @@ include_directories(
     )
 
 # This is only added to display the header in your IDE!
-set(LIBSERIALPORT_HEADER
+set(LIBSERIALPORT_HEADERS
     ${PROJECT_BINARY_DIR}/libserialport-prefix/include/libserialport.h
     )
+set_source_files_properties(${LIBSERIALPORT_HEADERS} PROPERTIES GENERATED TRUE)
 
 # This is only added to display the files in your IDE!
 set(OBERSERVER_FILES
@@ -86,10 +87,8 @@ set(OBERSERVER_FILES
     ${PROJECT_SOURCE_DIR}/../dep/observer/sf_subject.cpp
     )
 
-set_source_files_properties(${LIBSERIALPORT_HEADER} PROPERTIES GENERATED TRUE)
-
 set(SF_SERIALMACCLI_HEADERS
-    ${LIBSERIALPORT_HEADER}
+    ${LIBSERIALPORT_HEADERS}
     ${PROJECT_BINARY_DIR}/version.h
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.h
     ${PROJECT_SOURCE_DIR}/sf_serialmachandler.h
