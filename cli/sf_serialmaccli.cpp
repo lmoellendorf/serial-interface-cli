@@ -60,7 +60,7 @@ int SerialMacCli::InitSerialPort ()
   else
     {
       sp_ret = sp_get_port_by_name ( port_name, &port_context );
-      if ( SP_OK > sp_ret || !port_context  )
+      if ( SP_OK > sp_ret || !port_context )
         {
           std::cerr << "Port \"" << port_name << "\" could not be found!"  <<
                     std::endl;
@@ -149,7 +149,7 @@ int SerialMacCli::InitSerialPort ()
       return sp_ret;
     }
 
-  port_name = sp_get_port_name(port_context);
+  port_name = sp_get_port_name ( port_context );
   if ( port_name )
     {
       std::cout << "Opened port: \"" << port_name << "\""  << std::endl;
