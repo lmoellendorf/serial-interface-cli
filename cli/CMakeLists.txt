@@ -7,7 +7,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/../ ${PROJECT_BINARY_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer
     ${PROJECT_BINARY_DIR}/observer)
 
-set (SERIALMACCLI_PRODUCT_NAME "${SERIALMAC_PRODUCT_NAME} CLI" CACHE STRING "product")
+set (SERIALMACCLI_PRODUCT_NAME "sf-serial" CACHE STRING "product")
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -136,9 +136,9 @@ set(SF_SERIALMACCLI_SOURCES
     ${OBERSERVER_FILES}
     )
 
-add_executable(ssi  ${SF_SERIALMACCLI_SOURCES})
+add_executable(sf  ${SF_SERIALMACCLI_SOURCES})
 
-add_dependencies(ssi
+add_dependencies(sf
     docopt
     serialport
     serialmac
@@ -149,7 +149,7 @@ add_dependencies(ssi
 find_package ( Threads REQUIRED )
 
 if(LIBSERIALPORT AND LIBDOCOPT)
-    target_link_libraries(ssi
+    target_link_libraries(sf
         serialmac
         ${LIBSERIALPORT}
         ${LIBDOCOPT}
