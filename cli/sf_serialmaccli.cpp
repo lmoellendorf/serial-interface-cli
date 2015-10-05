@@ -1,23 +1,58 @@
 #include <iostream>
 #include <thread>
 #include <string.h>
+#include <docopt.h>
 
 #include "sf_serialmaccli.h"
 #include "sf_serialmachandler.h"
 #include "sf_serialmac.h"
+#include "version.h"
 
 
-#define SF_SERIAL_INPUT_MAX_SIZE 255
-//TODO: make all defines obsolete:
-#define SF_SERIAL_BAUDRATE 115200
-#define SF_SERIAL_BITS 8
-#define SF_SERIAL_STOPBITS 1
-#define SF_SERIAL_FLOWCTRL SP_FLOWCONTROL_NONE
+    static const char USAGE[] =
+      SERIALMAC_PRODUCT_NAME R"(.
 
-SerialMacCli::SerialMacCli ( const char* port_name )
-//: port_name()TODO why does this not work?
+      Usage:
+      )" SERIALMACCLI_PRODUCT_NAME R"( [options]
+
+      Options:
+      -h, --help                                Show this screen.
+      -v, --version                             Show version.
+      -d <device>, --device=<device>            Serial port to use (e.g. "/dev/tty0", "/dev/ttyUSB0" or "COM1").
+                                                If none is given, the first available port is chosen.
+      -b <baudrate>, --baudrate=<baudrate>      Baud rate [default: 115200].
+      -D (5-8), --data-bits=(5-8)               Data bits [default: 8].
+      -P (n|o|e|s|m), --parity-bit=(n|o|e|s|m)  Parity bit mode [default: n]:
+                                                n: None
+                                                o: Odd
+                                                e: Even
+                                                s: Space
+                                                m: Mark
+      -S (1|2), --stop-bits=(1|2)               Stop bits [default: 1].
+      -F (n|x|r|d), --flow-control=(n|x|r|d)    Flow control mode [default: n]:
+                                                n: None
+                                                x: XON/XOFF
+                                                r: RTS/CTS
+                                                d: DTR/DSR
+      -C (d|r|dr|rd), --current=(d|r|dr|rd)     Current supply:
+                                                d: Power DTR
+                                                r: Power RTS
+                                                dr or rd: Power both
+      -X (i|o|io|oi), --xon-xoff=(i|o|io|oi)    XON/XOFF flow control behaviour:
+                                                i: Enabled for input only
+                                                o: Enabled for output only
+                                                io or oi: Enabled for input and output
+      -I (d|r|c|s|x), --ignore=(d|r|c|s|x)      ignore configuration options:
+                                                Do not configure DTR
+                                                Do not configure RTS
+                                                Do not configure CTS
+                                                Do not configure DSR
+                                                Do not configure XON/XOFF
+      -V, --verbose                             Verbosive debug information on stderr.
+      )";
+
+SerialMacCli::SerialMacCli ( )
 {
-  this->port_name = port_name;
 }
 
 SerialMacCli::~SerialMacCli ( )
@@ -30,14 +65,36 @@ SerialMacCli::~SerialMacCli ( )
     }
 }
 
-int SerialMacCli::InitSerialPort ()
+int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
 {
   sp_return sp_ret = SP_OK;
   struct sp_port **available_ports = NULL;
+  docopt::value value;
+  const char *port_name = NULL;
+  long baudrate = 115200;
+  long data_bits = 8;
+  enum sp_parity parity_bit = SP_PARITY_NONE;
+  long stop_bits = 1;
+  enum sp_flowcontrol flow_control = SP_FLOWCONTROL_NONE;
+  enum sp_rts rts = SP_RTS_FLOW_CONTROL;
+  enum sp_dtr dtr = SP_DTR_FLOW_CONTROL;
+  enum sp_xonxoff xon_xoff = SP_XONXOFF_DISABLED;
 
-  /** If the user specified no port, choose any. */
-  if ( !port_name )
+  value = args.at ( "--device" );
+  if ( value && value.isString() )
     {
+      port_name = value.asString().c_str();
+      sp_ret = sp_get_port_by_name ( port_name, &port_context );
+      if ( SP_OK > sp_ret || !port_context )
+        {
+          std::cerr << "Port \"" << port_name << "\" could not be found!"  <<
+                    std::endl;
+          return ( 0 == sp_ret ? 1 : sp_ret );
+        }
+    }
+  else
+    {
+      /** If the user specified no port, choose any. */
       sp_ret = sp_list_ports ( &available_ports );
       if ( SP_OK > sp_ret )
         {
@@ -56,16 +113,7 @@ int SerialMacCli::InitSerialPort ()
           std::cerr << "Could not find any serial port!" << std::endl;
           return ( 0 == sp_ret ? 1 : sp_ret );
         }
-    }
-  else
-    {
-      sp_ret = sp_get_port_by_name ( port_name, &port_context );
-      if ( SP_OK > sp_ret || !port_context  )
-        {
-          std::cerr << "Port \"" << port_name << "\" could not be found!"  <<
-                    std::endl;
-          return ( 0 == sp_ret ? 1 : sp_ret );
-        }
+      port_name = sp_get_port_name(port_context);
     }
 
   sp_ret = sp_open ( port_context, SP_MODE_READ_WRITE );
@@ -77,14 +125,14 @@ int SerialMacCli::InitSerialPort ()
     }
 
   /** Save current port configuration for later restoring */
-  sp_ret = sp_new_config ( &saved_port_config );
+  sp_ret = sp_new_config ( &port_config_backup );
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Config of port  \"" << port_name
                 << "\" could not be saved! (Out of memory?)" << std::endl;
       return sp_ret;
     }
-  sp_ret = sp_get_config ( port_context, saved_port_config );
+  sp_ret = sp_get_config ( port_context, port_config_backup );
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Config of port  \"" << port_name
@@ -92,49 +140,240 @@ int SerialMacCli::InitSerialPort ()
       return sp_ret;
     }
 
-  sp_ret = sp_set_baudrate ( port_context, SF_SERIAL_BAUDRATE );
+  /** Create new port configuration */
+  sp_ret = sp_new_config ( &port_config_new );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Could not set baudrate to " << SF_SERIAL_BAUDRATE
+      std::cerr << "New config for port  \"" << port_name
+                << "\" could not be set! (Out of memory?)" << std::endl;
+      return sp_ret;
+    }
+
+  value = args.at ( "--baudrate" );
+  if ( value )
+    {
+      if ( value.isString() )
+        {
+          baudrate = std::strtoul(value.asString().c_str(), NULL, 0);
+        }
+      else if ( value.isLong() )
+        {
+          baudrate = value.asLong();
+        }
+    }
+  sp_ret = sp_set_config_baudrate ( port_config_new, baudrate );
+  if ( SP_OK > sp_ret )
+    {
+      std::cerr << "Could not set baudrate to " << baudrate
                 << " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
-  sp_ret = sp_set_bits ( port_context, SF_SERIAL_BITS );
+  value = args.at ( "--data-bits" );
+  if ( value )
+    {
+      if ( value.isString() )
+        {
+          data_bits = std::strtoul ( value.asString().c_str(), NULL, 0 );
+        }
+      else if ( value.isLong() )
+        {
+          data_bits = value.asLong();
+        }
+    }
+  sp_ret = sp_set_config_bits ( port_config_new, data_bits );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Could not set number of bits to " << SF_SERIAL_BITS
+      std::cerr << "Could not set data bits to " << data_bits
                 << " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
-  sp_ret = sp_set_parity ( port_context, SP_PARITY_NONE );
+  value = args.at ( "--parity-bit" );
+  if ( value && value.isString() )
+    {
+      switch ( value.asString().at ( 0 ) )
+        {
+        case 'n':
+          parity_bit = SP_PARITY_NONE;
+          break;
+        case 'o':
+          parity_bit = SP_PARITY_ODD;
+          break;
+        case 'e':
+          parity_bit = SP_PARITY_EVEN;
+          break;
+        case 's':
+          parity_bit = SP_PARITY_SPACE;
+          break;
+        case 'm':
+          parity_bit = SP_PARITY_MARK;
+          break;
+        }
+    }
+  sp_ret = sp_set_config_parity ( port_config_new, parity_bit );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Could not set parity to " << SP_PARITY_NONE
+      std::cerr << "Could not set parity bit mode to " << parity_bit
                 << " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
-  sp_ret = sp_set_stopbits ( port_context, SF_SERIAL_STOPBITS );
+  value = args.at ( "--stop-bits" );
+  if ( value )
+    {
+      if ( value.isString() )
+        {
+          stop_bits = std::strtoul ( value.asString().c_str(), NULL, 0 );
+        }
+      else if ( value.isLong() )
+        {
+          stop_bits = value.asLong();
+        }
+    }
+  sp_ret = sp_set_config_stopbits ( port_config_new, stop_bits );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Could not set stop-bits to " << SF_SERIAL_STOPBITS <<
+      std::cerr << "Could not set stop-bits to " << stop_bits <<
                 " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
 
-  sp_ret = sp_set_flowcontrol ( port_context, SF_SERIAL_FLOWCTRL );
+  value = args.at ( "--flow-control" );
+  if ( value && value.isString() )
+    {
+      switch ( value.asString().at ( 0 ) )
+        {
+        case 'n':
+          flow_control = SP_FLOWCONTROL_NONE;
+          break;
+        case 'x':
+          flow_control = SP_FLOWCONTROL_XONXOFF;
+          break;
+        case 'r':
+          flow_control = SP_FLOWCONTROL_RTSCTS;
+          break;
+        case 'd':
+          flow_control = SP_FLOWCONTROL_DTRDSR;
+          break;
+        }
+    }
+  sp_ret = sp_set_config_flowcontrol ( port_config_new, flow_control );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Could not set flow-control to " << SF_SERIAL_FLOWCTRL <<
+      std::cerr << "Could not set flow-control to " << flow_control <<
                 " on port \"" << port_name << "\"!" << std::endl;
       return sp_ret;
     }
+
+  value = args.at ( "--xon-xoff" );
+  if ( value && value.isString() )
+    {
+      if ( value.asString().length() > 1
+           && ( value.asString() == "io"
+                || value.asString() == "oi" )
+         )
+        {
+          xon_xoff = SP_XONXOFF_INOUT;
+        }
+      switch ( value.asString().at ( 0 ) )
+        {
+        case 'i':
+          xon_xoff = SP_XONXOFF_IN;
+          break;
+        case 'o':
+          xon_xoff = SP_XONXOFF_OUT;
+          break;
+        }
+      sp_set_config_xon_xoff ( port_config_new, xon_xoff );
+      if ( SP_OK > sp_ret )
+        {
+          std::cerr << "Could not set XON/XOFF direction " <<
+                    " on port \"" << port_name << "\"!" << std::endl;
+          return sp_ret;
+        }
+    }
+
+  value = args.at ( "--current" );
+  if ( value && value.isString() )
+    {
+      if ( value.asString().length() > 1
+           && ( value.asString() == "dr"
+                || value.asString() == "rd" )
+         )
+        {
+          rts = SP_RTS_ON;
+          dtr = SP_DTR_ON;
+        }
+      switch ( value.asString().at ( 0 ) )
+        {
+        case 'd':
+          dtr = SP_DTR_ON;
+          break;
+        case 'r':
+          rts = SP_RTS_ON;
+          break;
+        }
+      sp_set_config_rts ( port_config_new, rts );
+      if ( SP_OK > sp_ret )
+        {
+          std::cerr << "Could not set RTS power mode " <<
+                    " on port \"" << port_name << "\"!" << std::endl;
+          return sp_ret;
+        }
+      sp_set_config_dtr ( port_config_new, dtr );
+      if ( SP_OK > sp_ret )
+        {
+          std::cerr << "Could not set DTR power mode " <<
+                    " on port \"" << port_name << "\"!" << std::endl;
+          return sp_ret;
+        }
+    }
+
+  value = args.at ( "--ignore" );
+  if ( value && value.isString() )
+    {
+      switch ( value.asString().at ( 0 ) )
+        {
+        case 'd':
+           sp_ret = sp_set_config_dtr(port_config_new, SP_DTR_INVALID);
+          break;
+        case 'r':
+           sp_ret = sp_set_config_rts(port_config_new, SP_RTS_INVALID);
+          break;
+        case 'c':
+           sp_ret = sp_set_config_cts(port_config_new, SP_CTS_INVALID);
+          break;
+        case 's':
+           sp_ret = sp_set_config_dsr(port_config_new, SP_DSR_INVALID);
+          break;
+        case 'x':
+           sp_ret = sp_set_config_xon_xoff(port_config_new, SP_XONXOFF_INVALID);
+          break;
+        }
+      if ( SP_OK > sp_ret )
+        {
+          std::cerr << "Could not pin mode " <<
+                    " on port \"" << port_name << "\"!" << std::endl;
+          return sp_ret;
+        }
+    }
+
+  sp_ret =  sp_set_config ( port_context, port_config_new );
+  if ( SP_OK > sp_ret )
+    {
+      std::cerr << "Could not configure " <<
+                " port \"" << port_name << "\"!" << std::endl;
+      return sp_ret;
+    }
+
+  sp_free_config ( port_config_new );
 
   sp_ret = sp_new_event_set ( &port_events );
   if ( SP_OK > sp_ret )
     {
+      std::cerr << "Event set for  \"" << port_name
+                << "\" could not be created! (Out of memory?)" << std::endl;
       return sp_ret;
     }
 
@@ -149,7 +388,7 @@ int SerialMacCli::InitSerialPort ()
       return sp_ret;
     }
 
-  port_name = sp_get_port_name(port_context);
+  port_name = sp_get_port_name ( port_context );
   if ( port_name )
     {
       std::cout << "Opened port: \"" << port_name << "\""  << std::endl;
@@ -167,16 +406,28 @@ void SerialMacCli::DeInitSerialPort()
   if ( port_context )
     {
       /** Restore previous port configuration */
-      sp_set_config ( port_context, saved_port_config );
+      sp_set_config ( port_context, port_config_backup );
       sp_free_port ( port_context );
     }
 }
 
-int SerialMacCli::Run()
+int SerialMacCli::Run ( int argc, char **argv )
 {
   int ret = 0;
+  std::map<std::string, docopt::value> args
+  = docopt::docopt ( USAGE,
+  { argv + 1, argv + argc },
+  true,               // show help if requested
+  SERIALMACCLI_VERSION_STRING, false ); // version string
 
-  if ( ( ret = InitSerialPort() ) )
+  /* for debugging docopt
+  for ( auto const& arg : args )
+    {
+      std::cout << arg.first <<  arg.second << std::endl;
+    }
+   */
+
+  if ( ( ret = InitSerialPort(args) ) )
     {
       return ret;
     }

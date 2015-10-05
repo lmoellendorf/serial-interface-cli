@@ -7,7 +7,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/../ ${PROJECT_BINARY_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer
     ${PROJECT_BINARY_DIR}/observer)
 
-set (SERIALMACCLI_PRODUCT_NAME "${SERIALMAC_PRODUCT_NAME} CLI" CACHE STRING "product")
+set (SERIALMACCLI_PRODUCT_NAME "sf-serial" CACHE STRING "product")
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -23,6 +23,33 @@ if (WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
     find_library ( SETUPAPI setupapi )
     set(WIN32_DEPS ${SETUPAPI})
+endif()
+
+MESSAGE("PATH: $ENV{PATH}")
+
+find_library(LIBDOCOPT docopt
+    ${PROJECT_BINARY_DIR}/docopt-prefix/lib/)
+
+if(NOT LIBDOCOPT)
+  MESSAGE(STATUS "libdocopt not found!")
+  ExternalProject_Add(libdocopt   # Name for custom target
+      #--Download step--------------
+      GIT_REPOSITORY git@github.com:docopt/docopt.cpp.git
+      GIT_TAG master
+      #--Configure step-----------------
+      CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/docopt-prefix
+      )
+  ExternalProject_Get_Property(libdocopt install_dir)
+  MESSAGE(STATUS "docopt will be installed to:\n " ${install_dir})
+  # rerun cmake in initial build
+  # will update cmakecache/project files on first build
+  # so you may have to reload project after first build
+  add_custom_target(docopt ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS libdocopt)
+else()
+    MESSAGE(STATUS "libdocopt found!")
+    # serialport becomes a dummy target after first build
+    # this prevents cmake from rebuilding cache/projects on subsequent builds
+    add_custom_target(docopt)
 endif()
 
 find_library(LIBSERIALPORT serialport
@@ -69,13 +96,20 @@ include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/../src
     ${PROJECT_BINARY_DIR}/libserialport-prefix/include
+    ${PROJECT_BINARY_DIR}/docopt-prefix/include/docopt
     ${PROJECT_SOURCE_DIR}/../dep/observer
     )
 
+set(DOCOPT_HEADERS
+    ${PROJECT_BINARY_DIR}/docopt-prefix/include/docopt/docopt.h
+)
+set_source_files_properties(${DOCOPT_HEADERS} PROPERTIES GENERATED TRUE)
+
 # This is only added to display the header in your IDE!
-set(LIBSERIALPORT_HEADER
+set(LIBSERIALPORT_HEADERS
     ${PROJECT_BINARY_DIR}/libserialport-prefix/include/libserialport.h
     )
+set_source_files_properties(${LIBSERIALPORT_HEADERS} PROPERTIES GENERATED TRUE)
 
 # This is only added to display the files in your IDE!
 set(OBERSERVER_FILES
@@ -86,10 +120,9 @@ set(OBERSERVER_FILES
     ${PROJECT_SOURCE_DIR}/../dep/observer/sf_subject.cpp
     )
 
-set_source_files_properties(${LIBSERIALPORT_HEADER} PROPERTIES GENERATED TRUE)
-
 set(SF_SERIALMACCLI_HEADERS
-    ${LIBSERIALPORT_HEADER}
+    ${DOCOPT_HEADERS}
+    ${LIBSERIALPORT_HEADERS}
     ${PROJECT_BINARY_DIR}/version.h
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.h
     ${PROJECT_SOURCE_DIR}/sf_serialmachandler.h
@@ -103,9 +136,10 @@ set(SF_SERIALMACCLI_SOURCES
     ${OBERSERVER_FILES}
     )
 
-add_executable(ssi  ${SF_SERIALMACCLI_SOURCES})
+add_executable(sf  ${SF_SERIALMACCLI_SOURCES})
 
-add_dependencies(ssi
+add_dependencies(sf
+    docopt
     serialport
     serialmac
     observer
@@ -114,13 +148,13 @@ add_dependencies(ssi
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
 
-if(LIBSERIALPORT)
-    target_link_libraries(ssi
+if(LIBSERIALPORT AND LIBDOCOPT)
+    target_link_libraries(sf
         serialmac
         ${LIBSERIALPORT}
+        ${LIBDOCOPT}
         observer
         ${CMAKE_THREAD_LIBS_INIT}
         ${WIN32_DEPS}
         )
 endif()
-
