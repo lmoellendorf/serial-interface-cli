@@ -65,6 +65,14 @@ SerialMacCli::~SerialMacCli ( )
     }
 }
 
+/**
+ * This is a dummy function which is used instead of printf in non-verbosive
+ * mode.
+ */
+int non_verbosive (const char *format, ...){
+  return strlen(format);
+}
+
 int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
 {
   sp_return sp_ret = SP_OK;
@@ -391,7 +399,7 @@ int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
   port_name = sp_get_port_name ( port_context );
   if ( port_name )
     {
-      std::cout << "Opened port: \"" << port_name << "\""  << std::endl;
+      verbose( "Opened port: \"%s\"\n",  port_name );
     }
 
   return sp_ret;
@@ -414,11 +422,21 @@ void SerialMacCli::DeInitSerialPort()
 int SerialMacCli::Run ( int argc, char **argv )
 {
   int ret = 0;
+  docopt::value value;
   std::map<std::string, docopt::value> args
   = docopt::docopt ( USAGE,
   { argv + 1, argv + argc },
   true,               // show help if requested
   SERIALMACCLI_VERSION_STRING, false ); // version string
+
+  value = args.at ( "--verbose" );
+  if ( value && value.isBool() ){
+    if(value.asBool()){
+      verbose = printf;
+    } else {
+      verbose = non_verbosive;
+    }
+  }
 
   /* for debugging docopt
   for ( auto const& arg : args )
@@ -455,7 +473,7 @@ void SerialMacCli::Wait4UserInput ( void )
   char *output_buffer = NULL;
   int output_buffer_length = 0;
 
-  printf ( "Input text:\n" );
+  verbose ( "Input text:\n" );
   getline ( std::cin, line );
   if ( line.length() > 0 )
     {
@@ -466,7 +484,7 @@ void SerialMacCli::Wait4UserInput ( void )
   else
     {
       //TODO: use other means for quitting
-      std::cout << "Quitting." << std::endl;
+      verbose ( "Quitting.\n" );
       /** Userinput was empty line -> STOP */
       run = false;
       return;
@@ -522,12 +540,13 @@ void SerialMacCli::Update ( Event *event )
                 {
                   if ( '\n' == frame_buffer[0] )
                     {
-                      std::cout << "Quitting." << std::endl;
+                      verbose( "Quitting.\n" );
                       run = false;
                     }
                   else
                     {
-                      printf ( ":%s:%zd\n", frame_buffer, frame_buffer_length );
+                      printf ( "%s\n", frame_buffer );
+                      verbose ( "Length:\n%zd\n", frame_buffer_length );
                     }
                 }
               std::free ( frame_buffer );

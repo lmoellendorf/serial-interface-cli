@@ -33,6 +33,7 @@ private:
     void DeInitSerialPort();
     void Wait4UserInput ( void );
     void Wait4HalEvent ( int nano_nap );
+    int (*verbose) (const char *format, ...);
 };
 
 #endif // SERIALMACCLI_H
