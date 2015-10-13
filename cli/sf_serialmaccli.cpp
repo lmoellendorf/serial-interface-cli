@@ -458,10 +458,11 @@ int SerialMacCli::Run ( int argc, char **argv )
     }
   /** Start waiting for serial input */
   std::thread halEvent ( &SerialMacCli::Wait4HalEvent, this, 100000000 );
-  halEvent.detach();
-
 
   Wait4UserInput();
+
+  /** The main thread must not die before @ref halEvent returns */
+  halEvent.join();
 
   return ret;
 }
