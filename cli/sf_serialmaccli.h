@@ -26,6 +26,7 @@ private:
     struct sp_port *port_context = NULL;
     struct sp_event_set *port_events = NULL;
     struct sf_serialmac_ctx *mac_context = NULL;
+    const char *port_name = NULL;
 
     int run = true;
 

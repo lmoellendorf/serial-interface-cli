@@ -78,7 +78,6 @@ int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
   sp_return sp_ret = SP_OK;
   struct sp_port **available_ports = NULL;
   docopt::value value;
-  const char *port_name = NULL;
   long baudrate = 115200;
   long data_bits = 8;
   enum sp_parity parity_bit = SP_PARITY_NONE;
@@ -387,11 +386,10 @@ int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
 
   sp_ret = sp_add_port_events ( port_events,
                                 port_context,
-                                ( sp_event ) ( ( int ) SP_EVENT_TX_READY |
-                                    ( int ) SP_EVENT_RX_READY ) );
+                                SP_EVENT_RX_READY );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Could not set events on port \"" << port_name << "\"!"
+      std::cerr << "Could not set RX event on port \"" << port_name << "\"!"
                 << std::endl;
       return sp_ret;
     }
@@ -473,6 +471,7 @@ void SerialMacCli::Wait4UserInput ( void )
   std::string line = "";
   char *output_buffer = NULL;
   int output_buffer_length = 0;
+  sp_return sp_ret = SP_OK;
 
   verbose ( "Input text:\n" );
   getline ( std::cin, line );
@@ -498,6 +497,16 @@ void SerialMacCli::Wait4UserInput ( void )
   );
   /** Call the callback to trigger transmission. */
   sf_serialmac_hal_tx_callback ( mac_context );
+  //TODO: function
+  sp_ret = sp_add_port_events ( port_events,
+                                port_context,
+                                SP_EVENT_TX_READY );
+  if ( SP_OK > sp_ret )
+    {
+      std::cerr << "Could not set TX event on port \"" << port_name << "\"!"
+                << std::endl;
+      return;
+    }
 }
 
 void SerialMacCli::Wait4HalEvent ( int nano_nap )
@@ -515,6 +524,8 @@ void SerialMacCli::Wait4HalEvent ( int nano_nap )
 
 void SerialMacCli::Update ( Event *event )
 {
+  sp_return sp_ret = SP_OK;
+
   if ( event->GetSource() == mac_context )
     {
       char *frame_buffer = NULL;
@@ -554,6 +565,15 @@ void SerialMacCli::Update ( Event *event )
             }
           break;
         case SerialMacHandler::WRITE_BUFFER:
+          sp_ret = sp_add_port_events ( port_events,
+                                port_context,
+                                SP_EVENT_RX_READY );
+          if ( SP_OK > sp_ret )
+            {
+              std::cerr << "Could not set RX event on port \"" << port_name << "\"!"
+                        << std::endl;
+              return;
+            }
           if ( frame_buffer )
             {
               std::free ( frame_buffer );
