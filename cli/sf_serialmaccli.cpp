@@ -66,10 +66,10 @@ SerialMacCli::~SerialMacCli ( )
 }
 
 /**
- * This is a dummy function which is used instead of printf in non-verbosive
+ * This is a dummy function which is used instead of printf in non-verbose
  * mode.
  */
-int non_verbosive (const char *format, ...){
+int non_verbose (const char *format, ...){
   return strlen(format);
 }
 
@@ -434,7 +434,7 @@ int SerialMacCli::Run ( int argc, char **argv )
     if(value.asBool()){
       verbose = printf;
     } else {
-      verbose = non_verbosive;
+      verbose = non_verbose;
     }
   }
 
