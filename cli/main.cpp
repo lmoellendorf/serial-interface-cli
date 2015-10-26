@@ -19,5 +19,7 @@ int main ( int argc, char **argv )
 
   SerialMacCli cli;
 
-  return cli.Run( argc, argv );
+  //TODO: error handling
+  cli.Init( argc, argv );
+  return cli.Run();
 }

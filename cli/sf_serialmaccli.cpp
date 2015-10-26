@@ -376,20 +376,38 @@ int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
 
   sp_free_config ( port_config_new );
 
-  sp_ret = sp_new_event_set ( &port_events );
+  sp_ret = sp_new_event_set ( &port_rx_event );
   if ( SP_OK > sp_ret )
     {
-      std::cerr << "Event set for  \"" << port_name
+      std::cerr << "RX event set for  \"" << port_name
                 << "\" could not be created! (Out of memory?)" << std::endl;
       return sp_ret;
     }
 
-  sp_ret = sp_add_port_events ( port_events,
+  sp_ret = sp_add_port_events ( port_rx_event,
                                 port_context,
                                 SP_EVENT_RX_READY );
   if ( SP_OK > sp_ret )
     {
       std::cerr << "Could not set RX event on port \"" << port_name << "\"!"
+                << std::endl;
+      return sp_ret;
+    }
+
+  sp_ret = sp_new_event_set ( &port_tx_event );
+  if ( SP_OK > sp_ret )
+    {
+      std::cerr << "TX event set for  \"" << port_name
+                << "\" could not be created! (Out of memory?)" << std::endl;
+      return sp_ret;
+    }
+
+  sp_ret = sp_add_port_events ( port_tx_event,
+                                port_context,
+                                SP_EVENT_TX_READY );
+  if ( SP_OK > sp_ret )
+    {
+      std::cerr << "Could not set TX event on port \"" << port_name << "\"!"
                 << std::endl;
       return sp_ret;
     }
@@ -405,9 +423,13 @@ int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
 
 void SerialMacCli::DeInitSerialPort()
 {
-  if ( port_events )
+  if ( port_rx_event )
     {
-      sp_free_event_set ( port_events );
+      sp_free_event_set ( port_rx_event );
+    }
+  if ( port_tx_event )
+    {
+      sp_free_event_set ( port_tx_event );
     }
   if ( port_context )
     {
@@ -417,9 +439,102 @@ void SerialMacCli::DeInitSerialPort()
     }
 }
 
-int SerialMacCli::Run ( int argc, char **argv )
+void SerialMacCli::CliInput ( void )
 {
-  int ret = 0;
+  bool run = true;
+  std::string line = "";
+  char *output_buffer = NULL;
+  int output_buffer_length = 0;
+
+  /** Repeat until the user stops you */
+  while ( run )
+    {
+      switch ( cli_input_state )
+        {
+        case CLI:
+          verbose ( "Input text:\n" );
+          getline ( std::cin, line );
+          if ( line.length() > 0 )
+            {
+              /**
+               * On Windows the pointer given by line.c_str() cannot be passed
+               * to sf_serialmac_tx_frame() because the memory is invalidated.
+               * Therefore the zero terminated character array is copied to
+               * output_buffer first.
+               */
+              output_buffer_length = line.length() + 1/* for the terminating '\0' */;
+              output_buffer = ( char* ) std::malloc ( output_buffer_length );
+              strncpy ( output_buffer, line.c_str(), output_buffer_length );
+              //TODO: add error handling
+              /** Trigger TX */
+              sf_serialmac_tx_frame (
+                mac_context, output_buffer_length,
+                output_buffer,
+                output_buffer_length
+              );
+              cli_input_state = SERIAL;
+            }
+          else
+            {
+              cli_input_state = QUIT;
+            }
+          break;
+
+        case SERIAL:
+          /**
+           * Call the callback to process transmission until Update() sets
+           * cli_input_state to CLI.
+           */
+          sf_serialmac_hal_tx_callback ( mac_context );
+          if ( SP_OK != sp_wait ( port_tx_event, 0 ) )
+            {
+              std::cerr << "Error during transmission on \"" << port_name
+              << "\"!"<< std::endl;
+            }
+          break;
+
+        case QUIT:
+          //TODO: use other means for quitting
+          verbose ( "Quitting.\n" );
+          /** Userinput was empty line -> STOP */
+          run = false;
+          return;
+          break;
+        }
+    }
+}
+
+void SerialMacCli::CliOutput ( void )
+{
+  bool run = true;
+
+  while ( run )
+    {
+      switch ( cli_output_state )
+        {
+        case SERIAL:
+          /** Start waiting for serial input */
+          if ( SP_OK != sp_wait ( port_rx_event, 0 ) )
+            {
+              std::cerr << "Error during reception on \"" << port_name
+                        << "\"!"<< std::endl;
+            }
+          sf_serialmac_hal_rx_callback ( mac_context );
+          break;
+        case CLI:
+          // currently not used
+          break;
+        case QUIT:
+          verbose( "Quitting.\n" );
+          run = false;
+          break;
+        }
+    }
+}
+
+
+int SerialMacCli::Init ( int argc, char **argv )
+{
   docopt::value value;
   std::map<std::string, docopt::value> args
   = docopt::docopt ( USAGE,
@@ -428,13 +543,17 @@ int SerialMacCli::Run ( int argc, char **argv )
   SERIALMACCLI_VERSION_STRING, false ); // version string
 
   value = args.at ( "--verbose" );
-  if ( value && value.isBool() ){
-    if(value.asBool()){
-      verbose = printf;
-    } else {
-      verbose = non_verbose;
+  if ( value && value.isBool() )
+    {
+      if ( value.asBool() )
+        {
+          verbose = printf;
+        }
+      else
+        {
+          verbose = non_verbose;
+        }
     }
-  }
 
   /* for debugging docopt
   for ( auto const& arg : args )
@@ -443,89 +562,32 @@ int SerialMacCli::Run ( int argc, char **argv )
     }
    */
 
-  if ( ( ret = InitSerialPort(args) ) )
-    {
-      return ret;
-    }
-
   mac_context = ( sf_serialmac_ctx* ) std::malloc ( sf_serialmac_ctx_size() );
 
-  if ( ( ret=SerialMacHandler::Attach ( this, port_context, mac_context ) ) )
-    {
-      return ret;
-    }
-  /** Start waiting for serial input */
-  std::thread halEvent ( &SerialMacCli::Wait4HalEvent, this, 100000000 );
+  return InitSerialPort ( args );
+}
 
-  Wait4UserInput();
 
-  /** The main thread must not die before @ref halEvent returns */
-  halEvent.join();
+int SerialMacCli::Run ( )
+{
+  int ret = 0;
+
+  ret = SerialMacHandler::Attach ( this, port_context, mac_context );
+
+  /** */
+  cli_input_state = CLI;
+  std::thread process_cli_input (&SerialMacCli::CliInput, this);
+
+
+  cli_output_state = SERIAL;
+  CliOutput();
 
   return ret;
 }
 
 
-void SerialMacCli::Wait4UserInput ( void )
-{
-  std::string line = "";
-  char *output_buffer = NULL;
-  int output_buffer_length = 0;
-  sp_return sp_ret = SP_OK;
-
-  verbose ( "Input text:\n" );
-  getline ( std::cin, line );
-  if ( line.length() > 0 )
-    {
-      output_buffer_length = line.length() + 1; // for the terminating '\0'
-      output_buffer = ( char* ) std::malloc ( output_buffer_length );
-      strncpy ( output_buffer, line.c_str(), output_buffer_length );
-    }
-  else
-    {
-      //TODO: use other means for quitting
-      verbose ( "Quitting.\n" );
-      /** Userinput was empty line -> STOP */
-      run = false;
-      return;
-    }
-  //TODO: add error handling
-  sf_serialmac_tx_frame (
-    mac_context, output_buffer_length,
-    output_buffer,
-    output_buffer_length
-  );
-  /** Call the callback to trigger transmission. */
-  sf_serialmac_hal_tx_callback ( mac_context );
-  //TODO: function
-  sp_ret = sp_add_port_events ( port_events,
-                                port_context,
-                                SP_EVENT_TX_READY );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not set TX event on port \"" << port_name << "\"!"
-                << std::endl;
-      return;
-    }
-}
-
-void SerialMacCli::Wait4HalEvent ( int nano_nap )
-{
-  const struct timespec nap = { /* seconds */ 0, /* nanoseconds */ nano_nap};
-
-  while ( SP_OK <= sp_wait ( port_events, 0 ) && run )
-    {
-      sf_serialmac_entry ( mac_context );
-      nanosleep ( &nap, NULL );
-    }
-  return;
-}
-
-
 void SerialMacCli::Update ( Event *event )
 {
-  sp_return sp_ret = SP_OK;
-
   if ( event->GetSource() == mac_context )
     {
       char *frame_buffer = NULL;
@@ -542,6 +604,11 @@ void SerialMacCli::Update ( Event *event )
               sf_serialmac_rx_frame ( ( struct sf_serialmac_ctx * ) mac_context,
                                       frame_buffer,
                                       frame_buffer_length );
+              /**
+               * For future implementations of cli_output_state = CLI:
+               * Switch back to serial state.
+               */
+              cli_output_state = SERIAL;
             }
           break;
         case SerialMacHandler::READ_FRAME:
@@ -552,35 +619,34 @@ void SerialMacCli::Update ( Event *event )
                 {
                   if ( '\n' == frame_buffer[0] )
                     {
-                      verbose( "Quitting.\n" );
-                      run = false;
+                      cli_output_state = QUIT;
                     }
                   else
                     {
+                      /**
+                       * Instead of printing directly, cli_output_state = CLI
+                       * could be set and frame_buffer could be processed in
+                       * CliOutput.
+                       */
                       printf ( "%s\n", frame_buffer );
                       verbose ( "Length:\n%zd\n", frame_buffer_length );
                     }
                 }
+              /**
+               * TODO: if (in future implementations) frame_buffer is not
+               * processed directly here do not free it!
+               */
               std::free ( frame_buffer );
             }
           break;
         case SerialMacHandler::WRITE_BUFFER:
-          sp_ret = sp_add_port_events ( port_events,
-                                port_context,
-                                SP_EVENT_RX_READY );
-          if ( SP_OK > sp_ret )
-            {
-              std::cerr << "Could not set RX event on port \"" << port_name << "\"!"
-                        << std::endl;
-              return;
-            }
           if ( frame_buffer )
             {
               std::free ( frame_buffer );
             }
           break;
         case SerialMacHandler::WRITE_FRAME:
-          Wait4UserInput();
+          cli_input_state = CLI;
           break;
         }
     }
