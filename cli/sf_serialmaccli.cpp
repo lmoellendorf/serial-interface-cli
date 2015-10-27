@@ -498,7 +498,8 @@ void SerialMacCli::CliInput ( void )
           verbose ( "Quitting.\n" );
           /** Userinput was empty line -> STOP */
           run = false;
-          return;
+          /** This stops the other thread. */
+          cli_output_state = QUIT;
           break;
         }
     }
@@ -513,8 +514,10 @@ void SerialMacCli::CliOutput ( void )
       switch ( cli_output_state )
         {
         case SERIAL:
-          /** Start waiting for serial input */
-          if ( SP_OK != sp_wait ( port_rx_event, 0 ) )
+          /**
+           * Start waiting for serial input.
+           * A timeout is given to quit on demand. */
+          if ( SP_OK != sp_wait ( port_rx_event, 100 ) )
             {
               std::cerr << "Error during reception on \"" << port_name
                         << "\"!"<< std::endl;
@@ -526,6 +529,8 @@ void SerialMacCli::CliOutput ( void )
           break;
         case QUIT:
           verbose( "Quitting.\n" );
+          /** This stops the other thread. */
+          cli_input_state = QUIT;
           run = false;
           break;
         }
@@ -574,13 +579,28 @@ int SerialMacCli::Run ( )
 
   ret = SerialMacHandler::Attach ( this, port_context, mac_context );
 
-  /** */
+  /** Start waiting for CLI input */
   cli_input_state = CLI;
   std::thread process_cli_input (&SerialMacCli::CliInput, this);
 
-
+  /** Start waiting for CLI output */
   cli_output_state = SERIAL;
   CliOutput();
+
+  /**
+   * 30.3.1.3 thread destructor [thread.thread.destr]
+   *
+   * ~thread();
+   *
+   * If joinable() then terminate(), otherwise no effects.
+   * [ Note: Either implicitly detaching or joining a joinable()
+   * thread in its destructor could result in difficult to debug
+   * correctness (for detach) or performance (for join) bugs
+   * encountered only when an exception is raised. Thus the
+   * programmer must ensure that the destructor is never executed
+   * while the thread is still joinable. — end note ]
+   */
+  process_cli_input.join();
 
   return ret;
 }
