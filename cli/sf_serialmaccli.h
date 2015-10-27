@@ -12,15 +12,15 @@ extern "C"
 class SerialMacCli: public Observer
 {
 public:
-    SerialMacCli ( );
+    SerialMacCli ( int argc, char **argv );
     ~SerialMacCli ( );
 
-    int Init ( int argc, char **argv );
     int Run ( );
     void Update ( Event *event );
 
 private:
 
+    std::map<std::string, docopt::value> args;
     struct sp_port_config *port_config_backup;
     struct sp_port_config *port_config_new;
     struct sp_port *port_context = NULL;
@@ -38,11 +38,12 @@ private:
     io_states cli_input_state;
     io_states cli_output_state;
 
-    int InitSerialPort ( std::map<std::string, docopt::value> args );
+    static int NonVerbose (const char *format, ...);
+    int (*Verbose) (const char *format, ...);
+    int InitSerialPort ( );
     void DeInitSerialPort();
     void CliInput ( void );
     void CliOutput ( void );
-    int (*verbose) (const char *format, ...);
 };
 
 #endif // SERIALMACCLI_H

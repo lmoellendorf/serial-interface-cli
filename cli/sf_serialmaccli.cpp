@@ -51,8 +51,35 @@
       -V, --verbose                             Verbosive debug information on stderr.
       )";
 
-SerialMacCli::SerialMacCli ( )
+SerialMacCli::SerialMacCli ( int argc, char **argv )
 {
+  docopt::value value;
+  args = docopt::docopt ( USAGE,
+  { argv + 1, argv + argc },
+  true,               // show help if requested
+  SERIALMACCLI_VERSION_STRING, false ); // version string
+
+  value = args.at ( "--verbose" );
+  if ( value && value.isBool() )
+    {
+      if ( value.asBool() )
+        {
+          Verbose = printf;
+        }
+      else
+        {
+          Verbose = NonVerbose;
+        }
+    }
+
+  /* for debugging docopt
+  for ( auto const& arg : args )
+    {
+      std::cout << arg.first <<  arg.second << std::endl;
+    }
+   */
+
+  mac_context = ( sf_serialmac_ctx* ) std::malloc ( sf_serialmac_ctx_size() );
 }
 
 SerialMacCli::~SerialMacCli ( )
@@ -69,11 +96,14 @@ SerialMacCli::~SerialMacCli ( )
  * This is a dummy function which is used instead of printf in non-verbose
  * mode.
  */
-int non_verbose (const char *format, ...){
+int SerialMacCli::NonVerbose (const char *format, ...){
   return strlen(format);
 }
 
-int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
+/**
+ * Initialize the serial port.
+ */
+int SerialMacCli::InitSerialPort ( )
 {
   sp_return sp_ret = SP_OK;
   struct sp_port **available_ports = NULL;
@@ -415,7 +445,7 @@ int SerialMacCli::InitSerialPort ( std::map<std::string, docopt::value> args )
   port_name = sp_get_port_name ( port_context );
   if ( port_name )
     {
-      verbose( "Opened port: \"%s\"\n",  port_name );
+      Verbose( "Opened port: \"%s\"\n",  port_name );
     }
 
   return sp_ret;
@@ -452,7 +482,7 @@ void SerialMacCli::CliInput ( void )
       switch ( cli_input_state )
         {
         case CLI:
-          verbose ( "Input text:\n" );
+          Verbose ( "Input text:\n" );
           getline ( std::cin, line );
           if ( line.length() > 0 )
             {
@@ -495,7 +525,7 @@ void SerialMacCli::CliInput ( void )
 
         case QUIT:
           //TODO: use other means for quitting
-          verbose ( "Quitting.\n" );
+          Verbose ( "Quitting.\n" );
           /** Userinput was empty line -> STOP */
           run = false;
           /** This stops the other thread. */
@@ -528,7 +558,7 @@ void SerialMacCli::CliOutput ( void )
           // currently not used
           break;
         case QUIT:
-          verbose( "Quitting.\n" );
+          Verbose( "Quitting.\n" );
           /** This stops the other thread. */
           cli_input_state = QUIT;
           run = false;
@@ -538,46 +568,22 @@ void SerialMacCli::CliOutput ( void )
 }
 
 
-int SerialMacCli::Init ( int argc, char **argv )
-{
-  docopt::value value;
-  std::map<std::string, docopt::value> args
-  = docopt::docopt ( USAGE,
-  { argv + 1, argv + argc },
-  true,               // show help if requested
-  SERIALMACCLI_VERSION_STRING, false ); // version string
-
-  value = args.at ( "--verbose" );
-  if ( value && value.isBool() )
-    {
-      if ( value.asBool() )
-        {
-          verbose = printf;
-        }
-      else
-        {
-          verbose = non_verbose;
-        }
-    }
-
-  /* for debugging docopt
-  for ( auto const& arg : args )
-    {
-      std::cout << arg.first <<  arg.second << std::endl;
-    }
-   */
-
-  mac_context = ( sf_serialmac_ctx* ) std::malloc ( sf_serialmac_ctx_size() );
-
-  return InitSerialPort ( args );
-}
-
-
 int SerialMacCli::Run ( )
 {
-  int ret = 0;
+  int ret = InitSerialPort ( );
+
+  if(ret){
+    std::cerr << "Could not initialize \"" << port_name
+                        << "\"!"<< std::endl;
+    return ret;
+  }
 
   ret = SerialMacHandler::Attach ( this, port_context, mac_context );
+  if(ret){
+    std::cerr << "Could not initialize serial MAC on \"" << port_name
+                        << "\"!"<< std::endl;
+    return ret;
+  }
 
   /** Start waiting for CLI input */
   cli_input_state = CLI;
@@ -649,7 +655,7 @@ void SerialMacCli::Update ( Event *event )
                        * CliOutput.
                        */
                       printf ( "%s\n", frame_buffer );
-                      verbose ( "Length:\n%zd\n", frame_buffer_length );
+                      Verbose ( "Length:\n%zd\n", frame_buffer_length );
                     }
                 }
               /**
