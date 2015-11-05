@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <string.h>
+#include <algorithm>
 #include <docopt.h>
 
 #include "sf_serialmaccli.h"
@@ -13,7 +14,7 @@
       SERIALMAC_PRODUCT_NAME R"(.
 
       Usage:
-      )" SERIALMACCLI_PRODUCT_NAME R"( [options]
+      )" SERIALMACCLI_PRODUCT_NAME R"( [options] [<payload> ...]
 
       Options:
       -h, --help                                Show this screen.
@@ -75,7 +76,7 @@ SerialMacCli::SerialMacCli ( int argc, char **argv )
   /* for debugging docopt
   for ( auto const& arg : args )
     {
-      std::cout << arg.first <<  arg.second << std::endl;
+      std::cout << arg.first << ": " <<  arg.second << std::endl;
     }
    */
 
@@ -469,6 +470,30 @@ void SerialMacCli::DeInitSerialPort()
     }
 }
 
+
+/**
+ * Using a template allows us to ignore the differences between functors,
+ * function pointers and lambda
+ */
+template<typename IfFunc, typename ElseFunc>
+/**
+ * To avoid code rendundancy this function executes the IfOperation if
+ * payload has been passed as parameter and the ElseOperation otherwise.
+ */
+void SerialMacCli::PayloadPassedAsParameter (
+  IfFunc IfOperation, ElseFunc ElseOperation )
+{
+  docopt::value value = args.at ( "<payload>" );
+
+  if ( value && value.isStringList()
+       && value.asStringList().size() != 0 )
+    {
+      return IfOperation (value);
+    }
+  return ElseOperation();
+}
+
+
 void SerialMacCli::CliInput ( void )
 {
   bool run = true;
@@ -482,8 +507,23 @@ void SerialMacCli::CliInput ( void )
       switch ( cli_input_state )
         {
         case CLI:
-          Verbose ( "Input text:\n" );
-          getline ( std::cin, line );
+          PayloadPassedAsParameter ( [&line, this] ( docopt::value value )
+          {
+            std::vector <std::string> line_as_list = value.asStringList();
+            std::for_each ( line_as_list.begin(), line_as_list.end(),
+                            /**
+                             * A lambda within a lambda! But this is how
+                             * for_each works
+                             */
+                            [&line] ( std::string& word )
+            {
+              return line+=word;
+            } );
+          }, [&line, this] ()
+          {
+            Verbose ( "Input text:\n" );
+            getline ( std::cin, line );
+          } );
           if ( line.length() > 0 )
             {
               /**
@@ -493,6 +533,7 @@ void SerialMacCli::CliInput ( void )
                * output_buffer first.
                */
               output_buffer_length = line.length() + 1/* for the terminating '\0' */;
+              /** Will be freed in Update() when TX has been completed. */
               output_buffer = ( char* ) std::malloc ( output_buffer_length );
               strncpy ( output_buffer, line.c_str(), output_buffer_length );
               //TODO: add error handling
@@ -666,13 +707,26 @@ void SerialMacCli::Update ( Event *event )
             }
           break;
         case SerialMacHandler::WRITE_BUFFER:
-          if ( frame_buffer )
-            {
-              std::free ( frame_buffer );
-            }
+            if ( frame_buffer )
+              {
+                std::free ( frame_buffer );
+              }
           break;
         case SerialMacHandler::WRITE_FRAME:
-          cli_input_state = CLI;
+          PayloadPassedAsParameter (
+            [this] ( docopt::value value )
+          {
+            /**
+             * Silence the warning: "unused parameter" because we really do not
+             * need it here.
+             */
+            ( void ) value;
+            /** Payload passed as parameter has been send. */
+            cli_input_state = QUIT;
+          }, [this] ()
+          {
+            cli_input_state = CLI;
+          } );
           break;
         }
     }

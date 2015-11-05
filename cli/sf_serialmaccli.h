@@ -2,6 +2,7 @@
 #define SERIALMACCLI_H
 
 #include <docopt.h>
+#include <functional>
 extern "C"
 {
 #include <libserialport.h>
@@ -40,6 +41,9 @@ private:
 
     static int NonVerbose (const char *format, ...);
     int (*Verbose) (const char *format, ...);
+    template<typename IfFunc, typename ElseFunc>
+    void PayloadPassedAsParameter (
+        IfFunc IfOperation, ElseFunc ElseOperation );
     int InitSerialPort ( );
     void DeInitSerialPort();
     void CliInput ( void );
