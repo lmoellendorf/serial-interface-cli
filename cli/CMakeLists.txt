@@ -1,11 +1,13 @@
 cmake_minimum_required (VERSION 2.8)
-include(ExternalProject)
-
 project (serialcli)
+
+include(ExternalProject)
+include(CTest)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/../ ${PROJECT_BINARY_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer
     ${PROJECT_BINARY_DIR}/observer)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../tst/gunit ${PROJECT_BINARY_DIR}/tst)
 
 set (SERIALMACCLI_PRODUCT_NAME "sf-serial" CACHE STRING "product")
 
@@ -171,3 +173,5 @@ if(LIBSERIALPORT AND LIBDOCOPT)
         ${WIN32_DEPS}
         )
 endif()
+
+add_test(sf-gunit tst/sf-gunit)
