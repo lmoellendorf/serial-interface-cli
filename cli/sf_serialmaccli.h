@@ -2,6 +2,7 @@
 #define SERIALMACCLI_H
 
 #include <docopt.h>
+#include <functional>
 extern "C"
 {
 #include <libserialport.h>
@@ -12,27 +13,41 @@ extern "C"
 class SerialMacCli: public Observer
 {
 public:
-    SerialMacCli ( );
+    SerialMacCli ( int argc, char **argv );
     ~SerialMacCli ( );
 
+    int Run ( );
     void Update ( Event *event );
-
-    int Run (  int argc, char **argv );
 
 private:
 
+    std::map<std::string, docopt::value> args;
     struct sp_port_config *port_config_backup;
     struct sp_port_config *port_config_new;
     struct sp_port *port_context = NULL;
-    struct sp_event_set *port_events = NULL;
+    struct sp_event_set *port_rx_event = NULL;
+    struct sp_event_set *port_tx_event = NULL;
     struct sf_serialmac_ctx *mac_context = NULL;
+    const char *port_name = NULL;
 
-    int run = true;
+    enum io_states {
+        CLI,
+        SERIAL,
+        QUIT
+    };
 
-    int InitSerialPort ( std::map<std::string, docopt::value> args );
+    io_states cli_input_state;
+    io_states cli_output_state;
+
+    static int NonVerbose (const char *format, ...);
+    int (*Verbose) (const char *format, ...);
+    template<typename IfFunc, typename ElseFunc>
+    void PayloadPassedAsParameter (
+        IfFunc IfOperation, ElseFunc ElseOperation );
+    int InitSerialPort ( );
     void DeInitSerialPort();
-    void Wait4UserInput ( void );
-    void Wait4HalEvent ( int nano_nap );
+    void CliInput ( void );
+    void CliOutput ( void );
 };
 
 #endif // SERIALMACCLI_H

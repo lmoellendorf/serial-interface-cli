@@ -27,17 +27,19 @@ endif()
 
 MESSAGE("PATH: $ENV{PATH}")
 
+set(LIBDOCOPT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libdocopt-prefix)
 find_library(LIBDOCOPT docopt
-    ${PROJECT_BINARY_DIR}/docopt-prefix/lib/)
+    ${LIBDOCOPT_INSTALL_DIR}/lib/)
 
 if(NOT LIBDOCOPT)
   MESSAGE(STATUS "libdocopt not found!")
   ExternalProject_Add(libdocopt   # Name for custom target
       #--Download step--------------
-      GIT_REPOSITORY git@github.com:docopt/docopt.cpp.git
+      GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
+                     #git@github.com:docopt/docopt.cpp.git
       GIT_TAG master
       #--Configure step-----------------
-      CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/docopt-prefix
+      CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDOCOPT_INSTALL_DIR}
       )
   ExternalProject_Get_Property(libdocopt install_dir)
   MESSAGE(STATUS "docopt will be installed to:\n " ${install_dir})
@@ -52,8 +54,9 @@ else()
     add_custom_target(docopt)
 endif()
 
+set(LIBSERIALPORT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libserialport-prefix)
 find_library(LIBSERIALPORT serialport
-    ${PROJECT_BINARY_DIR}/libserialport-prefix/lib/)
+    ${LIBSERIALPORT_INSTALL_DIR}/lib/)
 
 if(NOT LIBSERIALPORT)
     MESSAGE(STATUS "libserialport not found!")
@@ -95,19 +98,19 @@ include_directories(
     ${PROJECT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/../src
-    ${PROJECT_BINARY_DIR}/libserialport-prefix/include
-    ${PROJECT_BINARY_DIR}/docopt-prefix/include/docopt
+    ${LIBSERIALPORT_INSTALL_DIR}/include
+    ${LIBDOCOPT_INSTALL_DIR}/include/docopt
     ${PROJECT_SOURCE_DIR}/../dep/observer
     )
 
 set(DOCOPT_HEADERS
-    ${PROJECT_BINARY_DIR}/docopt-prefix/include/docopt/docopt.h
+    ${LIBDOCOPT_INSTALL_DIR}/include/docopt/docopt.h
 )
 set_source_files_properties(${DOCOPT_HEADERS} PROPERTIES GENERATED TRUE)
 
 # This is only added to display the header in your IDE!
 set(LIBSERIALPORT_HEADERS
-    ${PROJECT_BINARY_DIR}/libserialport-prefix/include/libserialport.h
+    ${LIBSERIALPORT_INSTALL_DIR}/include/libserialport.h
     )
 set_source_files_properties(${LIBSERIALPORT_HEADERS} PROPERTIES GENERATED TRUE)
 
@@ -149,6 +152,16 @@ add_dependencies(sf
 find_package ( Threads REQUIRED )
 
 if(LIBSERIALPORT AND LIBDOCOPT)
+    if(WIN32)
+        # On Windows make sure that the static lib is linked
+        set(LIBDOCOPT "${LIBDOCOPT_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}docopt_s${CMAKE_STATIC_LIBRARY_SUFFIX}")
+        #set(LIBSERIALPORT "${LIBSERIALPORT_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}serialport${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    endif()
+    MESSAGE(STATUS "libdocopt is:\n "
+        ${LIBDOCOPT})
+    #MESSAGE(STATUS "libserialport is:\n "
+        #${LIBSERIALPORT})
+		
     target_link_libraries(sf
         serialmac
         ${LIBSERIALPORT}
