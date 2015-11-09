@@ -27,6 +27,7 @@ set(GOOGLETEST_GMOCK_INCLUDE_DIR ${GOOGLETEST_GMOCK_SOURCE_DIR}/include/)
 message(STATUS "GOOGLETEST_GMOCK_INCLUDE_DIR ${GOOGLETEST_GMOCK_INCLUDE_DIR}")
 set(GOOGLETEST_GTEST_INCLUDE_DIR ${GOOGLETEST_GTEST_SOURCE_DIR}/include/)
 message(STATUS "GOOGLETEST_GTEST_INCLUDE_DIR ${GOOGLETEST_GTEST_INCLUDE_DIR}")
+set(GOOGLETEST_CMAKE_GENERATOR "Unix Makefiles")
 find_library(GOOGLEMOCK gmock ${GOOGLETEST_BUILD_DIR}/)
 
 if(NOT GOOGLEMOCK)
@@ -41,7 +42,7 @@ if(NOT GOOGLEMOCK)
       #--it has to be passed to cmake.
       #--Please note, that SOURCE_DIR determines the root of the GIT_REPOSITORY
       #--therefore changing it directly does not work.
-      CONFIGURE_COMMAND cmake ${GOOGLETEST_GMOCK_SOURCE_DIR}
+      CONFIGURE_COMMAND cmake -G ${GOOGLETEST_CMAKE_GENERATOR} ${GOOGLETEST_GMOCK_SOURCE_DIR}
       #--Install step-----------------
       #--Citing from autotools:
       #-->'make install' is dangerous and not supported. Instead, see README
