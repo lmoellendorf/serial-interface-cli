@@ -131,12 +131,16 @@ set(SF_SERIALMACCLI_HEADERS
     ${PROJECT_BINARY_DIR}/version.h
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.h
     ${PROJECT_SOURCE_DIR}/sf_serialmachandler.h
+    ${PROJECT_SOURCE_DIR}/sf_stringhex.h
+    #${PROJECT_SOURCE_DIR}/../tst/gunit/tests/sf_teststringhex.h
     )
 
 set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/main
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
     ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
+    ${PROJECT_SOURCE_DIR}/sf_stringhex.cpp
+    #${PROJECT_SOURCE_DIR}/../tst/gunit/tests/sf_teststringhex.cpp
     ${SF_SERIALMACCLI_HEADERS}
     ${OBERSERVER_FILES}
     )
@@ -174,4 +178,4 @@ if(LIBSERIALPORT AND LIBDOCOPT)
         )
 endif()
 
-add_test(sf-gunit tst/sf-gunit)
+add_test(sf-stringhex-test tst/sf-stringhex-test)

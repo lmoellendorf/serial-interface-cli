@@ -71,6 +71,7 @@ set_source_files_properties(${GMOCK_HEADERS} PROPERTIES GENERATED TRUE)
 
 
 # add the binary tree to the search path for include files
+include_directories("${PROJECT_SOURCE_DIR}/../../cli/")
 include_directories("${PROJECT_SOURCE_DIR}/src_under_test/")
 include_directories("${PROJECT_SOURCE_DIR}/mocks/")
 include_directories("${PROJECT_SOURCE_DIR}/tests/")
@@ -80,20 +81,28 @@ include_directories("${GOOGLETEST_GTEST_INCLUDE_DIR}")
 
 add_definitions (-D_cplusplus -DGTEST_HAS_PTHREAD)
 
-set (SOURCES
-    ${PROJECT_SOURCE_DIR}/tests/test
-    ${PROJECT_SOURCE_DIR}/tests/test_sample
-    ${PROJECT_SOURCE_DIR}/tests/printHex
-    ${PROJECT_SOURCE_DIR}/src_under_test/foobar
-    ${PROJECT_SOURCE_DIR}/mocks/mocked_foobar_extern
+set (SAMPLE_SOURCES
+    ${PROJECT_SOURCE_DIR}/tests/test.cpp
+    ${PROJECT_SOURCE_DIR}/tests/test_sample.cpp
+    ${PROJECT_SOURCE_DIR}/tests/printHex.cpp
+    ${PROJECT_SOURCE_DIR}/src_under_test/foobar.c
+    ${PROJECT_SOURCE_DIR}/mocks/mocked_foobar_extern.cpp
     ${GMOCK_HEADERS}
     )
 
 
-add_executable(sf-gunit ${SOURCES})
-add_dependencies(sf-gunit
-    gmock
+add_executable(sf-sample-test ${SAMPLE_SOURCES})
+add_dependencies(sf-sample-test gmock)
+
+set (STRINGHEX_SOURCES
+    ${PROJECT_SOURCE_DIR}/tests/test.cpp
+    ${PROJECT_SOURCE_DIR}/tests/sf_teststringhex.cpp
+    ${PROJECT_SOURCE_DIR}/../../cli/sf_stringhex.cpp
+    ${GMOCK_HEADERS}
     )
+
+add_executable(sf-stringhex-test ${STRINGHEX_SOURCES})
+add_dependencies(sf-stringhex-test gmock)
 
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
@@ -101,7 +110,10 @@ find_package ( Threads REQUIRED )
 if(GOOGLEMOCK)
     MESSAGE(STATUS "libgmock is:\n "
         ${GOOGLEMOCK})
-  target_link_libraries (sf-gunit
+  target_link_libraries (sf-sample-test
+      ${GOOGLEMOCK}
+      ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries (sf-stringhex-test
       ${GOOGLEMOCK}
       ${CMAKE_THREAD_LIBS_INIT})
 endif()
