@@ -11,23 +11,16 @@ set (SERIALMAC_PRODUCT_NAME    "Serial MAC" CACHE STRING "product")
 
 # configure a header file to pass some of the CMake settings
 # to the source code
-configure_file(${PROJECT_SOURCE_DIR}/src/version.h.in
+configure_file(${PROJECT_SOURCE_DIR}/version.h.in
                ${PROJECT_BINARY_DIR}/version.h)
 
-# add the binary tree to the search path for include files
-include_directories(${PROJECT_BINARY_DIR}/
-                    ${PROJECT_SOURCE_DIR}/src
-                    ${PROJECT_SOURCE_DIR}/dep/crc/)
-
 list (APPEND SERIALMAC_HEADERS
-    ${PROJECT_SOURCE_DIR}/src/sf_serialmac.h
-    ${PROJECT_SOURCE_DIR}/dep/crc/sf_crc.h
+    ${PROJECT_SOURCE_DIR}/sf_serialmac.h
     ${PROJECT_BINARY_DIR}/version.h
     )
 
 set (SERIALMAC_SOURCES
-     ${PROJECT_SOURCE_DIR}/src/sf_serialmac.c
-     ${PROJECT_SOURCE_DIR}/dep/crc/sf_crc.c
+     ${PROJECT_SOURCE_DIR}/sf_serialmac.c
      ${SERIALMAC_HEADERS}
      )
 
@@ -37,14 +30,15 @@ find_package(Doxygen)
 if(DOXYGEN_FOUND)
 
     string(CONCAT DOXYFILE_INPUT ${DOXYFILE_INPUT} " "
-        ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../README.md)
     foreach(loop_var IN LISTS SERIALMAC_HEADERS)
         string(CONCAT DOXYFILE_INPUT ${DOXYFILE_INPUT} " " ${loop_var})
     endforeach(loop_var)
 
     MESSAGE(STATUS "doxyfile input: ${DOXYFILE_INPUT}")
 
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in
+    # TODO: move doxyfiles below lib or this config to root dir
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../doc/Doxyfile.in
 ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
     add_custom_target(doc
@@ -57,9 +51,12 @@ else()
     add_custom_target(doc SOURCES)
 endif(DOXYGEN_FOUND)
 
-#list(APPEND SERIALMAC_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+set(CRC_SOURCE_DIR ../dep/crc)
+add_subdirectory(${CRC_SOURCE_DIR} crc)
 
 add_library(serialmac ${SERIALMAC_SOURCES})
+add_dependencies(serialmac crc)
+include_directories(${CRC_SOURCE_DIR})
 
 install (TARGETS serialmac DESTINATION lib)
-install (FILES ${PROJECT_SOURCE_DIR}/src/sf_serialmac.h DESTINATION include)
+install (FILES ${PROJECT_SOURCE_DIR}/sf_serialmac.h DESTINATION include)

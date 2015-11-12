@@ -4,7 +4,7 @@ project (serialcli)
 include(ExternalProject)
 include(CTest)
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/../ ${PROJECT_BINARY_DIR}/lib)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../lib ${PROJECT_BINARY_DIR}/lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer
     ${PROJECT_BINARY_DIR}/observer)
 add_subdirectory(${PROJECT_SOURCE_DIR}/../tst/gunit ${PROJECT_BINARY_DIR}/tst)
@@ -99,7 +99,7 @@ include_directories(
     # add the binary tree to the search path for include files
     ${PROJECT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/../src
+    ${PROJECT_SOURCE_DIR}/../lib
     ${LIBSERIALPORT_INSTALL_DIR}/include
     ${LIBDOCOPT_INSTALL_DIR}/include/docopt
     ${PROJECT_SOURCE_DIR}/../dep/observer
@@ -152,6 +152,7 @@ add_dependencies(sf
     serialport
     serialmac
     observer
+    crc
     )
 
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
@@ -175,6 +176,7 @@ if(LIBSERIALPORT AND LIBDOCOPT)
         observer
         ${CMAKE_THREAD_LIBS_INIT}
         ${WIN32_DEPS}
+        crc
         )
 endif()
 
