@@ -27,34 +27,36 @@ if (WIN32)
     set(WIN32_DEPS ${SETUPAPI})
 endif()
 
-MESSAGE("PATH: $ENV{PATH}")
+##
+## DOCOPT
+##
+ExternalProject_Add(libdocopt   # Name for custom target
+    #--Download step--------------
+    GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
+    GIT_TAG master
+    #--Configure step-----------------
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    )
 
-set(LIBDOCOPT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libdocopt-prefix)
-find_library(LIBDOCOPT docopt
-    ${LIBDOCOPT_INSTALL_DIR}/lib/)
-
-if(NOT LIBDOCOPT)
-  MESSAGE(STATUS "libdocopt not found!")
-  ExternalProject_Add(libdocopt   # Name for custom target
-      #--Download step--------------
-      GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
-                     #git@github.com:docopt/docopt.cpp.git
-      GIT_TAG master
-      #--Configure step-----------------
-      CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDOCOPT_INSTALL_DIR}
-      )
-  ExternalProject_Get_Property(libdocopt install_dir)
-  MESSAGE(STATUS "docopt will be installed to:\n " ${install_dir})
-  # rerun cmake in initial build
-  # will update cmakecache/project files on first build
-  # so you may have to reload project after first build
-  add_custom_target(docopt ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS libdocopt)
+externalproject_get_property(libdocopt install_dir)
+if(WIN32)
+    add_library(docopt IMPORTED STATIC GLOBAL)
+    # Set docopt properties
+    set_target_properties(docopt PROPERTIES
+        "IMPORTED_LOCATION" "${install_dir}/lib/libdocopt_s.a"
+        )
 else()
-    MESSAGE(STATUS "libdocopt found!")
-    # serialport becomes a dummy target after first build
-    # this prevents cmake from rebuilding cache/projects on subsequent builds
-    add_custom_target(docopt)
+    add_library(docopt IMPORTED SHARED GLOBAL)
+    set_target_properties(docopt PROPERTIES
+        "IMPORTED_LOCATION" "${install_dir}/lib/libdocopt.so"
+        )
 endif()
+
+add_dependencies(docopt libdocopt)
+
+ExternalProject_Get_Property(libdocopt install_dir binary_dir)
+include_directories("${install_dir}/include/docopt")
+
 
 set(LIBSERIALPORT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libserialport-prefix)
 find_library(LIBSERIALPORT serialport
@@ -101,14 +103,8 @@ include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/../lib
     ${LIBSERIALPORT_INSTALL_DIR}/include
-    ${LIBDOCOPT_INSTALL_DIR}/include/docopt
     ${PROJECT_SOURCE_DIR}/../dep/observer
     )
-
-set(DOCOPT_HEADERS
-    ${LIBDOCOPT_INSTALL_DIR}/include/docopt/docopt.h
-)
-set_source_files_properties(${DOCOPT_HEADERS} PROPERTIES GENERATED TRUE)
 
 # This is only added to display the header in your IDE!
 set(LIBSERIALPORT_HEADERS
@@ -126,7 +122,6 @@ set(OBERSERVER_FILES
     )
 
 set(SF_SERIALMACCLI_HEADERS
-    ${DOCOPT_HEADERS}
     ${LIBSERIALPORT_HEADERS}
     ${PROJECT_BINARY_DIR}/version.h
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.h
@@ -158,21 +153,11 @@ add_dependencies(sf
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
 
-if(LIBSERIALPORT AND LIBDOCOPT)
-    if(WIN32)
-        # On Windows make sure that the static lib is linked
-        set(LIBDOCOPT "${LIBDOCOPT_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}docopt_s${CMAKE_STATIC_LIBRARY_SUFFIX}")
-        #set(LIBSERIALPORT "${LIBSERIALPORT_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}serialport${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    endif()
-    MESSAGE(STATUS "libdocopt is:\n "
-        ${LIBDOCOPT})
-    #MESSAGE(STATUS "libserialport is:\n "
-        #${LIBSERIALPORT})
-		
+if(LIBSERIALPORT)
     target_link_libraries(sf
         serialmac
         ${LIBSERIALPORT}
-        ${LIBDOCOPT}
+        docopt
         observer
         ${CMAKE_THREAD_LIBS_INIT}
         ${WIN32_DEPS}
