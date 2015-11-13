@@ -2,7 +2,6 @@ cmake_minimum_required (VERSION 2.8)
 project (serialcli)
 
 include(ExternalProject)
-include(CTest)
 
 ##
 ## TARGET
@@ -24,6 +23,7 @@ add_dependencies(
     observer
     )
 
+target_include_directories(sf PUBLIC ${PROJECT_SOURCE_DIR})
 
 ##
 ## PRODUCT AND VERSION
@@ -158,8 +158,18 @@ endif()
 ##
 install(TARGETS sf DESTINATION bin)
 
-##
-## TESTING
-##
-#add_test(sf-stringhex-test tst/sf-stringhex-test)
+###
+### TESTING
+###
+include(${PROJECT_SOURCE_DIR}/../CMakeIncludeGTest.txt)
+
+# stringhex
+add_executable(teststringhex
+    test/test.cpp
+    test/sf_teststringhex.cpp
+    sf_stringhex.cpp
+    )
+target_include_directories(teststringhex PUBLIC ${PROJECT_SOURCE_DIR})
+target_link_libraries(teststringhex libgmock)
+add_test(NAME teststringhex COMMAND teststringhex)
 
