@@ -4,11 +4,30 @@ project (serialcli)
 include(ExternalProject)
 include(CTest)
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/../lib ${PROJECT_BINARY_DIR}/lib)
-add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer
-    ${PROJECT_BINARY_DIR}/observer)
-add_subdirectory(${PROJECT_SOURCE_DIR}/../tst/gunit ${PROJECT_BINARY_DIR}/tst)
+##
+## TARGET
+##
+set(SF_SERIALMACCLI_SOURCES
+    ${PROJECT_SOURCE_DIR}/main
+    ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
+    ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
+    ${PROJECT_SOURCE_DIR}/sf_stringhex.cpp
+    )
 
+add_executable(sf  ${SF_SERIALMACCLI_SOURCES})
+
+add_dependencies(
+    sf
+    docopt
+    serialport
+    serialmac
+    observer
+    )
+
+
+##
+## PRODUCT AND VERSION
+##
 set (SERIALMACCLI_PRODUCT_NAME "sf-serial" CACHE STRING "product")
 
 # configure a header file to pass some of the CMake settings
@@ -18,7 +37,14 @@ configure_file (
     "${PROJECT_BINARY_DIR}/version.h"
     )
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra -pedantic -fmessage-length=0")
+# add the binary tree to the search path for generated include files
+target_include_directories(sf PUBLIC ${PROJECT_BINARY_DIR})
+
+
+##
+## TOOLCHAIN OPTIONS
+##
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
 
 if (WIN32)
     MESSAGE(STATUS "On Windows")
@@ -27,9 +53,11 @@ if (WIN32)
     set(WIN32_DEPS ${SETUPAPI})
 endif()
 
+
 ##
-## DOCOPT
+## EXTERNAL PROJECTS
 ##
+# DOCOPT
 ExternalProject_Add(libdocopt   # Name for custom target
     #--Download step--------------
     GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
@@ -39,6 +67,7 @@ ExternalProject_Add(libdocopt   # Name for custom target
     )
 
 externalproject_get_property(libdocopt install_dir)
+include_directories("${install_dir}/include/docopt")
 if(WIN32)
     add_library(docopt IMPORTED STATIC GLOBAL)
     # Set docopt properties
@@ -54,13 +83,9 @@ endif()
 
 add_dependencies(docopt libdocopt)
 
-ExternalProject_Get_Property(libdocopt install_dir binary_dir)
-include_directories("${install_dir}/include/docopt")
-
-
+# SERIALPORT
 set(LIBSERIALPORT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libserialport-prefix)
-find_library(LIBSERIALPORT serialport
-    ${LIBSERIALPORT_INSTALL_DIR}/lib/)
+find_library(LIBSERIALPORT serialport ${LIBSERIALPORT_INSTALL_DIR}/lib/)
 
 if(NOT LIBSERIALPORT)
     MESSAGE(STATUS "libserialport not found!")
@@ -80,16 +105,16 @@ if(NOT LIBSERIALPORT)
         INSTALL_COMMAND make install
         )
 
-    ExternalProject_Get_Property(libserialport install_dir)
-    ExternalProject_Get_Property(libserialport build_command)
-    ExternalProject_Get_Property(libserialport configure_command)
+    ExternalProject_Get_Property(libserialport
+        install_dir build_command configure_command)
     MESSAGE(STATUS "libserialport will be installed to:\n "
         ${install_dir} "\nusing build command: " ${build_command}
         "\nusing configure command: " ${configure_command})
-    # rerun cmake in initial build
+    # re-run cmake in initial build
     # will update cmakecache/project files on first build
     # so you may have to reload project after first build
-    add_custom_target(serialport ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR} DEPENDS libserialport)
+    add_custom_target(serialport COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR} DEPENDS libserialport)
 else()
     MESSAGE(STATUS "libserialport found!")
     # serialport becomes a dummy target after first build
@@ -97,63 +122,27 @@ else()
     add_custom_target(serialport)
 endif()
 
-include_directories(
-    # add the binary tree to the search path for include files
-    ${PROJECT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/../lib
-    ${LIBSERIALPORT_INSTALL_DIR}/include
-    ${PROJECT_SOURCE_DIR}/../dep/observer
-    )
-
-# This is only added to display the header in your IDE!
-set(LIBSERIALPORT_HEADERS
-    ${LIBSERIALPORT_INSTALL_DIR}/include/libserialport.h
-    )
+set(LIBSERIALPORT_HEADERS ${LIBSERIALPORT_INSTALL_DIR}/include/libserialport.h)
 set_source_files_properties(${LIBSERIALPORT_HEADERS} PROPERTIES GENERATED TRUE)
+include_directories(${LIBSERIALPORT_INSTALL_DIR}/include)
 
-# This is only added to display the files in your IDE!
-set(OBERSERVER_FILES
-    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_event.h
-    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_event.cpp
-    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_observer.h
-    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_subject.h
-    ${PROJECT_SOURCE_DIR}/../dep/observer/sf_subject.cpp
-    )
 
-set(SF_SERIALMACCLI_HEADERS
-    ${LIBSERIALPORT_HEADERS}
-    ${PROJECT_BINARY_DIR}/version.h
-    ${PROJECT_SOURCE_DIR}/sf_serialmaccli.h
-    ${PROJECT_SOURCE_DIR}/sf_serialmachandler.h
-    ${PROJECT_SOURCE_DIR}/sf_stringhex.h
-    #${PROJECT_SOURCE_DIR}/../tst/gunit/tests/sf_teststringhex.h
-    )
+##
+## INTERNAL PROJECTS
+##
+# SERIALMAC
+add_subdirectory(${PROJECT_SOURCE_DIR}/../lib lib)
+# OBSERVER
+add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer observer)
 
-set(SF_SERIALMACCLI_SOURCES
-    ${PROJECT_SOURCE_DIR}/main
-    ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
-    ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
-    ${PROJECT_SOURCE_DIR}/sf_stringhex.cpp
-    #${PROJECT_SOURCE_DIR}/../tst/gunit/tests/sf_teststringhex.cpp
-    ${SF_SERIALMACCLI_HEADERS}
-    ${OBERSERVER_FILES}
-    )
 
-add_executable(sf  ${SF_SERIALMACCLI_SOURCES})
-
-add_dependencies(sf
-    docopt
-    serialport
-    serialmac
-    observer
-    crc
-    )
-
+##
+## LINKING
+##
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
 
-if(LIBSERIALPORT)
+if(LIBSERIALPORT) # This is needed for integrating the non-CMake project
     target_link_libraries(sf
         serialmac
         ${LIBSERIALPORT}
@@ -161,8 +150,16 @@ if(LIBSERIALPORT)
         observer
         ${CMAKE_THREAD_LIBS_INIT}
         ${WIN32_DEPS}
-        crc
         )
 endif()
 
-add_test(sf-stringhex-test tst/sf-stringhex-test)
+##
+## INSTALLATION
+##
+install(TARGETS sf DESTINATION bin)
+
+##
+## TESTING
+##
+#add_test(sf-stringhex-test tst/sf-stringhex-test)
+
