@@ -10,7 +10,7 @@ public:
     StringHex();
     ~StringHex();
 
-    uint8_t *HexStringToBinary(std::string *hex_string);
+    size_t HexStringToBinary(std::string *hex_string, uint8_t **hex_array);
     std::string *BinaryToHexString(uint8_t *binaries, size_t length);
 };
 
