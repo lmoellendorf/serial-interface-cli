@@ -62,6 +62,9 @@ ExternalProject_Add(libdocopt   # Name for custom target
     #--Download step--------------
     GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
     GIT_TAG master
+    #--Update step----------------
+    # Never update automatically from the remote repository
+    UPDATE_DISCONNECTED 1
     #--Configure step-----------------
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     )
@@ -93,6 +96,9 @@ if(NOT LIBSERIALPORT)
         #--Download step--------------
         GIT_REPOSITORY git://sigrok.org/libserialport
         GIT_TAG master
+        #--Update step----------------
+        # Never update automatically from the remote repository
+        UPDATE_DISCONNECTED 1
         #--Configure step-------------
         # set prefix to the default install dir
         # (libserialport-prefix in this case)
