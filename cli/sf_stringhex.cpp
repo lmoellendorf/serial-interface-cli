@@ -15,8 +15,8 @@ std::string *StringHex::BinaryToHexString ( uint8_t* binaries, size_t length )
   return NULL;
 }
 
-size_t StringHex::HexStringToBinary(std::string *hex_string, uint8_t **hex_array)
+std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string )
 {
-  uint8_t *hex = NULL;
-  return 0;
+ std::vector<uint8_t> *hex = new std::vector<uint8_t>();
+  return *hex;
 }

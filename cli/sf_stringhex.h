@@ -3,6 +3,7 @@
 
 #include <string>
 #include <stdint.h>
+#include <vector>
 
 class StringHex
 {
@@ -10,7 +11,7 @@ public:
     StringHex();
     ~StringHex();
 
-    size_t HexStringToBinary(std::string *hex_string, uint8_t **hex_array);
+    std::vector<uint8_t> &HexStringToBinary ( std::string &hex_string );
     std::string *BinaryToHexString(uint8_t *binaries, size_t length);
 };
 
