@@ -128,6 +128,9 @@ TEST_F ( TestStringHex, PartlyInvalidSpaceSeparatedHexStringToBinaryTest )
 
 TEST_F ( TestStringHex, BinaryToHexStringTest )
 {
-  FAIL() << " - Test not implemented yet";
-  uint8_t test_hex[] = { 0x55, 0xaa, 0x55, 0xff, 0x00 };
+  std::vector<uint8_t>  hex_vector = { 0x55, 0xaa, 0x55, 0xff, 0x00 };
+  std::string hex_string_test = "55 AA 55 FF 00";
+  StringHex hex;
+  std::string hex_string;
+  ASSERT_THAT ( hex.BinaryToHexString ( hex_vector, hex_string ), testing::StrEq(hex_string_test) );
 }
