@@ -53,6 +53,16 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
               /* Check if there follows another character */
               if ( token_length >= i + 1 )
                 {
+                  /**
+                   * Ignore "0x"
+                   * Because strtoul gets only 2 byte to see, passing
+                   * hexadecimal prefixes is not possible here.
+                   */
+                  if ( '0' == * ( token + i ) &&
+                    'x' ==  * ( token + i + 1 ) )
+                    {
+                      continue;
+                    }
                   * ( ( uint16_t* ) hex_array ) =
                     * ( ( uint16_t* ) ( token + i ) );
                   byte = strtoul ( hex_array, &endptr, 16 );
