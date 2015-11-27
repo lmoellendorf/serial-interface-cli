@@ -23,7 +23,7 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
   /** Needed for tokenizing string at spaces */
   const char *delim = " ";
   char *saveptr = NULL;
-  char *token = "  ";
+  char *token;
   char *c_hex_string;
   char *str;
 
