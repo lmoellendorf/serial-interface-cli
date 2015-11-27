@@ -11,11 +11,6 @@ StringHex::~StringHex()
 
 }
 
-std::string *StringHex::BinaryToHexString ( uint8_t* binaries, size_t length )
-{
-  return NULL;
-}
-
 std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
     std::vector<uint8_t> &hex_binaries )
 {
@@ -83,4 +78,10 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
   while ( token );
 
   return hex_binaries;
+}
+
+std::string &StringHex::BinaryToHexString ( std::vector<uint8_t> &hex_binaries,
+                                            std::string &hex_string )
+{
+  return hex_string;
 }
