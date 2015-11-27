@@ -12,7 +12,7 @@ public:
     ~StringHex();
 
     std::vector<uint8_t> &HexStringToBinary ( std::string &hex_string,
-                                                     std::vector<uint8_t> &hex_binaries );
+            std::vector<uint8_t> &hex_binaries );
     std::string *BinaryToHexString(uint8_t *binaries, size_t length);
 };
 
