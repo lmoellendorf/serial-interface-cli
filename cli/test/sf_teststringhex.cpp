@@ -37,6 +37,15 @@ TEST_F ( TestStringHex, HexStringToBinaryTest )
   ASSERT_THAT ( hex.HexStringToBinary ( hex_string, hex_vector ), testing::ElementsAreArray ( hex_array_test ) );
 }
 
+TEST_F ( TestStringHex, UnevenHexStringToBinaryTest )
+{
+  std::string hex_string = "55AA55FF0";
+  uint8_t hex_array_test[] = { 0x55, 0xaa, 0x55, 0xff, 0x00 };
+  StringHex hex;
+  std::vector<uint8_t> hex_vector;
+  ASSERT_THAT ( hex.HexStringToBinary ( hex_string, hex_vector ), testing::ElementsAreArray ( hex_array_test ) );
+}
+
 TEST_F ( TestStringHex, LowerCaseHexStringToBinaryTest )
 {
   std::string hex_string = "55aa55ff00";
@@ -102,4 +111,5 @@ TEST_F ( TestStringHex, PartlyInvalidHexStringToBinaryTest )
 TEST_F ( TestStringHex, BinaryToHexStringTest )
 {
   FAIL() << " - Test not implemented yet";
+  uint8_t test_hex[] = { 0x55, 0xaa, 0x55, 0xff, 0x00 };
 }
