@@ -39,8 +39,8 @@ TEST_F ( TestStringHex, HexStringToBinaryTest )
 
 TEST_F ( TestStringHex, UnevenHexStringToBinaryTest )
 {
-  std::string hex_string = "55AA55FF0";
-  uint8_t hex_array_test[] = { 0x55, 0xaa, 0x55, 0xff, 0x00 };
+  std::string hex_string = "55AA55FF9";
+  uint8_t hex_array_test[] = { 0x55, 0xaa, 0x55, 0xff, 0x09 };
   StringHex hex;
   std::vector<uint8_t> hex_vector;
   ASSERT_THAT ( hex.HexStringToBinary ( hex_string, hex_vector ), testing::ElementsAreArray ( hex_array_test ) );
