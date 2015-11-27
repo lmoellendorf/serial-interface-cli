@@ -25,7 +25,7 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
   char *saveptr = NULL;
   char *token;
   char *c_hex_string;
-  char *str;
+  char *pass_to_strtok_r;
 
   size_t hex_string_length;
   size_t token_length;
@@ -38,13 +38,13 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
   c_hex_string = ( char* ) std::malloc ( hex_string_length + 1 );
   strncpy ( c_hex_string, hex_string.c_str(), hex_string_length + 1 );
   /* Copy the pointer so the tokenizer may set it to NULL */
-  str = c_hex_string;
+  pass_to_strtok_r = c_hex_string;
 
   do
     {
-      token = strtok_r ( str, delim, &saveptr );
+      token = strtok_r ( pass_to_strtok_r, delim, &saveptr );
       /** Set to NULL for all consecutive iterations */
-      str = NULL;
+      pass_to_strtok_r = NULL;
       if ( token )
         {
           for ( size_t i = 0; i <
