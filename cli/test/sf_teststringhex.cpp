@@ -73,6 +73,15 @@ TEST_F ( TestStringHex, PrefixedHexStringToBinaryTest )
   ASSERT_THAT ( hex.HexStringToBinary ( hex_string, hex_vector ), testing::ElementsAreArray ( hex_array_test ) );
 }
 
+TEST_F ( TestStringHex, UppercasePrefixedHexStringToBinaryTest )
+{
+  std::string hex_string = "0X55AA55FF00";
+  uint8_t hex_array_test[] = { 0x55, 0xaa, 0x55, 0xff, 0x00 };
+  StringHex hex;
+  std::vector<uint8_t> hex_vector;
+  ASSERT_THAT ( hex.HexStringToBinary ( hex_string, hex_vector ), testing::ElementsAreArray ( hex_array_test ) );
+}
+
 TEST_F ( TestStringHex, SpaceSeparatedHexStringToBinaryTest )
 {
   std::string hex_string = "55 AA 55 FF 00";

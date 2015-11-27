@@ -40,6 +40,8 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
   /* Copy the pointer so the tokenizer may set it to NULL */
   pass_to_strtok_r = c_hex_string;
 
+  const uint8_t case_mask = 0b0100000;
+
   do
     {
       token = strtok_r ( pass_to_strtok_r, delim, &saveptr );
@@ -53,12 +55,12 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
               /* Clean the array in case only one character is left */
               memset ( hex_array, 0, sizeof hex_array );
               /**
-               * Ignore "0x"
+               * Ignore "0x" and "0X"
                * Because strtoul gets only 2 byte to see, passing
                * hexadecimal prefixes is not possible here.
                */
               if ( token_length > i + 1  && '0' == * ( token + i ) &&
-                   'x' ==  * ( token + i + 1 ) )
+                   'x' == ( * ( token + i + 1 ) | case_mask ) )
                 {
                   continue;
                 }
