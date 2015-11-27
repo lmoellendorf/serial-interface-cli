@@ -36,7 +36,7 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
   hex_string_length = hex_string.length();
   /** Copy the whole string for tokenizing */
   c_hex_string = ( char* ) std::malloc ( hex_string_length + 1 );
-  strcpy ( c_hex_string, hex_string.c_str() );
+  strncpy ( c_hex_string, hex_string.c_str(), hex_string_length + 1 );
   /* Copy the pointer so the tokenizer may set it to NULL */
   str = c_hex_string;
 
