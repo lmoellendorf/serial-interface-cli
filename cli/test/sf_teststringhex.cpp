@@ -101,6 +101,15 @@ TEST_F ( TestStringHex, InvalidHexStringToBinaryTest )
 
 TEST_F ( TestStringHex, PartlyInvalidHexStringToBinaryTest )
 {
+  std::string hex_string = "55AA55FF00INVALID";
+  uint8_t hex_array_test[] = { 0x55, 0xaa, 0x55, 0xff, 0x00 };
+  StringHex hex;
+  std::vector<uint8_t> hex_vector;
+  ASSERT_THAT ( hex.HexStringToBinary ( hex_string, hex_vector ), testing::ElementsAreArray ( hex_array_test ) );
+}
+
+TEST_F ( TestStringHex, PartlyInvalidSpaceSeparatedHexStringToBinaryTest )
+{
   std::string hex_string = "55 AA 55 FF 00 INVALID";
   uint8_t hex_array_test[] = { 0x55, 0xaa, 0x55, 0xff, 0x00 };
   StringHex hex;
