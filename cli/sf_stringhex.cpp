@@ -50,32 +50,30 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
           for ( size_t i = 0; i <
                 ( token_length = strnlen ( token, hex_string_length ) ); i+=2 )
             {
-              /* Check if there follows another character */
-              if ( token_length >= i + 1 )
+              /* Clean the array in case only one character is left */
+              memset ( hex_array, 0, sizeof hex_array );
+              /**
+               * Ignore "0x"
+               * Because strtoul gets only 2 byte to see, passing
+               * hexadecimal prefixes is not possible here.
+               */
+              if ( token_length > i + 1  && '0' == * ( token + i ) &&
+                   'x' ==  * ( token + i + 1 ) )
                 {
-                  /**
-                   * Ignore "0x"
-                   * Because strtoul gets only 2 byte to see, passing
-                   * hexadecimal prefixes is not possible here.
-                   */
-                  if ( '0' == * ( token + i ) &&
-                    'x' ==  * ( token + i + 1 ) )
-                    {
-                      continue;
-                    }
-                  * ( ( uint16_t* ) hex_array ) =
-                    * ( ( uint16_t* ) ( token + i ) );
-                  byte = strtoul ( hex_array, &endptr, 16 );
-                  /* Check if the whole string had been valid */
-                  if ( '\0' != *hex_array && '\0' == *endptr )
-                    {
-                      hex_binaries.push_back ( byte );
-                    }
-                  else
-                    {
-                      /* Stop at the first invalid character */
-                      break;
-                    }
+                  continue;
+                }
+              * ( ( uint16_t* ) hex_array ) =
+                * ( ( uint16_t* ) ( token + i ) );
+              byte = strtoul ( hex_array, &endptr, 16 );
+              /* Check if the whole string had been valid */
+              if ( '\0' != *hex_array && '\0' == *endptr )
+                {
+                  hex_binaries.push_back ( byte );
+                }
+              else
+                {
+                  /* Stop at the first invalid character */
+                  break;
                 }
             }
         }
