@@ -34,6 +34,10 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
             {
               hex_binaries.push_back ( result );
             }
+          else
+            {
+              break;
+            }
         }
     }
 
