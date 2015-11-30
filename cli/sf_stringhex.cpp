@@ -1,5 +1,6 @@
 #include "sf_stringhex.h"
 #include <string.h>
+#include <bitset>
 
 StringHex::StringHex()
 {
@@ -35,7 +36,10 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
   /* Copy the pointer so the tokenizer may set it to NULL */
   pass_to_strtok_r = c_hex_string;
 
-  const uint8_t case_mask = 0b0100000;
+  /** sigh! "warning: binary constants are a C++14 feature or GCC extension"
+  const uint8_t case_mask = 0b00100000;
+  */
+  std::bitset<8> case_mask( "00100000" ) ; // construct from std::string
 
   do
     {
@@ -55,7 +59,7 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
                * hexadecimal prefixes is not possible here.
                */
               if ( token_length > i + 1  && '0' == * ( token + i ) &&
-                   'x' == ( * ( token + i + 1 ) | case_mask ) )
+                   ( case_mask |= * ( token + i + 1 ) ) == 'x' )
                 {
                   continue;
                 }
