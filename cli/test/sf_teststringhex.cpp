@@ -134,3 +134,21 @@ TEST_F ( TestStringHex, BinaryToHexStringTest )
   std::string hex_string;
   ASSERT_THAT ( hex.BinaryToHexString ( hex_vector, hex_string ), testing::StrEq(hex_string_test) );
 }
+
+TEST_F ( TestStringHex, UnevenBinaryToHexStringTest )
+{
+  std::vector<uint8_t>  hex_vector = { 0x5, 0xa5, 0x5a, 0x0, 0x0f };
+  std::string hex_string_test = "05 A5 5A 00 0F";
+  StringHex hex;
+  std::string hex_string;
+  ASSERT_THAT ( hex.BinaryToHexString ( hex_vector, hex_string ), testing::StrEq(hex_string_test) );
+}
+
+TEST_F ( TestStringHex, EmptyBinaryToHexStringTest )
+{
+  std::vector<uint8_t>  hex_vector = { };
+  std::string hex_string_test;
+  StringHex hex;
+  std::string hex_string;
+  ASSERT_THAT ( hex.BinaryToHexString ( hex_vector, hex_string ), testing::StrEq(hex_string_test) );
+}
