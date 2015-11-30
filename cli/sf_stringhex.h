@@ -8,6 +8,7 @@
 class StringHex
 {
 public:
+    StringHex(std::string delimiter);
     StringHex();
     ~StringHex();
 
@@ -15,6 +16,8 @@ public:
             std::vector<uint8_t> &hex_binaries );
     std::string &BinaryToHexString ( std::vector<uint8_t> &hex_binaries,
                                      std::string &hex_string );
+private:
+    std::string delimiter = " ,;:";
 };
 
 #endif // SF_STRINGHEX_H

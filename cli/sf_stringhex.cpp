@@ -3,7 +3,14 @@
 #include <stdio.h>
 #include <bitset>
 
-StringHex::StringHex()
+StringHex::StringHex( std::string delimiter )
+{
+  if(!delimiter.empty()){
+    this->delimiter = delimiter;
+  }
+}
+
+StringHex::StringHex( )
 {
 
 }
@@ -18,7 +25,6 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
 {
 
   /** Needed for tokenizing string at spaces */
-  const char *delim = " ,;:";
   char *saveptr = NULL;
   char *token;
   char *c_hex_string;
@@ -44,7 +50,7 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
 
   do
     {
-      token = strtok_r ( pass_to_strtok_r, delim, &saveptr );
+      token = strtok_r ( pass_to_strtok_r, delimiter.c_str(), &saveptr );
       /** Set to NULL for all consecutive iterations */
       pass_to_strtok_r = NULL;
       if ( token )
