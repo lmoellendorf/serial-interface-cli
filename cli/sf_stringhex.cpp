@@ -1,5 +1,6 @@
 #include "sf_stringhex.h"
 #include <string.h>
+#include <stdio.h>
 #include <bitset>
 
 StringHex::StringHex()
@@ -87,5 +88,27 @@ std::vector<uint8_t> &StringHex::HexStringToBinary ( std::string &hex_string,
 std::string &StringHex::BinaryToHexString ( std::vector<uint8_t> &hex_binaries,
                                             std::string &hex_string )
 {
+  const size_t size = 3;
+  char str[size];
+
+  for ( std::vector<uint8_t>::iterator hex_binary = hex_binaries.begin() ;
+        hex_binary != hex_binaries.end();
+        ++hex_binary )
+    {
+      if ( (int) (size - 1) == std::snprintf ( str, size, "%2.2X", *hex_binary ) )
+        {
+          hex_string += str;
+          hex_string += " ";
+        }
+    }
+    /**
+     * To avoid exceptions check for emptiness first, then check if the loop
+     * above has been rund in which case one ' ' has been appended too much.
+     */
+    if(!hex_string.empty() && ' ' == hex_string.back()){
+      /** Remove the trailing ' '. */
+      hex_string.pop_back();
+    }
+
   return hex_string;
 }
