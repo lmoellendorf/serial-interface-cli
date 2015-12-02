@@ -562,6 +562,12 @@ void SerialMacCli::CliInput ( void )
                   std::vector<uint8_t> hex_binaries;
                   hex.HexStringToBinary ( line, hex_binaries );
                   output_buffer_length = hex_binaries.size();
+                  /**
+                   * On invalid input the length is 0 and we are finished for
+                   * the moment
+                   */
+                  if(!output_buffer_length)
+                    break;
                   /** Will be freed in Update() when TX has been completed. */
                   output_buffer = ( char* ) std::malloc ( output_buffer_length );
                   std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
