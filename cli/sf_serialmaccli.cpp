@@ -65,7 +65,7 @@ SerialMacCli::SerialMacCli ( int argc, char **argv )
     {
       if ( value.asBool() )
         {
-          Verbose = printf;
+          Verbose = std::printf;
         }
       else
         {
