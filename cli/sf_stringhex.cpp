@@ -3,11 +3,12 @@
 #include <stdio.h>
 #include <bitset>
 
-StringHex::StringHex( std::string delimiter )
+StringHex::StringHex ( std::string delimiter )
 {
-  if(!delimiter.empty()){
-    this->delimiter = delimiter;
-  }
+  if ( !delimiter.empty() )
+    {
+      this->delimiter = delimiter;
+    }
 }
 
 StringHex::StringHex( )
