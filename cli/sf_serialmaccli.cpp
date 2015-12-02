@@ -51,7 +51,7 @@
                                                   Do not configure DSR
                                                   Do not configure XON/XOFF
       -t, --text                                  Send and receive plain text instead of converting it to binary values first.
-      -s <delimiters>, --delimiters=<delimiters>  String delimiter(s) [default: ,;: ] <- The last default is a whitespace!
+      -s <delimiters>, --delimiters=<delimiters>  String delimiter(s) [default: ,;.: ] <- The last default is a whitespace!
                                                   Will split the string at the given delimiters before converting them to binary values.
       -V, --verbose                               Verbosive debug information on stderr.
       )";
