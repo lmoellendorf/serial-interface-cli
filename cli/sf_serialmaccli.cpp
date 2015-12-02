@@ -659,25 +659,11 @@ int SerialMacCli::Run ( )
   /** Start waiting for CLI input */
   cli_input_state = CLI;
   std::thread process_cli_input (&SerialMacCli::CliInput, this);
+  process_cli_input.detach();
 
   /** Start waiting for CLI output */
   cli_output_state = SERIAL;
   CliOutput();
-
-  /**
-   * 30.3.1.3 thread destructor [thread.thread.destr]
-   *
-   * ~thread();
-   *
-   * If joinable() then terminate(), otherwise no effects.
-   * [ Note: Either implicitly detaching or joining a joinable()
-   * thread in its destructor could result in difficult to debug
-   * correctness (for detach) or performance (for join) bugs
-   * encountered only when an exception is raised. Thus the
-   * programmer must ensure that the destructor is never executed
-   * while the thread is still joinable. — end note ]
-   */
-  process_cli_input.join();
 
   return ret;
 }
