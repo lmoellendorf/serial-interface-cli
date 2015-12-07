@@ -9,7 +9,6 @@ public:
     Event ( int identifier, void *source, void *content, size_t content_size );
     ~Event();
 
-public:
     virtual int GetIdentifier ( );
     virtual void* GetSource ( );
     virtual size_t GetDetails ( void **content );

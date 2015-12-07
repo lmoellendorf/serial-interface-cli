@@ -8,6 +8,7 @@
 #include "sf_serialmachandler.h"
 #include "sf_serialmac.h"
 #include "version.h"
+#include "sf_stringhex.h"
 
 
     static const char USAGE[] =
@@ -17,39 +18,42 @@
       )" SERIALMACCLI_PRODUCT_NAME R"( [options] [<payload> ...]
 
       Options:
-      -h, --help                                Show this screen.
-      -v, --version                             Show version.
-      -d <device>, --device=<device>            Serial port to use (e.g. "/dev/tty0", "/dev/ttyUSB0" or "COM1").
-                                                If none is given, the first available port is chosen.
-      -b <baudrate>, --baudrate=<baudrate>      Baud rate [default: 115200].
-      -D (5-8), --data-bits=(5-8)               Data bits [default: 8].
-      -P (n|o|e|s|m), --parity-bit=(n|o|e|s|m)  Parity bit mode [default: n]:
-                                                n: None
-                                                o: Odd
-                                                e: Even
-                                                s: Space
-                                                m: Mark
-      -S (1|2), --stop-bits=(1|2)               Stop bits [default: 1].
-      -F (n|x|r|d), --flow-control=(n|x|r|d)    Flow control mode [default: n]:
-                                                n: None
-                                                x: XON/XOFF
-                                                r: RTS/CTS
-                                                d: DTR/DSR
-      -C (d|r|dr|rd), --current=(d|r|dr|rd)     Current supply:
-                                                d: Power DTR
-                                                r: Power RTS
-                                                dr or rd: Power both
-      -X (i|o|io|oi), --xon-xoff=(i|o|io|oi)    XON/XOFF flow control behaviour:
-                                                i: Enabled for input only
-                                                o: Enabled for output only
-                                                io or oi: Enabled for input and output
-      -I (d|r|c|s|x), --ignore=(d|r|c|s|x)      ignore configuration options:
-                                                Do not configure DTR
-                                                Do not configure RTS
-                                                Do not configure CTS
-                                                Do not configure DSR
-                                                Do not configure XON/XOFF
-      -V, --verbose                             Verbosive debug information on stderr.
+      -h, --help                                  Show this screen.
+      -v, --version                               Show version.
+      -d <device>, --device=<device>              Serial port to use (e.g. "/dev/tty0", "/dev/ttyUSB0" or "COM1").
+                                                  If none is given, the first available port is chosen.
+      -b <baudrate>, --baudrate=<baudrate>        Baud rate [default: 115200].
+      -D (5-8), --data-bits=(5-8)                 Data bits [default: 8].
+      -P (n|o|e|s|m), --parity-bit=(n|o|e|s|m)    Parity bit mode [default: n]:
+                                                  n: None
+                                                  o: Odd
+                                                  e: Even
+                                                  s: Space
+                                                  m: Mark
+      -S (1|2), --stop-bits=(1|2)                 Stop bits [default: 1].
+      -F (n|x|r|d), --flow-control=(n|x|r|d)      Flow control mode [default: n]:
+                                                  n: None
+                                                  x: XON/XOFF
+                                                  r: RTS/CTS
+                                                  d: DTR/DSR
+      -C (d|r|dr|rd), --current=(d|r|dr|rd)       Current supply:
+                                                  d: Power DTR
+                                                  r: Power RTS
+                                                  dr or rd: Power both
+      -X (i|o|io|oi), --xon-xoff=(i|o|io|oi)      XON/XOFF flow control behaviour:
+                                                  i: Enabled for input only
+                                                  o: Enabled for output only
+                                                  io or oi: Enabled for input and output
+      -I (d|r|c|s|x), --ignore=(d|r|c|s|x)        ignore configuration options:
+                                                  Do not configure DTR
+                                                  Do not configure RTS
+                                                  Do not configure CTS
+                                                  Do not configure DSR
+                                                  Do not configure XON/XOFF
+      -t, --text                                  Send and receive plain text instead of converting it to binary values first.
+      -s <delimiters>, --delimiters=<delimiters>  String delimiter(s) [default: ,;.: ] <- The last default is a whitespace!
+                                                  Will split the string at the given delimiters before converting them to binary values.
+      -V, --verbose                               Verbosive debug information on stderr.
       )";
 
 SerialMacCli::SerialMacCli ( int argc, char **argv )
@@ -65,7 +69,7 @@ SerialMacCli::SerialMacCli ( int argc, char **argv )
     {
       if ( value.asBool() )
         {
-          Verbose = printf;
+          Verbose = std::printf;
         }
       else
         {
@@ -498,6 +502,8 @@ void SerialMacCli::CliInput ( void )
 {
   bool run = true;
   std::string line = "";
+  docopt::value value;
+  std::string delimiters;
   char *output_buffer = NULL;
   int output_buffer_length = 0;
 
@@ -527,15 +533,45 @@ void SerialMacCli::CliInput ( void )
           if ( line.length() > 0 )
             {
               /**
-               * On Windows the pointer given by line.c_str() cannot be passed
-               * to sf_serialmac_tx_frame() because the memory is invalidated.
-               * Therefore the zero terminated character array is copied to
-               * output_buffer first.
+               * We cannot simply pass a pointer to line.c_str() or
+               * hex_binaries[0] here because their memory will be destroyed
+               * as soon as we leave the scope of this function and the serial
+               * MAC processes the memory asynchronously.
+               * Therefore we allocate memory and copy the content.
                */
-              output_buffer_length = line.length() + 1/* for the terminating '\0' */;
-              /** Will be freed in Update() when TX has been completed. */
-              output_buffer = ( char* ) std::malloc ( output_buffer_length );
-              strncpy ( output_buffer, line.c_str(), output_buffer_length );
+              value = args.at ( "--text" );
+              if ( value && value.isBool() && value.asBool() )
+                {
+                  output_buffer_length = line.length() + 1/* for the terminating '\0' */;
+                  /** Will be freed in Update() when TX has been completed. */
+                  output_buffer = ( char* ) std::malloc ( output_buffer_length );
+                  strncpy ( output_buffer, line.c_str(), output_buffer_length );
+                }
+              else
+                {
+                  value = args.at ( "--delimiters" );
+                  if ( value && value.isString() )
+                    {
+                      delimiters = value.asString();
+                    }
+                  /**
+                   * In C++ there is no easy way to separate declaration and
+                   * initialization of objects
+                   */
+                  StringHex hex ( delimiters );
+                  std::vector<uint8_t> hex_binaries;
+                  hex.HexStringToBinary ( line, hex_binaries );
+                  output_buffer_length = hex_binaries.size();
+                  /**
+                   * On invalid input the length is 0 and we are finished for
+                   * the moment
+                   */
+                  if(!output_buffer_length)
+                    break;
+                  /** Will be freed in Update() when TX has been completed. */
+                  output_buffer = ( char* ) std::malloc ( output_buffer_length );
+                  std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
+                }
               //TODO: add error handling
               /** Trigger TX */
               sf_serialmac_tx_frame (
@@ -629,25 +665,11 @@ int SerialMacCli::Run ( )
   /** Start waiting for CLI input */
   cli_input_state = CLI;
   std::thread process_cli_input (&SerialMacCli::CliInput, this);
+  process_cli_input.detach();
 
   /** Start waiting for CLI output */
   cli_output_state = SERIAL;
   CliOutput();
-
-  /**
-   * 30.3.1.3 thread destructor [thread.thread.destr]
-   *
-   * ~thread();
-   *
-   * If joinable() then terminate(), otherwise no effects.
-   * [ Note: Either implicitly detaching or joining a joinable()
-   * thread in its destructor could result in difficult to debug
-   * correctness (for detach) or performance (for join) bugs
-   * encountered only when an exception is raised. Thus the
-   * programmer must ensure that the destructor is never executed
-   * while the thread is still joinable. — end note ]
-   */
-  process_cli_input.join();
 
   return ret;
 }
@@ -672,8 +694,8 @@ void SerialMacCli::Update ( Event *event )
                                       frame_buffer,
                                       frame_buffer_length );
               /**
-               * For future implementations of cli_output_state = CLI:
-               * Switch back to serial state.
+               * Stay in serial state because we handle CLI output directly
+               * when a frame has been received.
                */
               cli_output_state = SERIAL;
             }
@@ -681,36 +703,50 @@ void SerialMacCli::Update ( Event *event )
         case SerialMacHandler::READ_FRAME:
           if ( frame_buffer )
             {
+              docopt::value value; //TODO: rename to a more significant value
               /** Check if a valid frame has been received */
               if ( frame_buffer_length )
                 {
-                  if ( '\n' == frame_buffer[0] )
+                  value = args.at ( "--text" );
+                  if ( value && value.isBool() && value.asBool() )
                     {
-                      cli_output_state = QUIT;
+
+                      if ( '\n' == frame_buffer[0] )
+                        {
+                          cli_output_state = QUIT;
+                        }
+                      else
+                        {
+                          std::printf ( "%s\n", frame_buffer );
+                        }
                     }
                   else
                     {
-                      /**
-                       * Instead of printing directly, cli_output_state = CLI
-                       * could be set and frame_buffer could be processed in
-                       * CliOutput.
-                       */
-                      printf ( "%s\n", frame_buffer );
-                      Verbose ( "Length:\n%zd\n", frame_buffer_length );
+                      std::string delimiters;
+                      value = args.at ( "--delimiters" );
+                      if ( value && value.isString() )
+                        {
+                          delimiters = value.asString();
+                        }
+                      StringHex hex ( delimiters );
+                      std::string hex_string;
+                      std::vector<uint8_t> hex_binaries ( frame_buffer, frame_buffer + frame_buffer_length );
+                      hex.BinaryToHexString ( hex_binaries, hex_string );
+                      std::printf ( "%s\n", hex_string.c_str() );
                     }
+                  Verbose ( "Length:\n%zd\n", frame_buffer_length );
                 }
               /**
-               * TODO: if (in future implementations) frame_buffer is not
-               * processed directly here do not free it!
+               * Frame buffer has been processed.
                */
               std::free ( frame_buffer );
             }
           break;
         case SerialMacHandler::WRITE_BUFFER:
-            if ( frame_buffer )
-              {
-                std::free ( frame_buffer );
-              }
+          if ( frame_buffer )
+            {
+              std::free ( frame_buffer );
+            }
           break;
         case SerialMacHandler::WRITE_FRAME:
           PayloadPassedAsParameter (
