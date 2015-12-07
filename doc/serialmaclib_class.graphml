@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java" xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0" xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
+  <!--Created by yEd 3.14.4-->
+  <key attr.name="Description" attr.type="string" for="graph" id="d0"/>
+  <key for="port" id="d1" yfiles.type="portgraphics"/>
+  <key for="port" id="d2" yfiles.type="portgeometry"/>
+  <key for="port" id="d3" yfiles.type="portuserdata"/>
+  <key attr.name="url" attr.type="string" for="node" id="d4"/>
+  <key attr.name="description" attr.type="string" for="node" id="d5"/>
+  <key for="node" id="d6" yfiles.type="nodegraphics"/>
+  <key for="graphml" id="d7" yfiles.type="resources"/>
+  <key attr.name="url" attr.type="string" for="edge" id="d8"/>
+  <key attr.name="description" attr.type="string" for="edge" id="d9"/>
+  <key for="edge" id="d10" yfiles.type="edgegraphics"/>
+  <graph edgedefault="directed" id="G">
+    <data key="d0"/>
+    <node id="n0">
+      <data key="d4"/>
+      <data key="d5"/>
+      <data key="d6">
+        <y:UMLClassNode>
+          <y:Geometry height="603.28" width="404.0572916666656" x="131.0" y="138.0"/>
+          <y:Fill color="#99CC00" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="115.34423828125" x="144.3565266927078" y="3.0">serialmac's API<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="-0.03703090122767855" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="" use3DEffect="true">
+            <y:AttributeLabel/>
+            <y:MethodLabel>enum sf_serialmac_return sf_serialmac_init ( 
+  struct sf_serialmac_ctx *ctx,
+  void *port_handle,
+  SF_SERIALMAC_HAL_READ_FUNCTION read,
+  SF_SERIALMAC_HAL_READ_WAIT_FUNCTION read_wait,
+  SF_SERIALMAC_HAL_WRITE_FUNCTION write,
+  SF_SERIALMAC_EVENT rx_event,
+  SF_SERIALMAC_EVENT rx_buffer_event,
+  SF_SERIALMAC_EVENT tx_event,
+  SF_SERIALMAC_EVENT tx_buffer_event );
+
+enum sf_serialmac_return sf_serialmac_hal_tx_callback (
+  struct sf_serialmac_ctx *ctx );
+
+enum sf_serialmac_return sf_serialmac_hal_rx_callback (
+  struct sf_serialmac_ctx *ctx );
+
+void sf_serialmac_entry (
+  struct sf_serialmac_ctx *ctx );
+
+enum sf_serialmac_return sf_serialmac_tx_frame_start (
+  struct sf_serialmac_ctx *ctx,
+  size_t frame_length );
+
+enum sf_serialmac_return sf_serialmac_tx_frame_append (
+  struct sf_serialmac_ctx *ctx,
+  const char *frame_buffer,
+  size_t frame_buffer_size );
+
+enum sf_serialmac_return sf_serialmac_tx_frame (
+  struct sf_serialmac_ctx *ctx,
+  size_t frame_length,
+  const char *frame_buffer,
+  size_t frame_buffer_size );
+
+enum sf_serialmac_return sf_serialmac_rx_frame (
+  struct sf_serialmac_ctx *ctx,
+  char *frame_buffer,
+  size_t frame_buffer_size );</y:MethodLabel>
+          </y:UML>
+        </y:UMLClassNode>
+      </data>
+    </node>
+    <node id="n1">
+      <data key="d4"/>
+      <data key="d5"/>
+      <data key="d6">
+        <y:UMLClassNode>
+          <y:Geometry height="248.25" width="404.0572916666656" x="565.0572916666656" y="493.03"/>
+          <y:Fill color="#99CC00" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="120.14306640625" x="141.9571126302078" y="25.96875">serialmac's HAL<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="-0.03703090122767855" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="Interface" use3DEffect="true">
+            <y:AttributeLabel/>
+            <y:MethodLabel>typedef size_t ( *SF_SERIALMAC_HAL_READ_FUNCTION ) (
+  void *port_handle,
+  char *frame_buffer,
+  size_t frame_buffer_length );
+
+typedef size_t ( *SF_SERIALMAC_HAL_READ_WAIT_FUNCTION ) (
+  void *port_handle );
+
+typedef size_t ( *SF_SERIALMAC_HAL_WRITE_FUNCTION ) (
+  void *port_handle,
+  char *frame_buffer,
+  size_t frame_buffer_length );</y:MethodLabel>
+          </y:UML>
+        </y:UMLClassNode>
+      </data>
+    </node>
+    <node id="n2">
+      <data key="d4"/>
+      <data key="d5"/>
+      <data key="d6">
+        <y:UMLClassNode>
+          <y:Geometry height="146.6875" width="404.0572916666656" x="565.0572916666656" y="138.0"/>
+          <y:Fill color="#99CC00" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="13" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="19.1328125" modelName="custom" textColor="#000000" visible="true" width="118.791015625" x="142.6331380208328" y="25.96875">serialmac's APL<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="-0.03703090122767855" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:UML clipContent="true" constraint="" omitDetails="false" stereotype="Interface" use3DEffect="true">
+            <y:AttributeLabel/>
+            <y:MethodLabel>typedef void ( *SF_SERIALMAC_EVENT ) (
+  void *mac_context,
+  char *frame_buffer,
+  size_t frame_buffer_length );
+
+</y:MethodLabel>
+          </y:UML>
+        </y:UMLClassNode>
+      </data>
+    </node>
+  </graph>
+  <data key="d7">
+    <y:Resources/>
+  </data>
+</graphml>
