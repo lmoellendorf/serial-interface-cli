@@ -90,6 +90,12 @@ add_dependencies(docopt libdocopt)
 set(LIBSERIALPORT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libserialport-prefix)
 find_library(LIBSERIALPORT serialport ${LIBSERIALPORT_INSTALL_DIR}/lib/)
 
+if(WIN32)
+  set(LIBSERIALPORT_CONFIGURE_PARAMETER --disable-shared)
+else()
+  set(LIBSERIALPORT_CONFIGURE_PARAMETER )
+endif()
+
 if(NOT LIBSERIALPORT)
     MESSAGE(STATUS "libserialport not found!")
     ExternalProject_Add(libserialport    # Name for custom target
@@ -102,7 +108,7 @@ if(NOT LIBSERIALPORT)
         #--Configure step-------------
         # set prefix to the default install dir
         # (libserialport-prefix in this case)
-        CONFIGURE_COMMAND ./autogen.sh && ./configure --disable-shared --prefix=<INSTALL_DIR>
+        CONFIGURE_COMMAND ./autogen.sh && ./configure ${LIBSERIALPORT_CONFIGURE_PARAMETER} --prefix=<INSTALL_DIR>
         #--Build step-----------------
         BUILD_COMMAND make
         BUILD_IN_SOURCE 1
