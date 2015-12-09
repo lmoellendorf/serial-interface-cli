@@ -34,6 +34,9 @@ target_include_directories(serialmac PUBLIC ${PROJECT_BINARY_DIR})
 find_package(Doxygen)
 
 if(DOXYGEN_FOUND)
+    set (SERIALMAC_HEADERS
+         ${PROJECT_SOURCE_DIR}/sf_serialmac.h
+         )
     string(CONCAT DOXYFILE_INPUT ${DOXYFILE_INPUT} " "
         ${PROJECT_SOURCE_DIR}/../README.md)
     foreach(loop_var IN LISTS SERIALMAC_HEADERS)
