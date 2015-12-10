@@ -10,6 +10,11 @@
 #include "version.h"
 #include "sf_stringhex.h"
 
+#ifdef __WIN32__
+#define CURRENT_SUPPLY_DEFAULT_PARAMETER "[default: d]"
+#else
+#define CURRENT_SUPPLY_DEFAULT_PARAMETER
+#endif
 
     static const char USAGE[] =
       SERIALMAC_PRODUCT_NAME R"(.
@@ -36,7 +41,8 @@
                                                   x: XON/XOFF
                                                   r: RTS/CTS
                                                   d: DTR/DSR
-      -C (d|r|dr|rd), --current=(d|r|dr|rd)       Current supply:
+      -C (d|r|dr|rd), --current=(d|r|dr|rd)       Current supply: )"
+      CURRENT_SUPPLY_DEFAULT_PARAMETER R"(
                                                   d: Power DTR
                                                   r: Power RTS
                                                   dr or rd: Power both
