@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <vector>
 
+namespace sf
+{
+
 class StringHex
 {
 public:
@@ -20,4 +23,5 @@ private:
     std::string delimiter = " ,;.:";
 };
 
+}
 #endif // SF_STRINGHEX_H

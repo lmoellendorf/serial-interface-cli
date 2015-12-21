@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <bitset>
 
+namespace sf
+{
+
 StringHex::StringHex ( std::string delimiter )
 {
   if ( !delimiter.empty() )
@@ -118,4 +121,5 @@ std::string &StringHex::BinaryToHexString ( std::vector<uint8_t> &hex_binaries,
     }
 
   return hex_string;
+}
 }

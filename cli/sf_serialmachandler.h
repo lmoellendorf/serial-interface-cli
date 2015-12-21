@@ -4,6 +4,9 @@
 #include "sf_subject.h"
 #include "sf_serialmaccli.h"
 
+namespace sf
+{
+
 class SerialMacHandler : public Subject
 {
 public:
@@ -39,4 +42,5 @@ private:
 
 };
 
+}
 #endif // SERIALMACHANDLER_H

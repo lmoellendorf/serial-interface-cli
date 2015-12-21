@@ -4,6 +4,9 @@
 #include "sf_subject.h"
 #include "sf_event.h"
 
+namespace sf
+{
+
 std::forward_list<Observer*> Subject::observers;
 
 Subject::Subject()
@@ -35,4 +38,6 @@ void Subject::Notify ( Event *event, Filter filter )
           ( ( Observer* ) *it )->Update ( event );
         }
     }
+}
+
 }

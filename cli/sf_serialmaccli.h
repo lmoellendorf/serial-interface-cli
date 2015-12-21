@@ -5,10 +5,14 @@
 #include <functional>
 extern "C"
 {
-#include <libserialport.h>
+#include "libserialport.h"
+#include "sf_serialmac.h"
 }
 #include "sf_observer.h"
 #include "version.h"
+
+namespace sf
+{
 
 class SerialMacCli: public Observer
 {
@@ -50,4 +54,5 @@ private:
     void CliOutput ( void );
 };
 
+}
 #endif // SERIALMACCLI_H

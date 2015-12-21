@@ -7,6 +7,8 @@
 /* Testing */
 #include "sf_stringhex.h"
 
+using namespace sf;
+
 TestStringHex::TestStringHex()
 {
 

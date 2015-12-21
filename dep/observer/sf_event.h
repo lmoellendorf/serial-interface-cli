@@ -3,6 +3,9 @@
 
 #include <string>
 
+namespace sf
+{
+
 class Event
 {
 public:
@@ -19,5 +22,7 @@ private:
     void *content;
     size_t content_size;
 };
+
+}
 
 #endif // EVENT_H

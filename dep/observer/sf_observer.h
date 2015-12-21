@@ -3,10 +3,14 @@
 
 #include "sf_event.h"
 
+namespace sf
+{
+
 class Observer
 {
 public:
     virtual void Update ( Event *event ) = 0;
 };
 
+}
 #endif // OBSERVER_H

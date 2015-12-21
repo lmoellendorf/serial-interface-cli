@@ -3,6 +3,9 @@
 
 #include <forward_list>
 
+namespace sf
+{
+
 class Observer;
 class Event;
 
@@ -23,4 +26,5 @@ public:
     static void Notify ( Event *event, Filter filter );
 };
 
+}
 #endif // SUBJECT_H

@@ -16,6 +16,8 @@
 #define CURRENT_SUPPLY_DEFAULT_PARAMETER
 #endif
 
+namespace sf
+{
     static const char USAGE[] =
       SERIALMAC_PRODUCT_NAME R"(.
 
@@ -772,4 +774,5 @@ void SerialMacCli::Update ( Event *event )
           break;
         }
     }
+}
 }

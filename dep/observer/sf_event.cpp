@@ -1,5 +1,8 @@
 #include "sf_event.h"
 
+namespace sf
+{
+
 Event::Event ( int identifier, void *source, void *content, size_t content_size ) //: identifier(), source(), content(), content_size() {} TODO
 {
   this->identifier = identifier;
@@ -24,4 +27,6 @@ size_t Event::GetDetails ( void** content )
 {
   *content = this->content;
   return content_size;
+}
+
 }

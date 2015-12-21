@@ -1,6 +1,9 @@
 #include "sf_serialmachandler.h"
 #include "sf_serialmac.h"
 
+namespace sf
+{
+
 //TODO: create a generic SerialMacObserver which implements Observer and is
 // inherited by SerialMacCli
 int SerialMacHandler::Attach ( SerialMacCli *observer,
@@ -83,4 +86,6 @@ void SerialMacHandler::WriteBufferEvent ( void *mac_context, char *frame_buffer,
 {
   Event event ( WRITE_BUFFER, mac_context, frame_buffer, frame_buffer_length );
   Subject::Notify ( &event, ( Filter ) filter );
+}
+
 }
