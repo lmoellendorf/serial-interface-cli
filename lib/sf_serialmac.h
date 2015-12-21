@@ -3,6 +3,14 @@ extern "C"
 {
 #endif
 /**
+ * @code
+ *  ___ _____ _   ___ _  _____ ___  ___  ___ ___
+ * / __|_   _/_\ / __| |/ / __/ _ \| _ \/ __| __|
+ * \__ \ | |/ _ \ (__| ' <| _| (_) |   / (__| _|
+ * |___/ |_/_/ \_\___|_|\_\_| \___/|_|_\\___|___|
+ * embedded.connectivity.solutions.==============
+ * @endcode
+ *
  * @file
  * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
  * @author     STACKFORCE
@@ -12,6 +20,23 @@ extern "C"
  * @details Please consult the
  * @ref introduction "README" for a general overview and
  * @ref usage "how to use" the STACKFORCE Serial MAC.
+ *
+ * This file is part of the STACKFORCE SERIAL serial mac library
+ * (below "libserialmac").
+ *
+ * libserialmac is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libserialmac is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with libserialmac.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 #ifndef __STACKFORCE_SERIALMAC_H_
@@ -20,22 +45,6 @@ extern "C"
 /** This API makes use of size_t */
 #include <stddef.h>
 
-/**
- * @defgroup STACKFORCE_SERIALMAC_API STACKFORCE Serial MAC Module
- * The API of the STACKFORCE Serial MAC Module.
- * @{
- */
-
-/**
- * @defgroup STACKFORCE_SERIALMAC_API_ENUMS Enumerations
- * @ingroup  STACKFORCE_SERIALMAC_API
- * This section describes the enumerations used by the STACKFORCE Serial MAC.
- */
-
-/**
- * @addtogroup STACKFORCE_SERIALMAC_API_ENUMS
- * @{
- */
 
 /**
  * Return values.
@@ -69,35 +78,13 @@ enum sf_serialmac_return
     /** There was an error in buffer handling */
     SF_SERIALMAC_ERROR_BUFFER,
 };
-/** @} end of STACKFORCE_SERIALMAC_API_ENUMS */
 
-/**
- * @defgroup STACKFORCE_SERIALMAC_API_STRUCTS Structures
- * @ingroup  STACKFORCE_SERIALMAC_API
- * This section describes the structures used by the STACKFORCE Serial MAC.
- */
-/**
- * @addtogroup STACKFORCE_SERIALMAC_API_STRUCTS
- * @{
- */
 
 /**
  * Structure used by the MAC to store its context.
  */
 struct sf_serialmac_ctx;
 
-/** @} end of STACKFORCE_SERIALMAC_API_STRUCTS */
-
-/**
- * @defgroup STACKFORCE_SERIALMAC_API_TYPEDEFS Type definitions
- * @ingroup  STACKFORCE_SERIALMAC_API
- * This section describes the type definitions provided and used by the
- * STACKFORCE Serial MAC.
- */
-/**
- * @addtogroup STACKFORCE_SERIALMAC_API_TYPEDEFS
- * @{
- */
 
 /**
  * Signature of HAL's read function to be used by the MAC for RX.
@@ -132,19 +119,6 @@ typedef void ( *SF_SERIALMAC_EVENT ) ( void *mac_context,
                                        char *frame_buffer,
                                        size_t frame_buffer_length );
 
-/** @} end of STACKFORCE_SERIALMAC_API_TYPEDEFS */
-
-/**
- * @defgroup STACKFORCE_SERIALMAC_API_FUNCTIONS Functions
- * @ingroup  STACKFORCE_SERIALMAC_API
- * This section describes the API functions provided by the STACKFORCE Serial
- * MAC.
- */
-
-/**
- * @addtogroup STACKFORCE_SERIALMAC_API_FUNCTIONS
- * @{
- */
 
 /**
  * Returns the size of the MAC context structure.
@@ -157,6 +131,7 @@ typedef void ( *SF_SERIALMAC_EVENT ) ( void *mac_context,
  * @return The size of the MAC context structure.
  */
 size_t sf_serialmac_ctx_size ( void );
+
 
 /**
  * Initialization of STACKFORCE Serial MAC.
@@ -191,6 +166,7 @@ enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
         SF_SERIALMAC_EVENT rx_buffer_event,
         SF_SERIALMAC_EVENT tx_event, SF_SERIALMAC_EVENT tx_buffer_event );
 
+
 /**
  * This function can be passed to the HAL layer as callback function to be
  * called on TX events.
@@ -208,6 +184,8 @@ enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
  */
 enum sf_serialmac_return sf_serialmac_hal_tx_callback ( struct sf_serialmac_ctx
         *ctx );
+
+
 /**
  * This function can be passed to the HAL layer as callback function to be
  * called on RX events.
@@ -220,6 +198,7 @@ enum sf_serialmac_return sf_serialmac_hal_tx_callback ( struct sf_serialmac_ctx
 enum sf_serialmac_return sf_serialmac_hal_rx_callback ( struct sf_serialmac_ctx
         *ctx );
 
+
 /**
  * This function has to be called periodically so the MAC can process incoming
  * data from the underlying serial interface and outgoing data from the upper
@@ -229,6 +208,7 @@ enum sf_serialmac_return sf_serialmac_hal_rx_callback ( struct sf_serialmac_ctx
  * @param ctx Points to the memory region the MAC uses to store its context.
  */
 void sf_serialmac_entry ( struct sf_serialmac_ctx *ctx );
+
 
 /**
  * Start a MAC frame with given length, i.e. initialize frame buffers and send
@@ -247,6 +227,7 @@ void sf_serialmac_entry ( struct sf_serialmac_ctx *ctx );
  */
 enum sf_serialmac_return sf_serialmac_tx_frame_start ( struct sf_serialmac_ctx
         *ctx, size_t frame_length );
+
 
 /**
  * Append data to the current frame's payload.
@@ -277,6 +258,7 @@ enum sf_serialmac_return sf_serialmac_tx_frame_start ( struct sf_serialmac_ctx
 enum sf_serialmac_return sf_serialmac_tx_frame_append ( struct sf_serialmac_ctx
         *ctx, const char *frame_buffer, size_t frame_buffer_size );
 
+
 /**
  * Start a frame iff not already done and append given payload.
  * It is save to always use this function instead of
@@ -303,6 +285,7 @@ enum sf_serialmac_return sf_serialmac_tx_frame ( struct sf_serialmac_ctx *ctx,
         size_t frame_length, const char *frame_buffer, size_t frame_buffer_size
                                                );
 
+
 /**
  * The upper layer has to call this function whenever the MAC has notified it
  * about the reception of a frame header by calling the upper layers callback
@@ -319,9 +302,7 @@ enum sf_serialmac_return sf_serialmac_tx_frame ( struct sf_serialmac_ctx *ctx,
 enum sf_serialmac_return sf_serialmac_rx_frame ( struct sf_serialmac_ctx *ctx,
         char *frame_buffer, size_t frame_buffer_size );
 
-/** @} end of STACKFORCE_SERIALMAC_API_FUNCTIONS */
 
-/** @} end of STACKFORCE_SERIALMAC_API */
 #endif /* STACKFORCE_SERIALMAC_H_ */
 #ifdef __cplusplus
 }

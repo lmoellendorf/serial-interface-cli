@@ -2,19 +2,46 @@
 extern "C"
 {
 #endif
-/*! ============================================================================
+/**
+ * @code
+ *  ___ _____ _   ___ _  _____ ___  ___  ___ ___
+ * / __|_   _/_\ / __| |/ / __/ _ \| _ \/ __| __|
+ * \__ \ | |/ _ \ (__| ' <| _| (_) |   / (__| _|
+ * |___/ |_/_/ \_\___|_|\_\_| \___/|_|_\\___|___|
+ * embedded.connectivity.solutions.==============
+ * @endcode
  *
- * @author:  © by STACKFORCE, Heitersheim, Germany, http://www.stackforce.de
- * @author:  Lars Möllendorf
+ * @file
+ * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
+ * @author     STACKFORCE
+ * @author     Lars Möllendorf
+ * @brief      STACKFORCE serial command line client (sf)
  *
+ * @details Please consult the
+ * @ref introduction "README" for a general overview and
+ * @ref usage "how to use" the STACKFORCE Serial MAC.
  *
- =============================================================================*/
-/*==============================================================================
- |                               INCLUDE FILES
- =============================================================================*/
-/*! definition of portable data types */
+ * This file is part of the STACKFORCE SERIAL serial mac library
+ * (below "libserialmac").
+ *
+ * libserialmac is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libserialmac is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with libserialmac.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+/** definition of portable data types */
 #include <stdint.h>
-/*! Common definitions most notably NULL */
+/** Common definitions most notably NULL */
 #include <stddef.h>
 /** memset is used */
 #include <string.h>
@@ -23,18 +50,15 @@ extern "C"
 #include "sf_crc.h"
 #include "sf_serialmac.h"
 
-/*==============================================================================
- |                                   MACROS
- =============================================================================*/
-/*! SYNC word of the STACKFORCE serial protocol */
+/** SYNC word of the STACKFORCE serial protocol */
 #define SF_SERIALMAC_PROTOCOL_SYNC_WORD              0xA5U
-/*! Length of the STACKFORCE serial protocol SYNC word field. */
+/** Length of the STACKFORCE serial protocol SYNC word field. */
 #define SF_SERIALMAC_PROTOCOL_SYNC_WORD_LEN          0x01U
-/*! Length of the STACKFORCE serial protocol length field */
+/** Length of the STACKFORCE serial protocol length field */
 #define SF_SERIALMAC_PROTOCOL_LENGTH_FIELD_LEN       0x02U
-/*! Length of the STACKFORCE serial protocol CRC field */
+/** Length of the STACKFORCE serial protocol CRC field */
 #define SF_SERIALMAC_PROTOCOL_CRC_FIELD_LEN          0x02U
-/*! Length of the serial MAC frame header */
+/** Length of the serial MAC frame header */
 #define SF_SERIALMAC_PROTOCOL_HEADER_LEN      \
  (SF_SERIALMAC_PROTOCOL_SYNC_WORD_LEN + SF_SERIALMAC_PROTOCOL_LENGTH_FIELD_LEN)
 
@@ -44,9 +68,6 @@ extern "C"
 #define UINT8_TO_UINT16(u8arr) (((((uint16_t)((u8arr)[0]))<<8U) & 0xFF00U) | \
 (((uint16_t)((u8arr)[1])) & 0xFFU ) )
 
-/*==============================================================================
- |                                   ENUMS
- =============================================================================*/
 /**
  * A frame consists of the elements:
  * <ul>
@@ -78,9 +99,6 @@ enum rxTxState {
     CRC,
 };
 
-/*==============================================================================
- |                       STRUCTURES AND OTHER TYPEDEFS
- =============================================================================*/
 /**
  * Signature of APP's callback function to be called by the MAC
  * when a buffer has been processed.
@@ -154,9 +172,7 @@ struct sf_serialmac_ctx {
     struct sf_serialmac_frame rxFrame;
 };
 
-/*==============================================================================
- |                         LOCAL FUNCTION PROTOTYPES
- =============================================================================*/
+
 static struct sf_serialmac_buffer* initBuffer (
     struct sf_serialmac_buffer *buffer, char *memory, size_t length,
     SF_SERIALMAC_BUF_EVT callback );
@@ -177,9 +193,6 @@ static void rxProcPayloadCB ( struct sf_serialmac_ctx *ctx );
 static void rxProcCrcCB ( struct sf_serialmac_ctx *ctx );
 
 
-/*==============================================================================
- |                              LOCAL FUNCTIONS
- =============================================================================*/
 static struct sf_serialmac_buffer *initBuffer (
     struct sf_serialmac_buffer *buffer, char *memory, size_t length,
     SF_SERIALMAC_BUF_EVT callback )
@@ -192,6 +205,7 @@ static struct sf_serialmac_buffer *initBuffer (
     }
     return buffer;
 }
+
 
 static void initFrame ( struct sf_serialmac_frame *frame, uint8_t syncWord )
 {
@@ -206,6 +220,7 @@ static void initFrame ( struct sf_serialmac_frame *frame, uint8_t syncWord )
     frame->headerMemory[0] = syncWord;
 }
 
+
 static void txInit ( struct sf_serialmac_ctx *ctx )
 {
     initBuffer ( &ctx->txFrame.headerBuffer, ( uint8_t* )
@@ -216,6 +231,7 @@ static void txInit ( struct sf_serialmac_ctx *ctx )
                  SF_SERIALMAC_PROTOCOL_CRC_FIELD_LEN, txProcCrcCB );
     initFrame ( &ctx->txFrame, SF_SERIALMAC_PROTOCOL_SYNC_WORD );
 }
+
 
 /**
  * Transmit up to sf_serialmac_buffer.length byte from given buffer.
@@ -299,10 +315,12 @@ static enum sf_serialmac_return tx ( struct sf_serialmac_ctx *ctx,
     }
 }
 
+
 static void txProcHeaderCB ( struct sf_serialmac_ctx *ctx )
 {
     ctx->txFrame.state = PAYLOAD;
 }
+
 
 static void txProcPayloadCB ( struct sf_serialmac_ctx *ctx )
 {
@@ -331,6 +349,7 @@ static void txProcPayloadCB ( struct sf_serialmac_ctx *ctx )
     ctx->tx_buffer_event ( ctx, buffer_memory, processed );
 }
 
+
 static void txProcCrcCB ( struct sf_serialmac_ctx *ctx )
 {
     size_t length = UINT8_TO_UINT16 ( ctx->txFrame.headerMemory +
@@ -345,6 +364,7 @@ static void txProcCrcCB ( struct sf_serialmac_ctx *ctx )
     ctx->tx_frame_event ( ctx, NULL, length );
 }
 
+
 static void rxInit ( struct sf_serialmac_ctx *ctx )
 {
     initBuffer ( &ctx->rxFrame.headerBuffer, ( uint8_t* )
@@ -355,6 +375,7 @@ static void rxInit ( struct sf_serialmac_ctx *ctx )
                  SF_SERIALMAC_PROTOCOL_CRC_FIELD_LEN, rxProcCrcCB );
     initFrame ( &ctx->rxFrame, 0 );
 }
+
 
 static enum sf_serialmac_return rx ( struct sf_serialmac_ctx *ctx,
                                      struct sf_serialmac_buffer
@@ -385,6 +406,7 @@ static enum sf_serialmac_return rx ( struct sf_serialmac_ctx *ctx,
     return SF_SERIALMAC_SUCCESS;
 }
 
+
 static void rxProcHeaderCB ( struct sf_serialmac_ctx *ctx )
 {
     /** Start the countdown */
@@ -395,6 +417,7 @@ static void rxProcHeaderCB ( struct sf_serialmac_ctx *ctx )
     ctx->rxFrame.state = PAYLOAD;
 }
 
+
 static void rxProcPayloadCB ( struct sf_serialmac_ctx *ctx )
 {
     ctx->rxFrame.remains -= ctx->rxFrame.payloadBuffer.length;
@@ -404,6 +427,7 @@ static void rxProcPayloadCB ( struct sf_serialmac_ctx *ctx )
      */
     ctx->rxFrame.state = CRC;
 }
+
 
 static void rxProcCrcCB ( struct sf_serialmac_ctx *ctx )
 {
@@ -440,9 +464,7 @@ static void rxProcCrcCB ( struct sf_serialmac_ctx *ctx )
     ctx->rxFrame.state = IDLE;
 }
 
-/*==============================================================================
- |                               API FUNCTIONS
- =============================================================================*/
+
 size_t sf_serialmac_ctx_size ( void )
 {
     return sizeof ( struct sf_serialmac_ctx );
@@ -475,6 +497,7 @@ enum sf_serialmac_return sf_serialmac_init ( struct sf_serialmac_ctx *ctx,
     return SF_SERIALMAC_SUCCESS;
 }
 
+
 enum sf_serialmac_return sf_serialmac_tx_frame_start ( struct sf_serialmac_ctx
         *ctx, size_t len )
 {
@@ -493,6 +516,7 @@ enum sf_serialmac_return sf_serialmac_tx_frame_start ( struct sf_serialmac_ctx
     ctx->txFrame.state = HEADER;
     return SF_SERIALMAC_SUCCESS;
 }
+
 
 enum sf_serialmac_return sf_serialmac_tx_frame_append ( struct sf_serialmac_ctx
         *ctx, const char *frmBufLoc, size_t frmBufSize )
@@ -522,12 +546,14 @@ enum sf_serialmac_return sf_serialmac_tx_frame_append ( struct sf_serialmac_ctx
     return SF_SERIALMAC_SUCCESS;
 }
 
+
 enum sf_serialmac_return sf_serialmac_tx_frame ( struct sf_serialmac_ctx *ctx,
         size_t frmLen, const char *frmBufLoc, size_t frmBufSize )
 {
     sf_serialmac_tx_frame_start ( ctx, frmLen );
     return sf_serialmac_tx_frame_append ( ctx, frmBufLoc, frmBufSize );
 }
+
 
 enum sf_serialmac_return sf_serialmac_rx_frame ( struct sf_serialmac_ctx *ctx,
         char *frmBufLoc, size_t frmBufSize )
@@ -547,6 +573,7 @@ enum sf_serialmac_return sf_serialmac_rx_frame ( struct sf_serialmac_ctx *ctx,
              ctx->rxFrame.payloadBuffer.length );
     return SF_SERIALMAC_SUCCESS;
 }
+
 
 enum sf_serialmac_return sf_serialmac_hal_tx_callback ( struct sf_serialmac_ctx
         *ctx )
@@ -601,6 +628,7 @@ enum sf_serialmac_return sf_serialmac_hal_tx_callback ( struct sf_serialmac_ctx
 
     return ret;
 }
+
 
 enum sf_serialmac_return sf_serialmac_hal_rx_callback ( struct sf_serialmac_ctx
         *ctx )
@@ -670,6 +698,7 @@ enum sf_serialmac_return sf_serialmac_hal_rx_callback ( struct sf_serialmac_ctx
     }
     return ret;
 }
+
 
 void sf_serialmac_entry ( struct sf_serialmac_ctx *ctx )
 {
