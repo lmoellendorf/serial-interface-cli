@@ -110,7 +110,7 @@ std::string &StringHex::BinaryToHexString ( std::vector<uint8_t> &hex_binaries,
     }
     /**
      * To avoid exceptions check for emptiness first, then check if the loop
-     * above has been rund in which case one ' ' has been appended too much.
+     * above has been run in which case one ' ' has been appended too much.
      */
     if(!hex_string.empty() && ' ' == hex_string.back()){
       /** Remove the trailing ' '. */
