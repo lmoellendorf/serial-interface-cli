@@ -1,7 +1,17 @@
-# README #                                                           {#mainpage}
-# Introduction #                                                 {#introduction}
+# README                                                             {#mainpage}
+    @code
 
-## Purpose ##                                                         {#purpose}
+     ___ _____ _   ___ _  _____ ___  ___  ___ ___
+    / __|_   _/_\ / __| |/ / __/ _ \| _ \/ __| __|
+    \__ \ | |/ _ \ (__| ' <| _| (_) |   / (__| _|
+    |___/ |_/_/ \_\___|_|\_\_| \___/|_|_\\___|___|
+    embedded.connectivity.solutions.==============
+
+    @endcode
+
+# Introduction                                                   {#introduction}
+
+## Purpose                                                            {#purpose}
 
 The STACKFORCE Serial MAC provides framing for serial interfaces.
 
@@ -10,7 +20,7 @@ before sending them over the serial interface.
 On RX the STACKFORCE Serial MAC listens for incoming frames, verifies their
 CRC and provides the payload to the upper layer.
 
-## Frame format ##                                                      {#frame}
+## Frame format                                                         {#frame}
 
 The Frame format is:
 
@@ -18,7 +28,7 @@ The Frame format is:
     | SYNC BYTE(S) | LENGTH | payload | CRC |
     +--------------+--------+-- - - --+-----+
 
-## Features ##                                                        {#feature}
+## Features                                                           {#feature}
 
 The STACKFORCE Serial MAC is written with cross-platform portability in mind.
 It should be usable within operating systems as well as bare metal devices.
@@ -31,14 +41,14 @@ functions to read from and write to the serial interface and a function
 which returns the number of bytes waiting on input.
 * Buffer allocation and management is completely left to the upper layer.
 
-# Usage #                                                               {#usage}
+# Usage                                                                 {#usage}
 
-## Initialization ##                                           {#initialization}
+## Initialization                                              {#initialization}
 
 To use the STACKFORCE Serial MAC you have to initialize it using
 sf_serialmac_init()
 
-## Reacting to events ##                                               {#events}
+## Reacting to events                                                  {#events}
 
 The STACKFORCE Serial MAC is event driven. You can use the MAC by calling
 sf_serialmac_entry() periodically.
@@ -47,7 +57,7 @@ Or you can add sf_serialmac_hal_tx_callback() and
 sf_serialmac_hal_rx_callback() as callback function to the corresponding
 serial port events. (TODO: How to?)
 
-## Receiving frames ##                                                     {#rx}
+## Receiving frames                                                        {#rx}
 
 Whenever the STACKFORCE Serial MAC receives the header of a frame it calls
 the upper layers callback function registered as SF_SERIALMAC_RX_EVENT
@@ -58,7 +68,7 @@ due to CRC error or time out, the upper layer's callback function is called
 which has been registered as SF_SERIALMAC_RX_EVENT rx_event() on
 initialization.
 
-## Transmitting frames ##                                                  {#tx}
+## Transmitting frames                                                     {#tx}
 
 Frames can be transmitted at once using sf_serialmac_tx_frame(). Or by
 starting a frame with sf_serialmac_tx_frame_start() and successively

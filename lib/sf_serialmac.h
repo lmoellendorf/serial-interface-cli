@@ -21,7 +21,7 @@ extern "C"
  * @ref introduction "README" for a general overview and
  * @ref usage "how to use" the STACKFORCE Serial MAC.
  *
- * This file is part of the STACKFORCE SERIAL serial mac library
+ * This file is part of the STACKFORCE Serial MAC Library
  * (below "libserialmac").
  *
  * libserialmac is free software: you can redistribute it and/or modify
