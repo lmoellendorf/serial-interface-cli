@@ -95,7 +95,7 @@ endif()
 ExternalProject_Add(libdocopt   # Name for custom target
     #--Download step--------------
     GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
-    GIT_TAG master
+    GIT_TAG a4177ccf1a6e36ebe268972732ddd456a3574f6d
     #--Update step----------------
     # Never update automatically from the remote repository
     UPDATE_DISCONNECTED 1
@@ -135,7 +135,7 @@ if(NOT LIBSERIALPORT)
     ExternalProject_Add(libserialport    # Name for custom target
         #--Download step--------------
         GIT_REPOSITORY git://sigrok.org/libserialport
-        GIT_TAG master
+        GIT_TAG a4177ccf1a6e36ebe268972732ddd456a3574f6d
         #--Update step----------------
         # Never update automatically from the remote repository
         UPDATE_DISCONNECTED 1
