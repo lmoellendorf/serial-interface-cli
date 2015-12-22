@@ -56,6 +56,8 @@ ExternalProject_Add(googletest   # Name for custom target
   # Never update automatically from the remote repository
   UPDATE_DISCONNECTED 1
 
+  PATCH_COMMAND echo "add_subdirectory(googlemock)" > CMakeLists.txt
+
   INSTALL_COMMAND ""
 )
 
