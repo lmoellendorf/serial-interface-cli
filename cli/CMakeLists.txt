@@ -135,7 +135,7 @@ if(NOT LIBSERIALPORT)
     ExternalProject_Add(libserialport    # Name for custom target
         #--Download step--------------
         GIT_REPOSITORY git://sigrok.org/libserialport
-        GIT_TAG a4177ccf1a6e36ebe268972732ddd456a3574f6d
+        GIT_TAG ae2c5825e79ab5b38a8ca53941df6d73679a52e6
         #--Update step----------------
         # Never update automatically from the remote repository
         UPDATE_DISCONNECTED 1
