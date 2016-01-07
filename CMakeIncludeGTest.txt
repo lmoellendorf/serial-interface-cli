@@ -28,6 +28,8 @@
 ## You should have received a copy of the GNU Affero General Public License
 ## along with sf serial.  If not, see <http://www.gnu.org/licenses/>.
 ##
+cmake_minimum_required (VERSION 3.2)
+
 find_package(Threads REQUIRED)
 
 # Enable ExternalProject CMake module
