@@ -16,13 +16,11 @@ and
 https://redmine.stackforce.de/projects/wheelstore/wiki/CMake#Windows
 on how to install CMake
 properly!"
-    GENERATOR='-G"MSYS Makefiles"'
+    cmake -G "MSYS Makefiles" -D CMAKE_BUILD_TYPE=Debug  ../
 else
     # default generator is fine
-    GENERATOR=""
+    cmake -D CMAKE_BUILD_TYPE=Debug  ../
 fi
-
-cmake ${GENERATOR} -D CMAKE_BUILD_TYPE=Debug  ../
 
 # build everything
 make all
