@@ -636,13 +636,20 @@ void SerialMacCli::CliInput ( void )
            * cli_input_state to CLI.
            */
           sf_serialmac_hal_tx_callback ( mac_context );
-          if ( SP_OK != sp_wait ( port_tx_event, 0 ) )
+          if ( SF_SERIALMAC_SUCCESS !=
+               sf_serialmac_hal_tx_callback ( mac_context ) ||
+               SP_OK != sp_wait ( port_tx_event, 0 ) )
             {
               std::cerr << "Error during transmission on \"" << port_name
-              << "\"!"<< std::endl;
+                        << "\"!"<< std::endl;
+              cli_input_state = QUIT;
             }
           break;
 
+        default:
+          std::cerr << "Error during transmission on \"" << port_name
+                    << "\"!"<< std::endl;
+          // break omitted
         case QUIT:
           //TODO: use other means for quitting
           Verbose ( "Quitting.\n" );
@@ -679,6 +686,10 @@ void SerialMacCli::CliOutput ( void )
         case CLI:
           // currently not used
           break;
+        default:
+          std::cerr << "Error during reception on \"" << port_name
+                    << "\"!"<< std::endl;
+          // break omitted
         case QUIT:
           Verbose( "Quitting.\n" );
           /** This stops the other thread. */
