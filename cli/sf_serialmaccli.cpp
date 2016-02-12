@@ -667,12 +667,14 @@ void SerialMacCli::CliOutput ( void )
           /**
            * Start waiting for serial input.
            * A timeout is given to quit on demand. */
-          if ( SP_OK != sp_wait ( port_rx_event, 100 ) )
+          if ( SP_OK != sp_wait ( port_rx_event, 100 )
+               || SF_SERIALMAC_SUCCESS !=
+               sf_serialmac_hal_rx_callback ( mac_context ) )
             {
               std::cerr << "Error during reception on \"" << port_name
                         << "\"!"<< std::endl;
+              cli_output_state = QUIT;
             }
-          sf_serialmac_hal_rx_callback ( mac_context );
           break;
         case CLI:
           // currently not used
