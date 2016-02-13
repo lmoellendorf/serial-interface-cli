@@ -527,7 +527,7 @@ template<typename IfFunc, typename ElseFunc>
  * To avoid code rendundancy this function executes the IfOperation if
  * payload has been passed as parameter and the ElseOperation otherwise.
  */
-void SerialMacCli::PayloadPassedAsParameter (
+void SerialMacCli::IfPayloadPassedAsParameter (
   IfFunc IfOperation, ElseFunc ElseOperation )
 {
   docopt::value value = args.at ( "<payload>" );
@@ -556,7 +556,10 @@ void SerialMacCli::CliInput ( void )
       switch ( cli_input_state )
         {
         case CLI:
-          PayloadPassedAsParameter ( [&line, this] ( docopt::value value )
+          /** If payload is passed as parameter ... */
+          IfPayloadPassedAsParameter (
+          /** ... this lambda function is executed ... */
+          [&line, this] ( docopt::value value )
           {
             std::vector <std::string> line_as_list = value.asStringList();
             std::for_each ( line_as_list.begin(), line_as_list.end(),
@@ -568,7 +571,9 @@ void SerialMacCli::CliInput ( void )
             {
               return line+=word;
             } );
-          }, [&line, this] ()
+          },
+          /** ... else this lambda function is executed */
+          [&line, this] ()
           {
             Verbose ( "Input text:\n" );
             getline ( std::cin, line );
@@ -805,7 +810,7 @@ void SerialMacCli::Update ( Event *event )
             }
           break;
         case SerialMacHandler::WRITE_FRAME:
-          PayloadPassedAsParameter (
+          IfPayloadPassedAsParameter (
             [this] ( docopt::value value )
           {
             /**

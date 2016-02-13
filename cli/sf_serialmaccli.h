@@ -80,7 +80,7 @@ private:
     static int NonVerbose (const char *format, ...);
     int (*Verbose) (const char *format, ...);
     template<typename IfFunc, typename ElseFunc>
-    void PayloadPassedAsParameter (
+    void IfPayloadPassedAsParameter (
         IfFunc IfOperation, ElseFunc ElseOperation );
     int InitSerialPort ( );
     void DeInitSerialPort();
