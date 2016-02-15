@@ -70,12 +70,11 @@ private:
 
     enum io_states {
         CLI,
-        SERIAL,
-        QUIT
+        SERIAL
     };
 
     io_states cli_input_state;
-    io_states cli_output_state;
+    bool run;
 
     static int NonVerbose (const char *format, ...);
     int (*Verbose) (const char *format, ...);
@@ -84,6 +83,7 @@ private:
         IfFunc IfOperation, ElseFunc ElseOperation );
     int InitSerialPort ( );
     void DeInitSerialPort();
+    void Quit();
     void CliInput ( void );
     void CliOutput ( void );
 };

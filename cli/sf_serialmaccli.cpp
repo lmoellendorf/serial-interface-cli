@@ -102,6 +102,7 @@ namespace sf
 
 SerialMacCli::SerialMacCli ( int argc, char **argv )
 {
+  run = true;
   docopt::value value;
   args = docopt::docopt ( USAGE,
   { argv + 1, argv + argc },
@@ -524,6 +525,11 @@ void SerialMacCli::DeInitSerialPort()
     }
 }
 
+void SerialMacCli::Quit(){
+          Verbose ( "Quitting.\n" );
+          /** Userinput was empty line -> STOP */
+          run = false;
+}
 
 /**
  * Using a template allows us to ignore the differences between functors,
@@ -550,7 +556,6 @@ void SerialMacCli::IfPayloadPassedAsParameter (
 
 void SerialMacCli::CliInput ( void )
 {
-  bool run = true;
   std::string line = "";
   docopt::value value;
   std::string delimiters;
@@ -622,7 +627,7 @@ void SerialMacCli::CliInput ( void )
                    * the moment
                    */
                   if(!output_buffer_length)
-                    break;
+                    Quit();
                   /** Will be freed in Update() when TX has been completed. */
                   output_buffer = ( char* ) std::malloc ( output_buffer_length );
                   std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
@@ -638,7 +643,7 @@ void SerialMacCli::CliInput ( void )
             }
           else
             {
-              cli_input_state = QUIT;
+              Quit();
             }
           break;
 
@@ -654,21 +659,14 @@ void SerialMacCli::CliInput ( void )
             {
               std::cerr << "Error during transmission on \"" << port_name
                         << "\"!"<< std::endl;
-              cli_input_state = QUIT;
+              Quit();
             }
           break;
 
         default:
           std::cerr << "Error during transmission on \"" << port_name
                     << "\"!"<< std::endl;
-          // break omitted
-        case QUIT:
-          //TODO: use other means for quitting
-          Verbose ( "Quitting.\n" );
-          /** Userinput was empty line -> STOP */
-          run = false;
-          /** This stops the other thread. */
-          cli_output_state = QUIT;
+          Quit();
           break;
         }
     }
@@ -676,38 +674,18 @@ void SerialMacCli::CliInput ( void )
 
 void SerialMacCli::CliOutput ( void )
 {
-  bool run = true;
-
   while ( run )
     {
-      switch ( cli_output_state )
+      /**
+       * Start waiting for serial input.
+       * A timeout is given to quit on demand. */
+      if ( SP_OK != sp_wait ( port_rx_event, 100 )
+           || SF_SERIALMAC_SUCCESS !=
+           sf_serialmac_hal_rx_callback ( mac_context ) )
         {
-        case SERIAL:
-          /**
-           * Start waiting for serial input.
-           * A timeout is given to quit on demand. */
-          if ( SP_OK != sp_wait ( port_rx_event, 100 )
-               || SF_SERIALMAC_SUCCESS !=
-               sf_serialmac_hal_rx_callback ( mac_context ) )
-            {
-              std::cerr << "Error during reception on \"" << port_name
-                        << "\"!"<< std::endl;
-              cli_output_state = QUIT;
-            }
-          break;
-        case CLI:
-          // currently not used
-          break;
-        default:
           std::cerr << "Error during reception on \"" << port_name
                     << "\"!"<< std::endl;
-          // break omitted
-        case QUIT:
-          Verbose( "Quitting.\n" );
-          /** This stops the other thread. */
-          cli_input_state = QUIT;
-          run = false;
-          break;
+          Quit();
         }
     }
 }
@@ -736,7 +714,6 @@ int SerialMacCli::Run ( )
   process_cli_input.detach();
 
   /** Start waiting for CLI output */
-  cli_output_state = SERIAL;
   CliOutput();
 
   return ret;
@@ -761,17 +738,12 @@ void SerialMacCli::Update ( Event *event )
               sf_serialmac_rx_frame ( ( struct sf_serialmac_ctx * ) mac_context,
                                       frame_buffer,
                                       frame_buffer_length );
-              /**
-               * Stay in serial state because we handle CLI output directly
-               * when a frame has been received.
-               */
-              cli_output_state = SERIAL;
             }
           break;
         case SerialMacHandler::READ_FRAME:
           if ( frame_buffer )
             {
-              docopt::value value; //TODO: rename to a more significant value
+              docopt::value value;
               /** Check if a valid frame has been received */
               if ( frame_buffer_length )
                 {
@@ -781,7 +753,7 @@ void SerialMacCli::Update ( Event *event )
 
                       if ( '\n' == frame_buffer[0] )
                         {
-                          cli_output_state = QUIT;
+                          Quit();
                         }
                       else
                         {
@@ -826,7 +798,7 @@ void SerialMacCli::Update ( Event *event )
              */
             ( void ) value;
             /** Payload passed as parameter has been send. */
-            cli_input_state = QUIT;
+            Quit();
           }, [this] ()
           {
             cli_input_state = CLI;
