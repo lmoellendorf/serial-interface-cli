@@ -179,7 +179,7 @@ include_directories(${LIBSERIALPORT_INSTALL_DIR}/include)
 # SERIALMAC
 add_subdirectory(${PROJECT_SOURCE_DIR}/../lib lib)
 # OBSERVER
-add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer observer)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 
 
 ##
