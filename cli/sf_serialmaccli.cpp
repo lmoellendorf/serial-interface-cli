@@ -78,8 +78,9 @@ namespace sf
                                                   x: XON/XOFF
                                                   r: RTS/CTS
                                                   d: DTR/DSR
-      -C (d|r|dr|rd), --current=(d|r|dr|rd)       Current supply: )"
-      CURRENT_SUPPLY_DEFAULT_PARAMETER R"(
+      -C (n|d|r|dr|rd), --current=(n|d|r|dr|rd)   Current supply )"
+      CURRENT_SUPPLY_DEFAULT_PARAMETER R"(: 
+                                                  n: Power off both
                                                   d: Power DTR
                                                   r: Power RTS
                                                   dr or rd: Power both
@@ -394,9 +395,15 @@ int SerialMacCli::InitSerialPort ( )
         {
         case 'd':
           dtr = SP_DTR_ON;
+          rts = SP_RTS_OFF;
           break;
         case 'r':
           rts = SP_RTS_ON;
+          dtr = SP_DTR_OFF;
+          break;
+        case 'n':
+          rts = SP_RTS_OFF;
+          dtr = SP_DTR_OFF;
           break;
         }
       sp_set_config_rts ( port_config_new, rts );
