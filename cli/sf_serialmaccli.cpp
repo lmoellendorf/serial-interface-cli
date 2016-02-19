@@ -46,7 +46,7 @@
 #include "sf_stringhex.h"
 
 #ifdef __WIN32__
-#define CURRENT_SUPPLY_DEFAULT_PARAMETER "[default: d]"
+#define CURRENT_SUPPLY_DEFAULT_PARAMETER " [default: d]"
 #else
 #define CURRENT_SUPPLY_DEFAULT_PARAMETER
 #endif
@@ -78,8 +78,8 @@ namespace sf
                                                   x: XON/XOFF
                                                   r: RTS/CTS
                                                   d: DTR/DSR
-      -C (n|d|r|dr|rd), --current=(n|d|r|dr|rd)   Current supply )"
-      CURRENT_SUPPLY_DEFAULT_PARAMETER R"(: 
+      -C (n|d|r|dr|rd), --current=(n|d|r|dr|rd)   Current supply)"
+      CURRENT_SUPPLY_DEFAULT_PARAMETER R"(:
                                                   n: Power off both
                                                   d: Power DTR
                                                   r: Power RTS
