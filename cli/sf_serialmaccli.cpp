@@ -80,7 +80,7 @@ namespace sf
                                                   d: DTR/DSR
       -C (n|d|r|dr|rd), --current=(n|d|r|dr|rd)   Current supply)"
       CURRENT_SUPPLY_DEFAULT_PARAMETER R"(:
-                                                  n: Power off both
+                                                  n: None
                                                   d: Power DTR
                                                   r: Power RTS
                                                   dr or rd: Power both
