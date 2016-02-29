@@ -562,6 +562,7 @@ void SerialMacCli::CliInput ( void )
   std::string delimiters;
   char *output_buffer = NULL;
   int output_buffer_length = 0;
+  sf_serialmac_return ret;
 
   /** Repeat until the user stops you */
   while ( run )
@@ -653,9 +654,8 @@ void SerialMacCli::CliInput ( void )
            * Call the callback to process transmission until Update() sets
            * cli_input_state to CLI.
            */
-          sf_serialmac_hal_tx_callback ( mac_context );
-          if ( SF_SERIALMAC_SUCCESS !=
-               sf_serialmac_hal_tx_callback ( mac_context ) ||
+          ret = sf_serialmac_hal_tx_callback ( mac_context );
+          if ( (SF_SERIALMAC_SUCCESS != ret && SF_SERIALMAC_ERROR_HAL_BUSY != ret)||
                SP_OK != sp_wait ( port_tx_event, 0 ) )
             {
               std::cerr << "Error during transmission on \"" << port_name
