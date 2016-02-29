@@ -37,6 +37,7 @@
 
 #include <docopt.h>
 #include <functional>
+#include <string.h>
 extern "C"
 {
 #include "libserialport.h"
@@ -66,24 +67,25 @@ private:
     struct sp_event_set *port_rx_event = NULL;
     struct sp_event_set *port_tx_event = NULL;
     struct sf_serialmac_ctx *mac_context = NULL;
+    std::string port_name_object;
     const char *port_name = NULL;
 
     enum io_states {
         CLI,
-        SERIAL,
-        QUIT
+        SERIAL
     };
 
     io_states cli_input_state;
-    io_states cli_output_state;
+    bool run;
 
     static int NonVerbose (const char *format, ...);
     int (*Verbose) (const char *format, ...);
     template<typename IfFunc, typename ElseFunc>
-    void PayloadPassedAsParameter (
+    void IfPayloadPassedAsParameter (
         IfFunc IfOperation, ElseFunc ElseOperation );
     int InitSerialPort ( );
     void DeInitSerialPort();
+    void Quit();
     void CliInput ( void );
     void CliOutput ( void );
 };

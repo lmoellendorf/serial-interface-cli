@@ -46,7 +46,7 @@ target_include_directories(serialmac PUBLIC ${PROJECT_SOURCE_DIR})
 ##
 set (SERIALMAC_VERSION_MAJOR 0 CACHE STRING "major version")
 set (SERIALMAC_VERSION_MINOR 1 CACHE STRING "minor version")
-set (SERIALMAC_VERSION_PATCH 0 CACHE STRING "patch version")
+set (SERIALMAC_VERSION_PATCH 1 CACHE STRING "patch version")
 set (SERIALMAC_PRODUCT_COMPANY "STACKFORCE" CACHE STRING "company")
 set (SERIALMAC_PRODUCT_NAME    "Serial MAC" CACHE STRING "product")
 # configure a header file to pass some of the CMake settings

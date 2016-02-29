@@ -1,8 +1,9 @@
 # ignore cmake generated stuff
 build/
+build.*/
 # ignore KDevelop files
 *.kdev4
 *.swp
 *.kate-swp
-# ignore temporary notepad++ files 
+# ignore temporary notepad++ files
 *~

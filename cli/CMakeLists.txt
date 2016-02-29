@@ -30,7 +30,7 @@
 ## You should have received a copy of the GNU Affero General Public License
 ## along with libserialmac.  If not, see <http://www.gnu.org/licenses/>.
 ##
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.2)
 project (serialcli)
 
 include(ExternalProject)
@@ -95,7 +95,7 @@ endif()
 ExternalProject_Add(libdocopt   # Name for custom target
     #--Download step--------------
     GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
-    GIT_TAG master
+    GIT_TAG a4177ccf1a6e36ebe268972732ddd456a3574f6d
     #--Update step----------------
     # Never update automatically from the remote repository
     UPDATE_DISCONNECTED 1
@@ -135,7 +135,7 @@ if(NOT LIBSERIALPORT)
     ExternalProject_Add(libserialport    # Name for custom target
         #--Download step--------------
         GIT_REPOSITORY git://sigrok.org/libserialport
-        GIT_TAG master
+        GIT_TAG ae2c5825e79ab5b38a8ca53941df6d73679a52e6
         #--Update step----------------
         # Never update automatically from the remote repository
         UPDATE_DISCONNECTED 1
@@ -179,7 +179,7 @@ include_directories(${LIBSERIALPORT_INSTALL_DIR}/include)
 # SERIALMAC
 add_subdirectory(${PROJECT_SOURCE_DIR}/../lib lib)
 # OBSERVER
-add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/observer observer)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 
 
 ##
