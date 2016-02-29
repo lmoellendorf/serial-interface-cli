@@ -170,7 +170,8 @@ int SerialMacCli::InitSerialPort ( )
   value = args.at ( "--device" );
   if ( value && value.isString() )
     {
-      port_name = value.asString().c_str();
+      port_name_object = value.asString();
+      port_name = port_name_object.c_str();
       sp_ret = sp_get_port_by_name ( port_name, &port_context );
       if ( SP_OK > sp_ret || !port_context )
         {

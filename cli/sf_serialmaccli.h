@@ -37,6 +37,7 @@
 
 #include <docopt.h>
 #include <functional>
+#include <string.h>
 extern "C"
 {
 #include "libserialport.h"
@@ -66,6 +67,7 @@ private:
     struct sp_event_set *port_rx_event = NULL;
     struct sp_event_set *port_tx_event = NULL;
     struct sf_serialmac_ctx *mac_context = NULL;
+    std::string port_name_object;
     const char *port_name = NULL;
 
     enum io_states {
