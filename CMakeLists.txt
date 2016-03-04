@@ -31,4 +31,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(serialinterface)
 
+list(APPEND CMAKE_FIND_ROOT_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+
 add_subdirectory(cli)

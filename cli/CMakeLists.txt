@@ -207,7 +207,8 @@ install(TARGETS sf DESTINATION bin)
 ###
 ### TESTING
 ###
-include(${PROJECT_SOURCE_DIR}/../CMakeIncludeGTest.txt)
+list(APPEND CMAKE_FIND_ROOT_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+find_package(gtest)
 
 # stringhex
 add_executable(teststringhex
