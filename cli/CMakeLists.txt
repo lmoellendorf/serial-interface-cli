@@ -42,7 +42,6 @@ set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/main
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
     ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
-    ${PROJECT_SOURCE_DIR}/sf_stringhex.cpp
     )
 
 add_executable(sf  ${SF_SERIALMACCLI_SOURCES})
@@ -53,6 +52,7 @@ add_dependencies(
     serialport
     serialmac
     observer
+    stringhex
     )
 
 target_include_directories(sf PUBLIC ${PROJECT_SOURCE_DIR})
@@ -180,6 +180,8 @@ include_directories(${LIBSERIALPORT_INSTALL_DIR}/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/../lib lib)
 # OBSERVER
 add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
+# STRINGHEX
+add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/stringhex stringhex)
 
 
 ##
@@ -194,6 +196,7 @@ if(LIBSERIALPORT) # This is needed for integrating the non-CMake project
         ${LIBSERIALPORT}
         docopt
         observer
+        stringhex
         ${CMAKE_THREAD_LIBS_INIT}
         ${WIN32_DEPS}
         )
@@ -203,20 +206,3 @@ endif()
 ## INSTALLATION
 ##
 install(TARGETS sf DESTINATION bin)
-
-###
-### TESTING
-###
-list(APPEND CMAKE_FIND_ROOT_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
-find_package(gtest)
-
-# stringhex
-add_executable(teststringhex
-    test/test.cpp
-    test/sf_teststringhex.cpp
-    sf_stringhex.cpp
-    )
-target_include_directories(teststringhex PUBLIC ${PROJECT_SOURCE_DIR})
-target_link_libraries(teststringhex libgmock)
-add_test(NAME teststringhex COMMAND teststringhex)
-
