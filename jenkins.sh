@@ -26,5 +26,5 @@ fi
 make all
 
 # run tests
-cli/test*
+#cli/test*
 
