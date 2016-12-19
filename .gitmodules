@@ -10,3 +10,6 @@
 [submodule "dep/stringhex"]
 	path = dep/stringhex
 	url = https://git.stackforce.de/stringhex.git
+[submodule "dep/serial-interface-mac"]
+	path = dep/serial-interface-mac
+	url = https://git.stackforce.de/serial-interface-mac
