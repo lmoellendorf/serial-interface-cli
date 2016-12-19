@@ -177,7 +177,7 @@ include_directories(${LIBSERIALPORT_INSTALL_DIR}/include)
 ## INTERNAL PROJECTS
 ##
 # SERIALMAC
-add_subdirectory(${PROJECT_SOURCE_DIR}/../lib lib)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/serial-interface-mac lib)
 # OBSERVER
 add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 # STRINGHEX
