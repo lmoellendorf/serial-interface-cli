@@ -44,11 +44,6 @@ set(${PROJECT_NAME}_VERSION_PATCH   1)
 set(${PROJECT_NAME}_PRODUCT_COMPANY "STACKFORCE" CACHE STRING "company")
 set(${PROJECT_NAME}_PRODUCT_NAME    "Serial MAC Command Line Client" CACHE STRING "product")
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} )
-set(SF_SERIALMACCLI_SOURCES
-    ${PROJECT_SOURCE_DIR}/main
-    ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
-    ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
-    )
 
 #---------------------------------------------------------------------------------------
 # Required dependencies versions
@@ -87,13 +82,19 @@ add_dependencies(
 
 target_include_directories(sf PUBLIC ${PROJECT_SOURCE_DIR})
 
+#---------------------------------------------------------------------------------------
+# cli headers and sources
+#---------------------------------------------------------------------------------------
+set(SF_SERIALMACCLI_SOURCES
+    ${PROJECT_SOURCE_DIR}/main.cpp
+    ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
+    ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
+)
 ##
 ## PRODUCT AND VERSION
 ##
 set (SERIALMACCLI_PRODUCT_NAME "sf-serial" CACHE STRING "product")
 
-# configure a header file to pass some of the CMake settings
-# to the source code
 configure_file (
     "${PROJECT_SOURCE_DIR}/version.h.in"
     "${PROJECT_BINARY_DIR}/version.h"
