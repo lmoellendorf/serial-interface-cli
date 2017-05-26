@@ -30,9 +30,9 @@
 ## You should have received a copy of the GNU Affero General Public License
 ## along with libserialmac.  If not, see <http://www.gnu.org/licenses/>.
 ##
-project (serialcli)
 
 cmake_minimum_required (VERSION 3.6)
+project(sfserialcli)
 include(ExternalProject)
 
 #---------------------------------------------------------------------------------------
@@ -71,7 +71,6 @@ get_target_property(SERIALPORT_LIB_STATIC libserialport-static IMPORTED_LOCATION
 message(STATUS "serial port lib: ${SERIALPORT_LIB}")
 message(STATUS "serial port static lib: ${SERIALPORT_LIB_STATIC}")
 
-target_include_directories(sf PUBLIC ${PROJECT_SOURCE_DIR})
 
 #---------------------------------------------------------------------------------------
 # cli headers and sources
@@ -141,4 +140,4 @@ target_link_libraries(sfserialcli
 ##
 ## INSTALLATION
 ##
-install(TARGETS sf DESTINATION bin)
+install(TARGETS sfserialcli DESTINATION bin)
