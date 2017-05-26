@@ -50,8 +50,32 @@ set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
     )
 
+#---------------------------------------------------------------------------------------
+# Required dependencies versions
+#---------------------------------------------------------------------------------------
+set(DOCOPT_VERSION 0.6.2)
+# set(SFOBSERVER_VERSION 1.0.0)
+set(SFSERIALMAC_VERSION 0.1.2)
+set(SFSTRINGHEX_VERSION 0.2.0)
+set(SFCRC_VERSION 0.1.2)
 add_executable(sf  ${SF_SERIALMACCLI_SOURCES})
 
+#---------------------------------------------------------------------------------------
+# Find required dependencies
+#---------------------------------------------------------------------------------------
+find_package(docopt ${DOCOPT_VERSION} REQUIRED)
+# find_package(observer ${OBSERVER_VERSION} REQUIRED)
+find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
+find_package(stringhex ${SFSTRINGHEX_VERSION} REQUIRED)
+find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
+find_package(Threads REQUIRED)
+
+message(STATUS "Searching serialport project configuration")
+find_package(serialport CONFIG REQUIRED)
+get_target_property(SERIALPORT_LIB libserialport IMPORTED_LOCATION)
+get_target_property(SERIALPORT_LIB_STATIC libserialport-static IMPORTED_LOCATION)
+message(STATUS "serial port lib: ${SERIALPORT_LIB}")
+message(STATUS "serial port static lib: ${SERIALPORT_LIB_STATIC}")
 add_dependencies(
     sf
     docopt
