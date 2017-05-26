@@ -127,7 +127,42 @@ target_link_libraries(sfserialcli
 #     ${WIN32_DEPS}
 )
 
-##
-## INSTALLATION
-##
-install(TARGETS sfserialcli DESTINATION bin)
+#---------------------------------------------------------------------------------------
+# Install/export targets and files
+#---------------------------------------------------------------------------------------
+set(CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+set(PROJECT_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake")
+set(PROJECT_CONFIG_FILE "${PROJECT_NAME}-config.cmake")
+set(TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
+
+# generate package version file
+write_basic_package_version_file(
+    ${PROJECT_VERSION_FILE}
+    VERSION ${${PROJECT_NAME}_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+# install targets
+install(TARGETS sfserialcli
+        EXPORT ${TARGETS_EXPORT_NAME}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# install version file
+install(FILES ${PROJECT_VERSION_FILE}
+        DESTINATION ${CONFIG_INSTALL_DIR}
+)
+
+# build directory package config
+export(EXPORT ${TARGETS_EXPORT_NAME}
+       FILE ${PROJECT_CONFIG_FILE}
+)
+
+# installed package config
+install(EXPORT ${TARGETS_EXPORT_NAME}
+        DESTINATION ${CONFIG_INSTALL_DIR}
+        FILE ${PROJECT_CONFIG_FILE}
+)
+
+# add to CMake registry
+export(PACKAGE ${PROJECT_NAME})
