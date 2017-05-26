@@ -81,10 +81,6 @@ set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
     ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
 )
-##
-## PRODUCT AND VERSION
-##
-set (SERIALMACCLI_PRODUCT_NAME "sf-serial" CACHE STRING "product")
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/version.h.in"
