@@ -127,9 +127,6 @@ endif()
 add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 
 
-# This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
-find_package ( Threads REQUIRED )
-
 target_link_libraries(sfserialcli
     sfserialmac-static
     libserialport-static
