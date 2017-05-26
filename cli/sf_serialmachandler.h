@@ -50,6 +50,7 @@ public:
         READ_FRAME,
         WRITE_FRAME,
         WRITE_BUFFER,
+        SYNC_BYTE,
     };
     static int Attach ( SerialMacCli *serialmaccli,
                         struct sp_port *port_context,
@@ -73,6 +74,10 @@ private:
                                 char *frame_buffer,
                                 size_t frame_buffer_length
                               );
+    static void SyncByteEvent ( void *mac_context,
+                                char *nullpointer,
+                                size_t frame_buffer_length
+                            );
     static bool filter ( Observer *observer, Event *event );
 
 };

@@ -55,6 +55,7 @@ int SerialMacHandler::Attach ( SerialMacCli *observer,
                                    sp_nonblocking_write,
                                    ( SF_SERIALMAC_EVENT ) ReadFrameEvent,
                                    ( SF_SERIALMAC_EVENT ) ReadBufferEvent,
+                                   ( SF_SERIALMAC_EVENT ) SyncByteEvent,
                                    ( SF_SERIALMAC_EVENT ) WriteFrameEvent,
                                    ( SF_SERIALMAC_EVENT ) WriteBufferEvent ) ) )
     {
@@ -120,5 +121,15 @@ void SerialMacHandler::WriteBufferEvent ( void *mac_context, char *frame_buffer,
   Event event ( WRITE_BUFFER, mac_context, frame_buffer, frame_buffer_length );
   Subject::Notify ( &event, ( Filter ) filter );
 }
+
+/**
+ * Function to be called by the MAC when a sync byte has been processed.
+ */
+void SerialMacHandler::SyncByteEvent(void* mac_context, char* nullpointer, size_t frame_buffer_length)
+{
+    Event event(SYNC_BYTE, mac_context, nullpointer, frame_buffer_length);
+    Subject::Notify( &event, ( Filter) filter );
+}
+
 
 }
