@@ -33,6 +33,8 @@
 
 cmake_minimum_required (VERSION 3.6)
 project(sfserialcli)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 include(ExternalProject)
 
 #---------------------------------------------------------------------------------------
