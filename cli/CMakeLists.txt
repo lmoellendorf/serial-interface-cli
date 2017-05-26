@@ -30,9 +30,9 @@
 ## You should have received a copy of the GNU Affero General Public License
 ## along with libserialmac.  If not, see <http://www.gnu.org/licenses/>.
 ##
-cmake_minimum_required (VERSION 3.2)
 project (serialcli)
 
+cmake_minimum_required (VERSION 3.6)
 include(ExternalProject)
 
 ##
