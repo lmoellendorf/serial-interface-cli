@@ -35,9 +35,15 @@ project (serialcli)
 cmake_minimum_required (VERSION 3.6)
 include(ExternalProject)
 
-##
-## TARGET
-##
+#---------------------------------------------------------------------------------------
+# Product and version
+#---------------------------------------------------------------------------------------
+set(${PROJECT_NAME}_VERSION_MAJOR   0)
+set(${PROJECT_NAME}_VERSION_MINOR   1)
+set(${PROJECT_NAME}_VERSION_PATCH   1)
+set(${PROJECT_NAME}_PRODUCT_COMPANY "STACKFORCE" CACHE STRING "company")
+set(${PROJECT_NAME}_PRODUCT_NAME    "Serial MAC Command Line Client" CACHE STRING "product")
+set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH} )
 set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/main
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
