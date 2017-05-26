@@ -118,38 +118,6 @@ if (WIN32)
 endif()
 
 
-##
-## EXTERNAL PROJECTS
-##
-# DOCOPT
-ExternalProject_Add(libdocopt   # Name for custom target
-    #--Download step--------------
-    GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
-    GIT_TAG a4177ccf1a6e36ebe268972732ddd456a3574f6d
-    #--Update step----------------
-    # Never update automatically from the remote repository
-    UPDATE_DISCONNECTED 1
-    #--Configure step-----------------
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    )
-
-externalproject_get_property(libdocopt install_dir)
-include_directories("${install_dir}/include/docopt")
-if(WIN32)
-    add_library(docopt IMPORTED STATIC GLOBAL)
-    # Set docopt properties
-    set_target_properties(docopt PROPERTIES
-        "IMPORTED_LOCATION" "${install_dir}/lib/libdocopt_s.a"
-        )
-else()
-    add_library(docopt IMPORTED SHARED GLOBAL)
-    set_target_properties(docopt PROPERTIES
-        "IMPORTED_LOCATION" "${install_dir}/lib/libdocopt.so"
-        )
-endif()
-
-add_dependencies(docopt libdocopt)
-
 # SERIALPORT
 set(LIBSERIALPORT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libserialport-prefix)
 find_library(LIBSERIALPORT serialport ${LIBSERIALPORT_INSTALL_DIR}/lib/)
