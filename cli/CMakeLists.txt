@@ -118,57 +118,6 @@ if (WIN32)
 endif()
 
 
-# SERIALPORT
-set(LIBSERIALPORT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libserialport-prefix)
-find_library(LIBSERIALPORT serialport ${LIBSERIALPORT_INSTALL_DIR}/lib/)
-
-if(WIN32)
-  set(LIBSERIALPORT_CONFIGURE_PARAMETER --disable-shared)
-else()
-  set(LIBSERIALPORT_CONFIGURE_PARAMETER )
-endif()
-
-if(NOT LIBSERIALPORT)
-    MESSAGE(STATUS "libserialport not found!")
-    ExternalProject_Add(libserialport    # Name for custom target
-        #--Download step--------------
-        GIT_REPOSITORY git://sigrok.org/libserialport
-        GIT_TAG ae2c5825e79ab5b38a8ca53941df6d73679a52e6
-        #--Update step----------------
-        # Never update automatically from the remote repository
-        UPDATE_DISCONNECTED 1
-        #--Configure step-------------
-        # set prefix to the default install dir
-        # (libserialport-prefix in this case)
-        CONFIGURE_COMMAND ./autogen.sh && ./configure ${LIBSERIALPORT_CONFIGURE_PARAMETER} --prefix=<INSTALL_DIR>
-        #--Build step-----------------
-        BUILD_COMMAND make
-        BUILD_IN_SOURCE 1
-        BUILD_ALWAYS 0
-        #--Install step-----------------
-        INSTALL_COMMAND make install
-        )
-
-    ExternalProject_Get_Property(libserialport
-        install_dir build_command configure_command)
-    MESSAGE(STATUS "libserialport will be installed to:\n "
-        ${install_dir} "\nusing build command: " ${build_command}
-        "\nusing configure command: " ${configure_command})
-    # re-run cmake in initial build
-    # will update cmakecache/project files on first build
-    # so you may have to reload project after first build
-    add_custom_target(serialport COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR} DEPENDS libserialport)
-else()
-    MESSAGE(STATUS "libserialport found!")
-    # serialport becomes a dummy target after first build
-    # this prevents cmake from rebuilding cache/projects on subsequent builds
-    add_custom_target(serialport)
-endif()
-
-set(LIBSERIALPORT_HEADERS ${LIBSERIALPORT_INSTALL_DIR}/include/libserialport.h)
-set_source_files_properties(${LIBSERIALPORT_HEADERS} PROPERTIES GENERATED TRUE)
-include_directories(${LIBSERIALPORT_INSTALL_DIR}/include)
 
 
 ##
