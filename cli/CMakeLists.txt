@@ -71,6 +71,7 @@ get_target_property(SERIALPORT_LIB_STATIC libserialport-static IMPORTED_LOCATION
 message(STATUS "serial port lib: ${SERIALPORT_LIB}")
 message(STATUS "serial port static lib: ${SERIALPORT_LIB_STATIC}")
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 
 #---------------------------------------------------------------------------------------
 # cli headers and sources
@@ -119,11 +120,6 @@ endif()
 
 
 
-##
-## INTERNAL PROJECTS
-##
-# OBSERVER
-add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 
 
 target_link_libraries(sfserialcli
