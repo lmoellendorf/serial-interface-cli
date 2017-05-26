@@ -131,23 +131,19 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/stringhex stringhex)
 
 
-##
-## LINKING
-##
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
 find_package ( Threads REQUIRED )
 
-if(LIBSERIALPORT) # This is needed for integrating the non-CMake project
-    target_link_libraries(sf
-        serialmac
-        ${LIBSERIALPORT}
-        docopt
-        observer
-        stringhex
-        ${CMAKE_THREAD_LIBS_INIT}
-        ${WIN32_DEPS}
-        )
-endif()
+target_link_libraries(sfserialcli
+    sfserialmac-static
+    libserialport-static
+    sfcrc-static
+    docopt_s
+    observer
+    stringhex-static
+    ${CMAKE_THREAD_LIBS_INIT}
+#     ${WIN32_DEPS}
+)
 
 ##
 ## INSTALLATION
