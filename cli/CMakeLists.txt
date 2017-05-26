@@ -51,7 +51,7 @@ set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_V
 # Required dependencies versions
 #---------------------------------------------------------------------------------------
 set(DOCOPT_VERSION 0.6.2)
-# set(SFOBSERVER_VERSION 1.0.0)
+set(SFOBSERVER_VERSION 2.0.0)
 set(SFSERIALMAC_VERSION 0.1.2)
 set(SFSTRINGHEX_VERSION 0.2.0)
 set(SFCRC_VERSION 0.1.2)
@@ -60,7 +60,7 @@ set(SFCRC_VERSION 0.1.2)
 # Find required dependencies
 #---------------------------------------------------------------------------------------
 find_package(docopt ${DOCOPT_VERSION} REQUIRED)
-# find_package(observer ${OBSERVER_VERSION} REQUIRED)
+find_package(sfobserver ${SFOBSERVER_VERSION} REQUIRED)
 find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
 find_package(stringhex ${SFSTRINGHEX_VERSION} REQUIRED)
 find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
@@ -72,8 +72,6 @@ get_target_property(SERIALPORT_LIB libserialport IMPORTED_LOCATION)
 get_target_property(SERIALPORT_LIB_STATIC libserialport-static IMPORTED_LOCATION)
 message(STATUS "serial port lib: ${SERIALPORT_LIB}")
 message(STATUS "serial port static lib: ${SERIALPORT_LIB_STATIC}")
-
-add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 
 #---------------------------------------------------------------------------------------
 # cli headers and sources
@@ -92,12 +90,11 @@ configure_file (
 #---------------------------------------------------------------------------------------
 # Target
 #---------------------------------------------------------------------------------------
-add_executable(sfserialcli  ${SF_SERIALMACCLI_SOURCES})
+add_executable(sfserialcli ${SF_SERIALMACCLI_SOURCES})
 
 add_dependencies(
     sfserialcli
     serialport
-    observer
 )
 
 target_include_directories(sfserialcli PRIVATE
@@ -124,7 +121,7 @@ target_link_libraries(sfserialcli
     libserialport-static
     sfcrc-static
     docopt_s
-    observer
+    sfobserver-static
     stringhex-static
     ${CMAKE_THREAD_LIBS_INIT}
 #     ${WIN32_DEPS}
