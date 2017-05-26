@@ -53,7 +53,6 @@ set(DOCOPT_VERSION 0.6.2)
 set(SFSERIALMAC_VERSION 0.1.2)
 set(SFSTRINGHEX_VERSION 0.2.0)
 set(SFCRC_VERSION 0.1.2)
-add_executable(sf  ${SF_SERIALMACCLI_SOURCES})
 
 #---------------------------------------------------------------------------------------
 # Find required dependencies
@@ -71,14 +70,6 @@ get_target_property(SERIALPORT_LIB libserialport IMPORTED_LOCATION)
 get_target_property(SERIALPORT_LIB_STATIC libserialport-static IMPORTED_LOCATION)
 message(STATUS "serial port lib: ${SERIALPORT_LIB}")
 message(STATUS "serial port static lib: ${SERIALPORT_LIB_STATIC}")
-add_dependencies(
-    sf
-    docopt
-    serialport
-    serialmac
-    observer
-    stringhex
-    )
 
 target_include_directories(sf PUBLIC ${PROJECT_SOURCE_DIR})
 
@@ -100,9 +91,21 @@ configure_file (
     "${PROJECT_BINARY_DIR}/version.h"
     )
 
-# add the binary tree to the search path for generated include files
-target_include_directories(sf PUBLIC ${PROJECT_BINARY_DIR})
+#---------------------------------------------------------------------------------------
+# Target
+#---------------------------------------------------------------------------------------
+add_executable(sfserialcli  ${SF_SERIALMACCLI_SOURCES})
 
+add_dependencies(
+    sfserialcli
+    serialport
+    observer
+)
+
+target_include_directories(sfserialcli PRIVATE
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_BINARY_DIR}
+)
 
 ##
 ## TOOLCHAIN OPTIONS
