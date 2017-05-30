@@ -92,6 +92,10 @@ configure_file (
 )
 
 #---------------------------------------------------------------------------------------
+# Compiler options
+#---------------------------------------------------------------------------------------
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
+
 if(WIN32)
 	message(STATUS "On Windows")
 	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
@@ -101,6 +105,7 @@ if(WIN32)
 	set(WIN32_DEPS ${SETUPAPI})
 endif()
 
+#---------------------------------------------------------------------------------------
 # Target
 #---------------------------------------------------------------------------------------
 add_executable(sfserialcli ${SF_SERIALMACCLI_SOURCES})
