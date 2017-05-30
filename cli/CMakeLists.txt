@@ -92,6 +92,15 @@ configure_file (
 )
 
 #---------------------------------------------------------------------------------------
+if(WIN32)
+	message(STATUS "On Windows")
+	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+	# Not all compilers offer macros to indicate a Windows build environment.
+	add_definitions(-D__WIN32__)
+	find_library(SETUPAPI setupapi)
+	set(WIN32_DEPS ${SETUPAPI})
+endif()
+
 # Target
 #---------------------------------------------------------------------------------------
 add_executable(sfserialcli ${SF_SERIALMACCLI_SOURCES})
@@ -106,20 +115,6 @@ target_include_directories(sfserialcli PRIVATE
     ${PROJECT_BINARY_DIR}
 )
 
-##
-## TOOLCHAIN OPTIONS
-##
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
-
-# if (WIN32)
-#     MESSAGE(STATUS "On Windows")
-#     set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-#     # Not all compilers offer macros to indicate a Windows build environment.
-#     add_definitions(-D__WIN32__)
-#     find_library ( SETUPAPI setupapi )
-#     set(WIN32_DEPS ${SETUPAPI})
-# endif()
-
 target_link_libraries(sfserialcli
     sfserialmac-static
     libserialport-static
@@ -128,7 +123,7 @@ target_link_libraries(sfserialcli
     sfobserver-static
     stringhex-static
     ${CMAKE_THREAD_LIBS_INIT}
-#     ${WIN32_DEPS}
+    ${WIN32_DEPS}
 )
 
 #---------------------------------------------------------------------------------------
