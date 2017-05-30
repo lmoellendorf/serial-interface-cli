@@ -42,7 +42,7 @@ include(CMakePackageConfigHelpers)
 include(ExternalProject)
 
 #---------------------------------------------------------------------------------------
-# Product and version
+# Product extra info
 #---------------------------------------------------------------------------------------
 set(${PROJECT_NAME}_PRODUCT_COMPANY "STACKFORCE" CACHE STRING "company")
 set(${PROJECT_NAME}_PRODUCT_NAME    "Serial MAC Command Line Client" CACHE STRING "product")
