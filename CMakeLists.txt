@@ -81,13 +81,13 @@ message(STATUS "serial port static lib: ${SERIALPORT_LIB_STATIC}")
 # cli headers and sources
 #---------------------------------------------------------------------------------------
 set(SF_SERIALMACCLI_SOURCES
-    ${PROJECT_SOURCE_DIR}/main.cpp
-    ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
-    ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
+    ${PROJECT_SOURCE_DIR}/src/main.cpp
+    ${PROJECT_SOURCE_DIR}/src/sf_serialmaccli.cpp
+    ${PROJECT_SOURCE_DIR}/src/sf_serialmachandler.cpp
 )
 
-configure_file (
-    "${PROJECT_SOURCE_DIR}/version.h.in"
+configure_file(
+    "${PROJECT_SOURCE_DIR}/src/version.h.in"
     "${PROJECT_BINARY_DIR}/version.h"
 )
 
@@ -196,7 +196,7 @@ set(CPACK_PACKAGE_VERSION ${${PROJECT_NAME}_VERSION})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${${PROJECT_NAME}_PRODUCT_COMPANY} ${${PROJECT_NAME}_PRODUCT_NAME}")
 set(CPACK_PACKAGE_VENDOR "${${PROJECT_NAME}_PRODUCT_COMPANY} GmbH")
 set(CPACK_PACKAGE_CONTACT "info@stackforce.de")
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/../LICENSE")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}-Linux-${MACHINE_ARCH})
 set(CPACK_STRIP_FILES ON)
 
