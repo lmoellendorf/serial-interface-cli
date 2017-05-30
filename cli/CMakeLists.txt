@@ -31,8 +31,12 @@
 ## along with libserialmac.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-cmake_minimum_required (VERSION 3.6)
+cmake_minimum_required(VERSION 3.6)
 project(sfserialcli)
+
+#---------------------------------------------------------------------------------------
+# Include required modules
+#---------------------------------------------------------------------------------------
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 include(ExternalProject)
