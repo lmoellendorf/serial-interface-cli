@@ -64,11 +64,6 @@ configure_file(
 #---------------------------------------------------------------------------------------
 add_executable(sfserialcli ${SF_SERIALMACCLI_SOURCES})
 
-add_dependencies(
-    sfserialcli
-    libserialport
-)
-
 target_include_directories(sfserialcli PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
