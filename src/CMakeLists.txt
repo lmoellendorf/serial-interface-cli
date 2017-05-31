@@ -28,62 +28,8 @@
 ## GNU Affero General Public License for more details.
 ##
 ## You should have received a copy of the GNU Affero General Public License
-## along with libserialmac.  If not, see <http://www.gnu.org/licenses/>.
+## along with serialmac cli. If not, see <http://www.gnu.org/licenses/>.
 ##
-
-#---------------------------------------------------------------------------------------
-# Include required modules
-#---------------------------------------------------------------------------------------
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
-include(ExternalProject)
-
-#---------------------------------------------------------------------------------------
-# Product extra info
-#---------------------------------------------------------------------------------------
-set(${PROJECT_NAME}_PRODUCT_COMPANY "STACKFORCE" CACHE STRING "company")
-set(${PROJECT_NAME}_PRODUCT_NAME    "Serial MAC Command Line Client" CACHE STRING "product")
-
-#---------------------------------------------------------------------------------------
-# Required dependencies versions
-#---------------------------------------------------------------------------------------
-set(DOCOPT_VERSION 0.6.2)
-set(SFOBSERVER_VERSION 2.0.0)
-set(SFSERIALMAC_VERSION 0.1.2)
-set(SFSTRINGHEX_VERSION 0.2.0)
-set(SFCRC_VERSION 0.1.2)
-
-#---------------------------------------------------------------------------------------
-# Find required dependencies
-#---------------------------------------------------------------------------------------
-find_package(docopt ${DOCOPT_VERSION} REQUIRED)
-find_package(sfobserver ${SFOBSERVER_VERSION} REQUIRED)
-find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
-find_package(stringhex ${SFSTRINGHEX_VERSION} REQUIRED)
-find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
-find_package(Threads REQUIRED)
-
-message(STATUS "Searching serialport project configuration")
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
-find_package(Serialport REQUIRED)
-get_target_property(SERIALPORT_LIB libserialport IMPORTED_LOCATION)
-get_target_property(SERIALPORT_LIB_STATIC libserialport-static IMPORTED_LOCATION)
-message(STATUS "serial port lib: ${SERIALPORT_LIB}")
-message(STATUS "serial port static lib: ${SERIALPORT_LIB_STATIC}")
-
-#---------------------------------------------------------------------------------------
-# cli headers and sources
-#---------------------------------------------------------------------------------------
-set(SF_SERIALMACCLI_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/main.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/sf_serialmaccli.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/sf_serialmachandler.cpp
-)
-
-configure_file(
-    "${CMAKE_CURRENT_LIST_DIR}/version.h.in"
-    "${PROJECT_BINARY_DIR}/version.h"
-)
 
 #---------------------------------------------------------------------------------------
 # Compiler options
@@ -98,6 +44,20 @@ if(WIN32)
 	find_library(SETUPAPI setupapi)
 	set(WIN32_DEPS ${SETUPAPI})
 endif()
+
+#---------------------------------------------------------------------------------------
+# cli headers and sources
+#---------------------------------------------------------------------------------------
+set(SF_SERIALMACCLI_SOURCES
+    ${CMAKE_CURRENT_LIST_DIR}/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/sf_serialmaccli.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/sf_serialmachandler.cpp
+)
+
+configure_file(
+    "${CMAKE_CURRENT_LIST_DIR}/version.h.in"
+    "${PROJECT_BINARY_DIR}/version.h"
+)
 
 #---------------------------------------------------------------------------------------
 # Target
