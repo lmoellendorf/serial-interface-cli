@@ -80,7 +80,7 @@ else()
 	set(LINK_LIBS sfserialmac docopt sfobserver stringhex)
 endif()
 
-target_link_libraries(sfserialcli
+target_link_libraries(sfserialcli PRIVATE
 	${LINK_LIBS}
 	libserialport-static
     ${CMAKE_THREAD_LIBS_INIT}
