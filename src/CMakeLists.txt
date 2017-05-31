@@ -56,7 +56,7 @@ set(SF_SERIALMACCLI_SOURCES
 
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/version.h.in"
-    "${PROJECT_BINARY_DIR}/version.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/version.h"
 )
 
 #---------------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ add_dependencies(
 
 target_include_directories(sfserialcli PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${PROJECT_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 if(BUILD_STATIC)
