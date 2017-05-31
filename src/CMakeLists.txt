@@ -49,13 +49,13 @@ endif()
 # cli headers and sources
 #---------------------------------------------------------------------------------------
 set(SF_SERIALMACCLI_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/main.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/sf_serialmaccli.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/sf_serialmachandler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmaccli.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmachandler.cpp
 )
 
 configure_file(
-    "${CMAKE_CURRENT_LIST_DIR}/version.h.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/version.h.in"
     "${PROJECT_BINARY_DIR}/version.h"
 )
 
@@ -70,7 +70,7 @@ add_dependencies(
 )
 
 target_include_directories(sfserialcli PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_BINARY_DIR}
 )
 
