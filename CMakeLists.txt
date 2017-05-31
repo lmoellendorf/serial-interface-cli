@@ -44,8 +44,8 @@ include(ExternalProject)
 #---------------------------------------------------------------------------------------
 # Product extra info
 #---------------------------------------------------------------------------------------
-set(${PROJECT_NAME}_PRODUCT_COMPANY "STACKFORCE" CACHE STRING "company")
-set(${PROJECT_NAME}_PRODUCT_NAME    "Serial MAC Command Line Client" CACHE STRING "product")
+set(PROJECT_PRODUCT_COMPANY "STACKFORCE"						CACHE STRING "company")
+set(PROJECT_PRODUCT_NAME    "Serial MAC Command Line Client"	CACHE STRING "product")
 
 #---------------------------------------------------------------------------------------
 # Required dependencies versions
