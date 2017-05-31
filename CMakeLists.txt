@@ -39,7 +39,6 @@ project(sfserialcli VERSION 0.1.2)
 #---------------------------------------------------------------------------------------
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
-include(ExternalProject)
 
 #---------------------------------------------------------------------------------------
 # Product extra info
