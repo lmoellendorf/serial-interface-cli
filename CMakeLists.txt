@@ -61,7 +61,7 @@ set(SFCRC_VERSION 0.1.2)
 find_package(docopt ${DOCOPT_VERSION} REQUIRED)
 find_package(sfobserver ${SFOBSERVER_VERSION} REQUIRED)
 find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
-find_package(stringhex ${SFSTRINGHEX_VERSION} REQUIRED)
+find_package(sfstringhex ${SFSTRINGHEX_VERSION} REQUIRED)
 find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
 find_package(Threads REQUIRED)
 
