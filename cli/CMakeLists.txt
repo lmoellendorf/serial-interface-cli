@@ -56,7 +56,16 @@ add_dependencies(
     observer
 )
 
-target_include_directories(sf PUBLIC ${PROJECT_SOURCE_DIR})
+if(CMAKE_CROSSCOMPILING AND WIN32)
+    add_dependencies(
+        sf
+        getstdthreads
+    )
+endif()
+
+target_include_directories(sf PRIVATE
+    ${PROJECT_SOURCE_DIR}
+)
 
 ##
 ## PRODUCT AND VERSION
@@ -198,6 +207,17 @@ set(LIBSERIALPORT_HEADERS ${LIBSERIALPORT_INSTALL_DIR}/include/libserialport.h)
 set_source_files_properties(${LIBSERIALPORT_HEADERS} PROPERTIES GENERATED TRUE)
 include_directories(${LIBSERIALPORT_INSTALL_DIR}/include)
 
+# mingw-std-threads
+if(CMAKE_CROSSCOMPILING AND WIN32)
+    add_custom_target(getstdthreads
+        COMMAND git clone -b master https://github.com/meganz/mingw-std-threads.git
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        VERBATIM
+    )
+
+    target_include_directories(sf PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/mingw-std-threads)
+    message(STATUS "mingw-std-threads location: ${CMAKE_CURRENT_BINARY_DIR}/mingw-std-threads")
+endif()
 
 ##
 ## INTERNAL PROJECTS
