@@ -87,8 +87,14 @@ target_include_directories(sf PUBLIC ${PROJECT_BINARY_DIR})
 ##
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
 
-if (WIN32)
-    MESSAGE(STATUS "On Windows")
+if(WIN32)
+    if(CMAKE_CROSSCOMPILING)
+        message(STATUS "Cross compiling for Windows")
+        message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
+        add_definitions(-D__WIN32_CROSS_BUILD__)
+    else()
+        message(STATUS "On Windows")
+    endif()
     set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
     # Not all compilers offer macros to indicate a Windows build environment.
     add_definitions(-D__WIN32__)

@@ -51,6 +51,10 @@
 #define CURRENT_SUPPLY_DEFAULT_PARAMETER
 #endif
 
+#ifdef __WIN32_CROSS_BUILD__
+#include "mingw.thread.h"
+#endif
+
 namespace sf
 {
     static const char USAGE[] =
