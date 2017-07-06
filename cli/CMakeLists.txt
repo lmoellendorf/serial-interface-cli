@@ -8,8 +8,8 @@
 ##
 ## @file
 ## @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
-## @author     STACKFORCE
 ## @author     Lars Möllendorf
+## @author     Adrian Antonana
 ## @brief      STACKFORCE Serial MAC Command Line Client
 ##
 ## @details See @code sf --help @endcode for details.
@@ -83,7 +83,14 @@ if (WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
     # Not all compilers offer macros to indicate a Windows build environment.
     add_definitions(-D__WIN32__)
-    find_library ( SETUPAPI setupapi )
+
+    # Find the setupapi library
+    find_library (SETUPAPI setupapi)
+    if(SETUPAPI)
+        message(STATUS "Setupapi library location: ${SETUPAPI}")
+    else()
+        message(FATAL_ERROR "Failed to locate the setupapi library")
+    endif()
     set(WIN32_DEPS ${SETUPAPI})
 endif()
 
