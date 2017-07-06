@@ -30,6 +30,7 @@
 ## You should have received a copy of the GNU Affero General Public License
 ## along with libserialmac.  If not, see <http://www.gnu.org/licenses/>.
 ##
+
 cmake_minimum_required (VERSION 3.2)
 project (serialcli)
 
@@ -43,9 +44,9 @@ set(SF_SERIALMACCLI_SOURCES
     ${PROJECT_SOURCE_DIR}/sf_serialmaccli.cpp
     ${PROJECT_SOURCE_DIR}/sf_serialmachandler.cpp
     ${PROJECT_SOURCE_DIR}/sf_stringhex.cpp
-    )
+)
 
-add_executable(sf  ${SF_SERIALMACCLI_SOURCES})
+add_executable(sf ${SF_SERIALMACCLI_SOURCES})
 
 add_dependencies(
     sf
@@ -53,7 +54,7 @@ add_dependencies(
     serialport
     serialmac
     observer
-    )
+)
 
 target_include_directories(sf PUBLIC ${PROJECT_SOURCE_DIR})
 
@@ -67,11 +68,10 @@ set (SERIALMACCLI_PRODUCT_NAME "sf-serial" CACHE STRING "product")
 configure_file (
     "${PROJECT_SOURCE_DIR}/version.h.in"
     "${PROJECT_BINARY_DIR}/version.h"
-    )
+)
 
 # add the binary tree to the search path for generated include files
 target_include_directories(sf PUBLIC ${PROJECT_BINARY_DIR})
-
 
 ##
 ## TOOLCHAIN OPTIONS
@@ -93,7 +93,6 @@ if (WIN32)
     endif()
     set(WIN32_DEPS ${SETUPAPI})
 endif()
-
 
 ##
 ## EXTERNAL PROJECTS
@@ -126,12 +125,12 @@ if(WIN32)
     # Set docopt properties
     set_target_properties(docopt PROPERTIES
         "IMPORTED_LOCATION" "${install_dir}/lib/libdocopt_s.a"
-        )
+    )
 else()
     add_library(docopt IMPORTED SHARED GLOBAL)
     set_target_properties(docopt PROPERTIES
         "IMPORTED_LOCATION" "${install_dir}/lib/libdocopt.so"
-        )
+    )
 endif()
 
 add_dependencies(docopt libdocopt)
@@ -151,7 +150,7 @@ if(WIN32)
 endif()
 
 if(NOT LIBSERIALPORT)
-    MESSAGE(STATUS "libserialport not found!")
+    message(STATUS "libserialport not found!")
     ExternalProject_Add(libserialport    # Name for custom target
         #--Download step--------------
         GIT_REPOSITORY git://sigrok.org/libserialport
@@ -169,20 +168,27 @@ if(NOT LIBSERIALPORT)
         BUILD_ALWAYS 0
         #--Install step-----------------
         INSTALL_COMMAND make install
-        )
+    )
 
     ExternalProject_Get_Property(libserialport
-        install_dir build_command configure_command)
-    MESSAGE(STATUS "libserialport will be installed to:\n "
+        install_dir build_command configure_command
+    )
+
+    message(STATUS "libserialport will be installed to:\n "
         ${install_dir} "\nusing build command: " ${build_command}
-        "\nusing configure command: " ${configure_command})
+        "\nusing configure command: " ${configure_command}
+    )
+
     # re-run cmake in initial build
     # will update cmakecache/project files on first build
     # so you may have to reload project after first build
-    add_custom_target(serialport COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR} DEPENDS libserialport)
+    add_custom_target(serialport
+        COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        DEPENDS libserialport
+    )
 else()
-    MESSAGE(STATUS "libserialport found!")
+    message(STATUS "libserialport found!")
     # serialport becomes a dummy target after first build
     # this prevents cmake from rebuilding cache/projects on subsequent builds
     add_custom_target(serialport)
@@ -206,9 +212,10 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/../dep/callback-observer observer)
 ## LINKING
 ##
 # This together with ${CMAKE_THREAD_LIBS_INIT} is a portable way to link pthread
-find_package ( Threads REQUIRED )
+find_package(Threads REQUIRED)
 
 if(LIBSERIALPORT) # This is needed for integrating the non-CMake project
+
     target_link_libraries(sf
         serialmac
         ${LIBSERIALPORT}
@@ -216,7 +223,7 @@ if(LIBSERIALPORT) # This is needed for integrating the non-CMake project
         observer
         ${CMAKE_THREAD_LIBS_INIT}
         ${WIN32_DEPS}
-        )
+    )
 endif()
 
 ##
