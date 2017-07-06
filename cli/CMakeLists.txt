@@ -130,8 +130,8 @@ ExternalProject_Add(libdocopt   # Name for custom target
     # Never update automatically from the remote repository
     UPDATE_DISCONNECTED 1
     #--Configure step-----------------
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    )
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> ${DOCOPT_CMAKE_EXTRA_ARGS}
+)
 
 externalproject_get_property(libdocopt install_dir)
 include_directories("${install_dir}/include/docopt")
