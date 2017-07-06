@@ -99,6 +99,15 @@ endif()
 ## EXTERNAL PROJECTS
 ##
 # DOCOPT
+set(DOCOPT_CMAKE_EXTRA_ARGS)
+if(CMAKE_CROSSCOMPILING)
+    list(APPEND DOCOPT_CMAKE_EXTRA_ARGS "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+endif()
+
+if(WIN32)
+    list(APPEND DOCOPT_CMAKE_EXTRA_ARGS "-DWITH_STATIC=true")
+endif()
+
 ExternalProject_Add(libdocopt   # Name for custom target
     #--Download step--------------
     GIT_REPOSITORY https://github.com/docopt/docopt.cpp.git
@@ -131,10 +140,14 @@ add_dependencies(docopt libdocopt)
 set(LIBSERIALPORT_INSTALL_DIR ${PROJECT_BINARY_DIR}/libserialport-prefix)
 find_library(LIBSERIALPORT serialport ${LIBSERIALPORT_INSTALL_DIR}/lib/)
 
+set(LIBSERIALPORT_CONFIGURE_PARAMETER)
+
+if(CMAKE_CROSSCOMPILING)
+    list(APPEND LIBSERIALPORT_CONFIGURE_PARAMETER --host=${COMPILER_PREFIX})
+endif()
+
 if(WIN32)
-  set(LIBSERIALPORT_CONFIGURE_PARAMETER --disable-shared)
-else()
-  set(LIBSERIALPORT_CONFIGURE_PARAMETER )
+    list(APPEND LIBSERIALPORT_CONFIGURE_PARAMETER --disable-shared)
 endif()
 
 if(NOT LIBSERIALPORT)
