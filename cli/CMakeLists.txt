@@ -266,15 +266,16 @@ install(TARGETS sf DESTINATION bin)
 ###
 ### TESTING
 ###
-include(${PROJECT_SOURCE_DIR}/../CMakeIncludeGTest.txt)
+if(NOT CMAKE_CROSSCOMPILING)
+	include(${PROJECT_SOURCE_DIR}/../CMakeIncludeGTest.txt)
 
-# stringhex
-add_executable(teststringhex
-    test/test.cpp
-    test/sf_teststringhex.cpp
-    sf_stringhex.cpp
+	# stringhex
+	add_executable(teststringhex
+	    test/test.cpp
+	    test/sf_teststringhex.cpp
+	    sf_stringhex.cpp
     )
-target_include_directories(teststringhex PUBLIC ${PROJECT_SOURCE_DIR})
-target_link_libraries(teststringhex libgmock)
-add_test(NAME teststringhex COMMAND teststringhex)
-
+	target_include_directories(teststringhex PUBLIC ${PROJECT_SOURCE_DIR})
+	target_link_libraries(teststringhex libgmock)
+	add_test(NAME teststringhex COMMAND teststringhex)
+endif()
