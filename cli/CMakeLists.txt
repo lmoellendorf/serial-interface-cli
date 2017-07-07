@@ -56,12 +56,12 @@ add_dependencies(
     observer
 )
 
-if(CMAKE_CROSSCOMPILING AND WIN32)
-    add_dependencies(
-        sf
-        getstdthreads
-    )
-endif()
+ if(CMAKE_CROSSCOMPILING AND WIN32)
+     add_dependencies(
+         sf
+         mingw-std-threads
+     )
+ endif()
 
 target_include_directories(sf PRIVATE
     ${PROJECT_SOURCE_DIR}
@@ -215,14 +215,21 @@ include_directories(${LIBSERIALPORT_INSTALL_DIR}/include)
 
 # mingw-std-threads
 if(CMAKE_CROSSCOMPILING AND WIN32)
-    add_custom_target(getstdthreads
-        COMMAND git clone -b master https://github.com/meganz/mingw-std-threads.git
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        VERBATIM
-    )
 
-    target_include_directories(sf PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/mingw-std-threads)
-    message(STATUS "mingw-std-threads location: ${CMAKE_CURRENT_BINARY_DIR}/mingw-std-threads")
+	ExternalProject_Add(mingw-std-threads
+		GIT_REPOSITORY https://github.com/meganz/mingw-std-threads.git
+		GIT_TAG master
+		UPDATE_DISCONNECTED 1
+		CONFIGURE_COMMAND ""
+		BUILD_COMMAND ""
+		BUILD_ALWAYS 0
+		INSTALL_COMMAND ""
+	)
+
+	ExternalProject_Get_Property(mingw-std-threads source_dir)
+	target_include_directories(sf PRIVATE ${source_dir})
+	message(STATUS "mingw-std-threads location: ${source_dir}")
+
 endif()
 
 ##
