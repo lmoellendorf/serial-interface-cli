@@ -47,6 +47,7 @@ set(SF_SERIALMACCLI_SOURCES
 )
 
 add_executable(sf ${SF_SERIALMACCLI_SOURCES})
+set_target_properties(sf PROPERTIES OUTPUT_NAME sfcli)
 
 add_dependencies(
     sf
