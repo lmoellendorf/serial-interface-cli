@@ -261,7 +261,7 @@ endif()
 ##
 ## INSTALLATION
 ##
-install(TARGETS sf DESTINATION bin)
+install(TARGETS sf DESTINATION bin COMPONENT sfcli)
 
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Serial Command Line Tool")
 set(CPACK_PACKAGE_VENDOR "STACKFORCE GmbH")
@@ -273,6 +273,7 @@ set(CPACK_PACKAGE_VERSION_PATCH "1")
 
 if(WIN32)
     set(CPACK_GENERATOR "NSIS")
+    set(CPACK_COMPONENTS_ALL sfcli)
     set(CPACK_NSIS_PACKAGE_NAME "Serial Command Line Tool")
     set(CPACK_NSIS_MUI_ICON ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico)
     set(CPACK_NSIS_MUI_UNIICON ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico)
