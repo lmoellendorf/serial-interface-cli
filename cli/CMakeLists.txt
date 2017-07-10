@@ -263,6 +263,45 @@ endif()
 ##
 install(TARGETS sf DESTINATION bin)
 
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Serial Command Line Tool")
+set(CPACK_PACKAGE_VENDOR "STACKFORCE GmbH")
+# set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/ReadMe.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/agpl-3.0.txt")
+set(CPACK_PACKAGE_VERSION_MAJOR "0")
+set(CPACK_PACKAGE_VERSION_MINOR "1")
+set(CPACK_PACKAGE_VERSION_PATCH "1")
+
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_PACKAGE_NAME "Serial Command Line Tool")
+    set(CPACK_NSIS_MUI_ICON ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico)
+    set(CPACK_NSIS_MUI_UNIICON ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico)
+    set(CPACK_NSIS_INSTALLED_ICON_NAME ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico)
+    set(CPACK_PACKAGE_ICON ${CMAKE_SOURCE_DIR}/cmake/cpack/sf_logo_heading.bmp)
+    set(CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP ${CMAKE_SOURCE_DIR}/cmake/cpack/sf_logo_margin.bmp)
+    set(CPACK_NSIS_MUI_UNWELCOMEFINISHPAGE_BITMAP ${CMAKE_SOURCE_DIR}/cmake/cpack/sf_logo_margin.bmp)
+    set(CPACK_NSIS_HELP_LINK "www.stackforce.de")
+    set(CPACK_NSIS_URL_INFO_ABOUT "www.stackforce.de")
+    set(CPACK_NSIS_CONTACT "info@stackforce.de")
+
+    set(CPACK_PACKAGE_EXECUTABLES "sfcli" "sfcli")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "sfcli")
+	set(CPACK_NSIS_MENU_LINKS "https://github.com/stackforce" "Serial CLI project on GitHub")
+
+#	set(CPACK_CREATE_DESKTOP_LINKS "sf")
+	set(CPACK_NSIS_INSTALLED_ICON_NAME \\\$INSTDIR\\\\bin\\\\sfcli.exe)
+	set(CPACK_NSIS_CREATE_ICONS_EXTRA
+		"CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\sfcli.lnk' '$INSTDIR\\\\bin\\\\sfcli.exe' '-h'"
+	)
+	set(CPACK_NSIS_DELETE_ICONS_EXTRA
+		"Delete '$SMPROGRAMS\\\\$START_MENU\\\\sfcli.lnk'"
+	)
+    set(CPACK_NSIS_MODIFY_PATH ON)
+
+endif()
+include(CPack)
+
 ###
 ### TESTING
 ###
