@@ -11,7 +11,7 @@
 
 ## Purpose
 
-Command Line Interface to easily send and receive serial messages from and to devices using the STACKFORCE serial-interface-mac.
+Command Line Interface to easily send and receive serial messages from and to devices using the STACKFORCE [serial-interface-mac](https://github.com/stackforce/serial-interface-mac).
 
 ## Build instructions
 
