@@ -38,8 +38,8 @@ or to define a custom install directory e.g. devroot:
 
 ## Cross Build for Windows instructions
 
-** Cross build from Linux to Windows has been tested only under Ubuntu 16.04 based distributions with the MinGW toolchain installed.
-Produced binaries should run under Windows 10. Other Windows versions have not been tested. **
+**Cross build from Linux to Windows has been tested only under Ubuntu 16.04 based distributions with the MinGW toolchain installed.
+Produced binaries should run under Windows 10. Other Windows versions have not been tested.**
 
 To produce a Windows 64bit binary follow these steps after cloning the repository (use the i686 toolchain file for 32bit):
 
@@ -59,7 +59,7 @@ To generate an NSIS installer
 
 In order to be able to cross build in Linux to produce Windows 32bit and 64bit binaries following MinGW dependencies have to be met:
 
-** NOTE: The dependencies list applies to Ubuntu 16.04 based distributions **
+**NOTE: The dependencies list applies to Ubuntu 16.04 based distributions**
 
 * binutils-mingw-w64-i686
 * binutils-mingw-w64-x86-64
