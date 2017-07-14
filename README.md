@@ -1,87 +1,77 @@
-# README                                                             {#mainpage}
-    @code
-
+# README
+```
      ___ _____ _   ___ _  _____ ___  ___  ___ ___
     / __|_   _/_\ / __| |/ / __/ _ \| _ \/ __| __|
     \__ \ | |/ _ \ (__| ' <| _| (_) |   / (__| _|
     |___/ |_/_/ \_\___|_|\_\_| \___/|_|_\\___|___|
     embedded.connectivity.solutions.==============
+```
 
-    @endcode
+# Introduction
 
-# Introduction                                                   {#introduction}
+## Purpose
 
-## Purpose                                                            {#purpose}
+Command Line Interface to easily send and receive serial messages from and to devices using the STACKFORCE serial-interface-mac.
 
-The STACKFORCE Serial MAC provides framing for serial interfaces.
+## Build instructions
 
-On TX the STACKFORCE Serial MAC takes over the task to wrap up data in frames
-before sending them over the serial interface.
-On RX the STACKFORCE Serial MAC listens for incoming frames, verifies their
-CRC and provides the payload to the upper layer.
+The STACKFORCE serial-interface-cli uses CMake as build system.
 
-## Frame format                                                         {#frame}
+Go to the project directory and create a build subdirectory:
 
-The Frame format is:
+    cd serial-interface-cli
+    git submodule update --init --recursive
+    mkdir build
+    cd build
 
-    +--------------+--------+-- - - --+-----+
-    | SYNC BYTE(S) | LENGTH | payload | CRC |
-    +--------------+--------+-- - - --+-----+
+and run:
 
-## Features                                                           {#feature}
+    cmake ..
+    make
+    sudo make install
 
-The STACKFORCE Serial MAC is written with cross-platform portability in mind.
-It should be usable within operating systems as well as bare metal devices.
+or to define a custom install directory e.g. devroot:
 
-* All API functions are non-blocking.
-* The MAC has no direct dependencies (besides standard C libs and
-STACKFORCE utilities that are hardware/OS independent, e.g. CRC module).
-* The MAC is usable with any HAL library that provides non-blocking
-functions to read from and write to the serial interface and a function
-which returns the number of bytes waiting on input.
-* Buffer allocation and management is completely left to the upper layer.
+    cmake .. -DCMAKE_INSTALL_PREFIX=devroot
+    make
+    make install
 
-# Usage                                                                 {#usage}
+## Cross Build for Windows instructions
 
-## Initialization                                              {#initialization}
+** Cross build from Linux to Windows has been tested only under Ubuntu 16.04 based distributions with the MinGW toolchain installed.
+Produced binaries should run under Windows 10. Other Windows versions have not been tested. **
 
-To use the STACKFORCE Serial MAC you have to initialize it using
-sf_serialmac_init()
+To produce a Windows 64bit binary follow these steps after cloning the repository (use the i686 toolchain file for 32bit):
 
-## Reacting to events                                                  {#events}
+    cd serial-interface-cli
+    git checkout win-cross-build
+    git submodule update --init --recursive
+    mkdir build
+    cd build
+    cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-cross-mingw-x86_64.cmake ..
+    make
 
-The STACKFORCE Serial MAC is event driven. You can use the MAC by calling
-sf_serialmac_entry() periodically.
+To generate an NSIS installer
 
-Or you can add sf_serialmac_hal_tx_callback() and
-sf_serialmac_hal_rx_callback() as callback function to the corresponding
-serial port events. (TODO: How to?)
+    make package
 
-## Receiving frames                                                        {#rx}
+## MinGW cross build dependencies
 
-Whenever the STACKFORCE Serial MAC receives the header of a frame it calls
-the upper layers callback function registered as SF_SERIALMAC_RX_EVENT
-rx_buffer_event() on Initialization. To receive the frame the upper layer has
-to provide a memory location for the payload passed to the MAC by calling
-sf_serialmac_rx_frame(). As soon as the frame has been completed or rejected
-due to CRC error or time out, the upper layer's callback function is called
-which has been registered as SF_SERIALMAC_RX_EVENT rx_event() on
-initialization.
+In order to be able to cross build in Linux to produce Windows 32bit and 64bit binaries following MinGW dependencies have to be met:
 
-## Transmitting frames                                                     {#tx}
+** NOTE: The dependencies list applies to Ubuntu 16.04 based distributions **
 
-Frames can be transmitted at once using sf_serialmac_tx_frame(). Or by
-starting a frame with sf_serialmac_tx_frame_start() and successively
-appending the payload using sf_serialmac_tx_frame_append() until the frame
-is filled.
-
-Whenever the MAC completed the transmission of a frame the upper layer's
-callback called that has been registered as SF_SERIALMAC_TX_EVENT tx_event()
-on initialization.
-
-Whenever the MAC processed a buffer with payload the upper layer's callback
-is called which has been registered as SF_SERIALMAC_TX_EVENT tx_buf_event on
-initialization. The upper layer must not touch the buffer memory passed with
-sf_serialmac_tx_frame() or sf_serialmac_tx_frame_append() before this
-callback has been called. Also all calls to sf_serialmac_tx_frame_append()
-are ignored until the previously provided buffer has been processed.
+* binutils-mingw-w64-i686
+* binutils-mingw-w64-x86-64
+* g++-mingw-w64
+* g++-mingw-w64-i686
+* g++-mingw-w64-x86-64
+* gcc-mingw-w64
+* gcc-mingw-w64-base
+* gcc-mingw-w64-i686
+* gcc-mingw-w64-x86-64
+* mingw-w64
+* mingw-w64-common
+* mingw-w64-i686-dev
+* mingw-w64-tools
+* mingw-w64-x86-64-dev
