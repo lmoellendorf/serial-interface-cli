@@ -54,10 +54,11 @@
 
 namespace sf {
     static const char USAGE[] =
-      SERIALMAC_PRODUCT_NAME R"(.
+    SERIALMACCLI_PRODUCT_NAME R"(
+Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VERSION R"(
 
       Usage:
-      )" SERIALMACCLI_PRODUCT_NAME R"( [options] [<payload> ...]
+      )" SERIALMACCLI_PROGRAM_NAME R"( [options] [<payload> ...]
 
       Options:
       -h, --help                                  Show this screen.
@@ -106,15 +107,16 @@ SerialMacCli::SerialMacCli ( int argc, char **argv ) : SerialObserver()
   docopt::value value;
   args = docopt::docopt ( USAGE,
   { argv + 1, argv + argc },
-  true,               // show help if requested
-  SERIALMACCLI_VERSION_STRING, false ); // version string
-
   value = args.at ( "--verbose" );
   if ( value && value.isBool() )
     {
       if ( value.asBool() )
         {
           Verbose = std::printf;
+    SERIALMACCLI_PRODUCT_NAME R"(
+Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH
+CLI v)" SERIALMACCLI_VERSION R"(
+MAC v)" SERIALMAC_VERSION, false ); // version string
         }
       else
         {
