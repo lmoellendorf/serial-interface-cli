@@ -76,8 +76,8 @@ else()
 endif()
 
 target_link_libraries(sfserialcli PRIVATE
-	${LINK_LIBS}
-	libserialport-static
+    ${LINK_LIBS}
+    libserialport-static
     ${CMAKE_THREAD_LIBS_INIT}
     ${WIN32_DEPS}
 )
