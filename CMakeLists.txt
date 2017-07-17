@@ -37,8 +37,10 @@ project(sfserialcli VERSION 0.1.2)
 #---------------------------------------------------------------------------------------
 # Include required modules
 #---------------------------------------------------------------------------------------
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+include(ColorMessages)
 
 #---------------------------------------------------------------------------------------
 # Product extra info
@@ -58,14 +60,21 @@ set(SFCRC_VERSION 0.1.2)
 #---------------------------------------------------------------------------------------
 # Find required dependencies
 #---------------------------------------------------------------------------------------
-find_package(docopt ${DOCOPT_VERSION} REQUIRED)
-find_package(sfobserver ${SFOBSERVER_VERSION} REQUIRED)
-find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
-find_package(sfstringhex ${SFSTRINGHEX_VERSION} REQUIRED)
-find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
-find_package(Threads REQUIRED)
+colormessage(MORE_IMPORTANT "Searching required project dependencies...")
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
+colormessage(STATUS "Searching docopt project configuration")
+find_package(docopt ${DOCOPT_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfobserver project configuration")
+find_package(sfobserver ${SFOBSERVER_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfserialmac project configuration")
+find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfstringhex project configuration")
+find_package(sfstringhex ${SFSTRINGHEX_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfcrc project configuration")
+find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
+colormessage(STATUS "Searching Threads")
+find_package(Threads REQUIRED)
+colormessage(STATUS "Searching Serialport project configuration")
 find_package(Serialport REQUIRED)
 
 #---------------------------------------------------------------------------------------
