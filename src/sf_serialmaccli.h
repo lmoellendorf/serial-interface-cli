@@ -43,13 +43,13 @@ extern "C"
 #include "libserialport.h"
 #include "sf_serialmac.h"
 }
-#include "sf_observer.h"
+#include "sf_serialobserver.h"
 #include "version.h"
 
 namespace sf
 {
 
-class SerialMacCli: public Observer
+class SerialMacCli: public SerialObserver
 {
 public:
     SerialMacCli ( int argc, char **argv );
@@ -61,14 +61,7 @@ public:
 private:
 
     std::map<std::string, docopt::value> args;
-    struct sp_port_config *port_config_backup;
-    struct sp_port_config *port_config_new;
-    struct sp_port *port_context = NULL;
-    struct sp_event_set *port_rx_event = NULL;
-    struct sp_event_set *port_tx_event = NULL;
-    struct sf_serialmac_ctx *mac_context = NULL;
-    std::string port_name_object;
-    const char *port_name = NULL;
+    SerialPortConfig *serialPortConfig = nullptr;
 
     enum io_states {
         CLI,
@@ -83,11 +76,10 @@ private:
     template<typename IfFunc, typename ElseFunc>
     void IfPayloadPassedAsParameter (
         IfFunc IfOperation, ElseFunc ElseOperation );
-    int InitSerialPort ( );
+    SerialObserverStatus InitSerialPort();
     void DeInitSerialPort();
     void Quit();
     void CliInput ( void );
-    void CliOutput ( void );
 };
 
 }
