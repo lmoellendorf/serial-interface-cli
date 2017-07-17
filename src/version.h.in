@@ -13,7 +13,7 @@
  * @author     Lars Möllendorf
  * @brief      STACKFORCE Serial MAC Command Line Client
  *
- * @details See @code sf --help @endcode for details.
+ * @details See @code sfserialcli --help @endcode for details.
  *
  * This file is part of the STACKFORCE Serial Command Line Client
  * (below "serialmac cli").
@@ -33,30 +33,22 @@
  *
  */
 
-#ifndef SF_STRINGHEX_H
-#define SF_STRINGHEX_H
+#ifndef __STACKFORCE_SERIALMACCLI_VERSION_H_
+#define __STACKFORCE_SERIALMACCLI_VERSION_H_
 
-#include <string>
-#include <stdint.h>
-#include <vector>
+#define TOSTR_(...) #__VA_ARGS__
+#define STRINGIFY(x) TOSTR_(x)
 
-namespace sf
-{
+#define SERIALMAC_VERSION_MAJOR         @PROJECT_VERSION_MAJOR@
+#define SERIALMAC_VERSION_MINOR         @PROJECT_VERSION_MINOR@
+#define SERIALMAC_VERSION_PATCH         @PROJECT_VERSION_PATCH@
+#define SERIALMAC_VERSION_MAJOR_STRING  STRINGIFY(SERIALMAC_VERSION_MAJOR)
+#define SERIALMAC_VERSION_MINOR_STRING  STRINGIFY(SERIALMAC_VERSION_MINOR)
+#define SERIALMAC_VERSION_PATCH_STRING  STRINGIFY(SERIALMAC_VERSION_PATCH)
+#define SERIALMAC_PRODUCT_COMPANY       "${${PROJECT_NAME}_PRODUCT_COMPANY}"
+#define SERIALMAC_PRODUCT_NAME          "${${PROJECT_NAME}_PRODUCT_NAME}"
+#define SERIALMACCLI_PRODUCT_NAME       "${PROJECT_NAME}"
 
-class StringHex
-{
-public:
-    StringHex(std::string delimiter);
-    StringHex();
-    ~StringHex();
+#define SERIALMACCLI_VERSION_STRING SERIALMAC_PRODUCT_COMPANY "(c) " SERIALMACCLI_PRODUCT_NAME "-" STRINGIFY(SERIALMAC_VERSION_MAJOR.SERIALMAC_VERSION_MINOR.SERIALMAC_VERSION_PATCH)
 
-    std::vector<uint8_t> &HexStringToBinary ( std::string &hex_string,
-            std::vector<uint8_t> &hex_binaries );
-    std::string &BinaryToHexString ( std::vector<uint8_t> &hex_binaries,
-                                     std::string &hex_string );
-private:
-    std::string delimiter = " ,;.:";
-};
-
-}
-#endif // SF_STRINGHEX_H
+#endif

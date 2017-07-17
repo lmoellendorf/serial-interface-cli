@@ -638,7 +638,7 @@ void SerialMacCli::CliInput ( void )
               /** Trigger TX */
               sf_serialmac_tx_frame (
                 mac_context, output_buffer_length,
-                output_buffer,
+                (uint8_t*)output_buffer,
                 output_buffer_length
               );
               cli_input_state = SERIAL;
@@ -737,7 +737,7 @@ void SerialMacCli::Update ( Event *event )
               frame_buffer = ( char* ) std::malloc ( frame_buffer_length );
 
               sf_serialmac_rx_frame ( ( struct sf_serialmac_ctx * ) mac_context,
-                                      frame_buffer,
+                                      (uint8_t*)frame_buffer,
                                       frame_buffer_length );
             }
           break;
