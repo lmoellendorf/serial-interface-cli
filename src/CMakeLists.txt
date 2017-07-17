@@ -37,12 +37,12 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
 
 if(WIN32)
-	message(STATUS "On Windows")
-	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-	# Not all compilers offer macros to indicate a Windows build environment.
-	add_definitions(-D__WIN32__)
-	find_library(SETUPAPI setupapi)
-	set(WIN32_DEPS ${SETUPAPI})
+    message(STATUS "On Windows")
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+    # Not all compilers offer macros to indicate a Windows build environment.
+    add_definitions(-D__WIN32__)
+    find_library(SETUPAPI setupapi)
+    set(WIN32_DEPS ${SETUPAPI})
 endif()
 
 #---------------------------------------------------------------------------------------
