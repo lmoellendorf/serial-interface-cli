@@ -10,11 +10,11 @@
 ## @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
 ## @author     Lars Moellendorf
 ## @author     Adrian Antonana
-## @brief      STACKFORCE Serial MAC Command Line Client
+## @brief      STACKFORCE Serial MAC Command Line Interface
 ##
 ## @details See @code sfserialcli --help @endcode for details.
 ##
-## This file is part of the STACKFORCE Serial Command Line Client
+## This file is part of the STACKFORCE Serial Command Line Interface
 ## (below "serialmac cli").
 ##
 ## The serialmac cli is free software: you can redistribute it and/or modify
@@ -43,12 +43,6 @@ include(CMakePackageConfigHelpers)
 include(ColorMessages)
 
 #---------------------------------------------------------------------------------------
-# Product extra info
-#---------------------------------------------------------------------------------------
-set(PROJECT_PRODUCT_COMPANY "STACKFORCE"						CACHE STRING "company")
-set(PROJECT_PRODUCT_NAME    "Serial MAC Command Line Client"	CACHE STRING "product")
-
-#---------------------------------------------------------------------------------------
 # Required dependencies versions
 #---------------------------------------------------------------------------------------
 set(DOCOPT_VERSION 0.6.2)
@@ -57,6 +51,14 @@ set(SFSERIALOBSERVER_VERSION 0.1.0)
 set(SFSERIALMAC_VERSION 0.1.2)
 set(SFSTRINGHEX_VERSION 0.2.0)
 set(SFCRC_VERSION 0.1.2)
+
+#---------------------------------------------------------------------------------------
+# Product extra info
+#---------------------------------------------------------------------------------------
+set(PROJECT_PRODUCT_COMPANY     "STACKFORCE")
+set(PROJECT_PRODUCT_NAME        "Serial MAC Command Line Interface")
+set(SERIALMACCLI_PROGRAM_NAME   "sfserialcli")
+set(SERIALMAC_VERSION           ${SFSERIALMAC_VERSION})
 
 #---------------------------------------------------------------------------------------
 # Find required dependencies
