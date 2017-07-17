@@ -51,7 +51,6 @@ endif()
 set(SF_SERIALMACCLI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmaccli.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmachandler.cpp
 )
 
 configure_file(
