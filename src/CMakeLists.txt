@@ -70,9 +70,9 @@ target_include_directories(sfserialcli PRIVATE
 )
 
 if(BUILD_STATIC)
-	set(LINK_LIBS sfserialmac-static docopt_s sfobserver-static sfstringhex-static)
+    set(LINK_LIBS sfserialmac-static docopt_s sfobserver-static sfserialobserver-static sfstringhex-static)
 else()
-	set(LINK_LIBS sfserialmac docopt sfobserver sfstringhex)
+    set(LINK_LIBS sfserialmac docopt sfserialobserver sfstringhex)
 endif()
 
 target_link_libraries(sfserialcli PRIVATE
