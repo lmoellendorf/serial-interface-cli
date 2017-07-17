@@ -51,8 +51,8 @@ namespace sf {
     class SerialMacCli: public SerialObserver {
 
         public:
-            SerialMacCli ( int argc, char **argv );
-            ~SerialMacCli ( );
+            SerialMacCli(int argc, char **argv);
+            ~SerialMacCli();
 
             int Run();
             void Update(Event *event);

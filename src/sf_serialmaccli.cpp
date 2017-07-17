@@ -101,39 +101,36 @@ Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VER
       -V, --verbose                               Verbosive debug information on stderr.
       )";
 
-SerialMacCli::SerialMacCli ( int argc, char **argv ) : SerialObserver()
-{
-  run = true;
-  docopt::value value;
-  args = docopt::docopt ( USAGE,
-  { argv + 1, argv + argc },
-  value = args.at ( "--verbose" );
-  if ( value && value.isBool() )
-    {
-      if ( value.asBool() )
-        {
-          Verbose = std::printf;
+SerialMacCli::SerialMacCli(int argc, char **argv) : SerialObserver() {
+    run = true;
+    docopt::value value;
+    args = docopt::docopt ( USAGE,
+    { argv + 1, argv + argc },
+    true,               // show help if requested
     SERIALMACCLI_PRODUCT_NAME R"(
 Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH
 CLI v)" SERIALMACCLI_VERSION R"(
 MAC v)" SERIALMAC_VERSION, false ); // version string
+
+    value = args.at ( "--verbose" );
+    if(value && value.isBool()) {
+        if( value.asBool()) {
+            Verbose = std::printf;
         }
-      else
-        {
-          Verbose = NonVerbose;
+        else {
+            Verbose = NonVerbose;
         }
     }
 
-  /* for debugging docopt
-  for ( auto const& arg : args )
+    /* for debugging docopt
+    for ( auto const& arg : args )
     {
-      std::cout << arg.first << ": " <<  arg.second << std::endl;
+        std::cout << arg.first << ": " <<  arg.second << std::endl;
     }
-   */
+    */
 }
 
-SerialMacCli::~SerialMacCli ( )
-{
+SerialMacCli::~SerialMacCli() {
 //   SerialMacHandler::Detach ( this );
 //   this->DeInitSerialPort();
 
@@ -144,15 +141,14 @@ SerialMacCli::~SerialMacCli ( )
  * This is a dummy function which is used instead of printf in non-verbose
  * mode.
  */
-int SerialMacCli::NonVerbose (const char *format, ...){
+int SerialMacCli::NonVerbose (const char *format, ...) {
   return strlen(format);
 }
 
 /**
  * Initialize the serial port.
  */
-SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort ( )
-{
+SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     docopt::value value;
 
     serialPortConfig = new SerialPortConfig(args.at( "--device" ).asString());
@@ -267,8 +263,7 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort ( )
     return AttachSerial(serialPortConfig);
 }
 
-void SerialMacCli::DeInitSerialPort()
-{
+void SerialMacCli::DeInitSerialPort() {
 //   if ( port_rx_event )
 //     {
 //       sp_free_event_set ( port_rx_event );
@@ -285,7 +280,7 @@ void SerialMacCli::DeInitSerialPort()
 //     }
 }
 
-void SerialMacCli::Quit(){
+void SerialMacCli::Quit() {
     Verbose ( "Quitting.\n" );
     /** Userinput was empty line -> STOP */
     run = false;
@@ -301,11 +296,11 @@ template<typename IfFunc, typename ElseFunc>
  * payload has been passed as parameter and the ElseOperation otherwise.
  */
 void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseOperation) {
-    docopt::value value = args.at ( "<payload>" );
+    docopt::value value = args.at("<payload>");
 
-    if ( value && value.isStringList()
-        && value.asStringList().size() != 0 ) {
-        return IfOperation (value);
+    if(value && value.isStringList()
+        && value.asStringList().size() != 0) {
+        return IfOperation(value);
     }
 
     return ElseOperation();
@@ -327,24 +322,22 @@ void SerialMacCli::CliInput(void) {
                 /** If payload is passed as parameter ... */
                 IfPayloadPassedAsParameter(
                 /** ... this lambda function is executed ... */
-                [&line, this] ( docopt::value value )
-                {
-                std::vector <std::string> line_as_list = value.asStringList();
-                std::for_each ( line_as_list.begin(), line_as_list.end(),
-                                /**
-                                    * A lambda within a lambda! But this is how
-                                    * for_each works
-                                    */
-                                [&line] ( std::string& word )
-                {
-                    return line+=word;
-                });
+                [&line, this](docopt::value value) {
+                    std::vector <std::string> line_as_list = value.asStringList();
+                    std::for_each(line_as_list.begin(), line_as_list.end(),
+                                    /**
+                                        * A lambda within a lambda! But this is how
+                                        * for_each works
+                                        */
+                                    [&line](std::string& word)
+                    {
+                        return line+=word;
+                    });
                 },
                 /** ... else this lambda function is executed */
-                [&line, this]()
-                {
-                Verbose ( "Input text:\n" );
-                getline ( std::cin, line );
+                [&line, this]() {
+                    Verbose ("Input text:\n");
+                    std::getline(std::cin, line);
                 });
 
                 if(line.length() > 0) {
@@ -420,109 +413,101 @@ void SerialMacCli::CliInput(void) {
     }
 }
 
-int SerialMacCli::Run()
-{
-  if(InitSerialPort() != SerialObserverStatus::ATTACH_OK) {
-    std::cerr << "Could not initialize <port name here>" << std::endl;
-    return 1;
-  }
+int SerialMacCli::Run() {
+    if(InitSerialPort() != SerialObserverStatus::ATTACH_OK) {
+        std::cerr << "Could not initialize <port name here>" << std::endl;
+        return 1;
+    }
 
     /** Start waiting for CLI input */
     ioState = IoState::CLI;
-  std::thread threadCliInput (&SerialMacCli::CliInput, this);
-  threadCliInput.detach();
+    std::thread threadCliInput(&SerialMacCli::CliInput, this);
+    threadCliInput.detach();
 
-  while(run) {};
+    while(run) {};
 
-  return 0;
+    return 0;
 }
 
-  void SerialMacCli::Update(Event* event) {
-        std::cout << "DeviceHandler::Update -> start" << std::endl;
-        uint8_t *bufferContent = NULL;
-        size_t bufferSize;
-        std::vector<uint8_t> payload;
-        docopt::value value;
+void SerialMacCli::Update(Event* event) {
+    std::cout << "DeviceHandler::Update -> start" << std::endl;
+    uint8_t *bufferContent = NULL;
+    size_t bufferSize;
+    std::vector<uint8_t> payload;
+    docopt::value value;
 
-        switch(event->GetIdentifier()) {
-            case SerialHandler::SERIAL_READ_FRAME_EVENT:
+    switch(event->GetIdentifier()) {
+        case SerialHandler::SERIAL_READ_FRAME_EVENT:
 
-                bufferSize = event->GetDetails((void**)&bufferContent);
-                payload.assign(bufferContent, bufferContent+bufferSize);
-                std::cout << "DeviceHandler::Update -> got SERIAL_READ_FRAME_EVENT " << std::endl;;
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            payload.assign(bufferContent, bufferContent+bufferSize);
+            std::cout << "DeviceHandler::Update -> got SERIAL_READ_FRAME_EVENT " << std::endl;;
 
-                /** Check if a valid frame has been received */
-                if ( bufferSize )
-                {
-                    value = args.at ( "--text" );
-                    if ( value && value.isBool() && value.asBool() )
-                    {
-
-                        if ( '\n' == bufferContent[0] )
-                        {
-                            Quit();
-                        }
-                        else
-                        {
-                            std::printf ( "%s\n", bufferContent );
-                        }
+            /** Check if a valid frame has been received */
+            if(bufferSize) {
+                value = args.at ( "--text" );
+                if(value && value.isBool() && value.asBool()) {
+                    if('\n' == bufferContent[0]) {
+                        Quit();
                     }
-                    else
-                    {
-                        std::string delimiters;
-                        value = args.at ( "--delimiters" );
-                        if ( value && value.isString() )
-                        {
-                            delimiters = value.asString();
-                        }
-                        StringHex hex ( delimiters );
-                        std::string hex_string;
-                        std::vector<uint8_t> hex_binaries ( bufferContent, bufferContent + bufferSize );
-                        hex.BinaryToHexString ( hex_binaries, hex_string );
-                        std::printf ( "%s\n", hex_string.c_str() );
+                    else {
+                        std::printf("%s\n", bufferContent);
                     }
-                    Verbose ( "Length:\n%zd\n", bufferSize );
                 }
+                else {
+                    std::string delimiters;
+                    value = args.at ( "--delimiters" );
+                    if(value && value.isString()) {
+                        delimiters = value.asString();
+                    }
+                    StringHex hex(delimiters);
+                    std::string hex_string;
+                    std::vector<uint8_t> hex_binaries(bufferContent, bufferContent + bufferSize);
+                    hex.BinaryToHexString(hex_binaries, hex_string);
+                    std::printf("%s\n", hex_string.c_str());
+                }
+                Verbose("Length:\n%zd\n", bufferSize);
+            }
 
             ioState = IoState::CLI;
             break;
 
-            case SerialHandler::SERIAL_READ_BUFFER_EVENT:
+        case SerialHandler::SERIAL_READ_BUFFER_EVENT:
 
-                bufferSize = event->GetDetails((void**)&bufferContent);
-                std::cout << "DeviceHandler::Update -> got SERIAL_READ_BUFFER_EVENT" << std::endl;
-                break;
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_READ_BUFFER_EVENT" << std::endl;
+            break;
 
-            case SerialHandler::SERIAL_WRITE_FRAME_EVENT:
+        case SerialHandler::SERIAL_WRITE_FRAME_EVENT:
 
-                bufferSize = event->GetDetails((void**)&bufferContent);
-                std::cout << "DeviceHandler::Update -> got SERIAL_WRITE_FRAME_EVENT" << std::endl;
-                break;
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_WRITE_FRAME_EVENT" << std::endl;
+            break;
 
-            case SerialHandler::SERIAL_WRITE_BUFFER_EVENT:
+        case SerialHandler::SERIAL_WRITE_BUFFER_EVENT:
 
-                bufferSize = event->GetDetails((void**)&bufferContent);
-                std::cout << "DeviceHandler::Update -> got SERIAL_WRITE_BUFFER_EVENT" << std::endl;
-                break;
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_WRITE_BUFFER_EVENT" << std::endl;
+            break;
 
-            case SerialHandler::SERIAL_READ_SYNC_BYTE_EVENT:
+        case SerialHandler::SERIAL_READ_SYNC_BYTE_EVENT:
 
-                bufferSize = event->GetDetails((void**)&bufferContent);
-                std::cout << "DeviceHandler::Update -> got SERIAL_READ_SYNC_BYTE_EVENT" << std::endl;
-                break;
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_READ_SYNC_BYTE_EVENT" << std::endl;
+            break;
 
-            case SerialHandler::SERIAL_CONNECTION_ERROR:
+        case SerialHandler::SERIAL_CONNECTION_ERROR:
 
-                bufferSize = event->GetDetails((void**)&bufferContent);
-                std::cout << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
-                this->Quit();
-                break;
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
+            this->Quit();
+            break;
 
-            default:
-                std::cout << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
-                break;
-        }
-        std::cout << "DeviceHandler::Update -> end" << std::endl;
+        default:
+            std::cout << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
+            break;
     }
+    std::cout << "DeviceHandler::Update -> end" << std::endl;
+}
 
 }
