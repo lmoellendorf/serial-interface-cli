@@ -13,6 +13,16 @@
 
 Command Line Interface to easily send and receive serial messages from and to devices using the STACKFORCE [serial-interface-mac](https://github.com/stackforce/serial-interface-mac).
 
+## Get Precompiled Binaries
+
+### Windows
+
+Precompiled binaries for Windows can be found in the [releases](https://github.com/stackforce/serial-interface-cli/releases) section. **Please note that currently Windows binaries have been tested under Windows 10 only.**
+
+### Linux
+
+DEB packages will be soon available.
+
 ## Build instructions
 
 The STACKFORCE serial-interface-cli uses CMake as build system.
