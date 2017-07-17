@@ -1,5 +1,5 @@
-#ifndef SERIALMACCLI_H
-#define SERIALMACCLI_H
+#ifndef _SF_SERIALMACCLI_H_
+#define _SF_SERIALMACCLI_H_
 /**
  * @code
  *  ___ _____ _   ___ _  _____ ___  ___  ___ ___
@@ -46,41 +46,39 @@ extern "C"
 #include "sf_serialobserver.h"
 #include "version.h"
 
-namespace sf
-{
+namespace sf {
 
-class SerialMacCli: public SerialObserver
-{
-public:
-    SerialMacCli ( int argc, char **argv );
-    ~SerialMacCli ( );
+    class SerialMacCli: public SerialObserver {
 
-    int Run ( );
-    void Update ( Event *event );
+        public:
+            SerialMacCli ( int argc, char **argv );
+            ~SerialMacCli ( );
 
-private:
+            int Run();
+            void Update(Event *event);
 
-    std::map<std::string, docopt::value> args;
-    SerialPortConfig *serialPortConfig = nullptr;
+        private:
+            std::map<std::string, docopt::value> args;
+            SerialPortConfig *serialPortConfig = nullptr;
 
-    enum io_states {
-        CLI,
-        SERIAL
+            enum io_states {
+                CLI,
+                SERIAL
+            };
+
+            io_states cli_input_state;
+            bool run;
+
+            static int NonVerbose(const char *format, ...);
+            int (*Verbose) (const char *format, ...);
+            template<typename IfFunc, typename ElseFunc>
+            void IfPayloadPassedAsParameter (
+                IfFunc IfOperation, ElseFunc ElseOperation );
+            SerialObserverStatus InitSerialPort();
+            void DeInitSerialPort();
+            void Quit();
+            void CliInput(void);
     };
 
-    io_states cli_input_state;
-    bool run;
-
-    static int NonVerbose (const char *format, ...);
-    int (*Verbose) (const char *format, ...);
-    template<typename IfFunc, typename ElseFunc>
-    void IfPayloadPassedAsParameter (
-        IfFunc IfOperation, ElseFunc ElseOperation );
-    SerialObserverStatus InitSerialPort();
-    void DeInitSerialPort();
-    void Quit();
-    void CliInput ( void );
-};
-
 }
-#endif // SERIALMACCLI_H
+#endif // _SF_SERIALMACCLI_H_

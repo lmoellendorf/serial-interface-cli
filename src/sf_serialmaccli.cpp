@@ -52,8 +52,7 @@
 #define CURRENT_SUPPLY_DEFAULT_PARAMETER
 #endif
 
-namespace sf
-{
+namespace sf {
     static const char USAGE[] =
       SERIALMAC_PRODUCT_NAME R"(.
 
@@ -123,16 +122,12 @@ SerialMacCli::SerialMacCli ( int argc, char **argv ) : SerialObserver()
         }
     }
 
-
-
   /* for debugging docopt
   for ( auto const& arg : args )
     {
       std::cout << arg.first << ": " <<  arg.second << std::endl;
     }
    */
-
-//   mac_context = ( sf_serialmac_ctx* ) std::malloc ( sf_serialmac_ctx_size() );
 }
 
 SerialMacCli::~SerialMacCli ( )
@@ -289,9 +284,9 @@ void SerialMacCli::DeInitSerialPort()
 }
 
 void SerialMacCli::Quit(){
-          Verbose ( "Quitting.\n" );
-          /** Userinput was empty line -> STOP */
-          run = false;
+    Verbose ( "Quitting.\n" );
+    /** Userinput was empty line -> STOP */
+    run = false;
 }
 
 /**
@@ -303,109 +298,101 @@ template<typename IfFunc, typename ElseFunc>
  * To avoid code rendundancy this function executes the IfOperation if
  * payload has been passed as parameter and the ElseOperation otherwise.
  */
-void SerialMacCli::IfPayloadPassedAsParameter (
-  IfFunc IfOperation, ElseFunc ElseOperation )
-{
-  docopt::value value = args.at ( "<payload>" );
+void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseOperation) {
+    docopt::value value = args.at ( "<payload>" );
 
-  if ( value && value.isStringList()
-       && value.asStringList().size() != 0 )
-    {
-      return IfOperation (value);
+    if ( value && value.isStringList()
+        && value.asStringList().size() != 0 ) {
+        return IfOperation (value);
     }
-  return ElseOperation();
+
+    return ElseOperation();
 }
 
 
-void SerialMacCli::CliInput ( void )
-{
-  std::string line = "";
-  docopt::value value;
-  std::string delimiters;
-  char *output_buffer = NULL;
-  int output_buffer_length = 0;
-  std::vector<uint8_t> payload;
+void SerialMacCli::CliInput(void) {
+    std::string line = "";
+    docopt::value value;
+    std::string delimiters;
+    char *output_buffer = NULL;
+    int output_buffer_length = 0;
+    std::vector<uint8_t> payload;
 
-  /** Repeat until the user stops you */
-  while ( run )
-    {
-      switch ( cli_input_state )
-        {
-        case CLI:
-          /** If payload is passed as parameter ... */
-          IfPayloadPassedAsParameter (
-          /** ... this lambda function is executed ... */
-          [&line, this] ( docopt::value value )
-          {
-            std::vector <std::string> line_as_list = value.asStringList();
-            std::for_each ( line_as_list.begin(), line_as_list.end(),
-                            /**
-                             * A lambda within a lambda! But this is how
-                             * for_each works
-                             */
-                            [&line] ( std::string& word )
-            {
-              return line+=word;
-            } );
-          },
-          /** ... else this lambda function is executed */
-          [&line, this] ()
-          {
-            Verbose ( "Input text:\n" );
-            getline ( std::cin, line );
-          } );
-          if ( line.length() > 0 )
-            {
-              /**
-               * We cannot simply pass a pointer to line.c_str() or
-               * hex_binaries[0] here because their memory will be destroyed
-               * as soon as we leave the scope of this function and the serial
-               * MAC processes the memory asynchronously.
-               * Therefore we allocate memory and copy the content.
-               */
-              value = args.at ( "--text" );
-              if ( value && value.isBool() && value.asBool() )
+    /** Repeat until the user stops you */
+    while(run) {
+        switch(cli_input_state) {
+            case CLI:
+                /** If payload is passed as parameter ... */
+                IfPayloadPassedAsParameter(
+                /** ... this lambda function is executed ... */
+                [&line, this] ( docopt::value value )
                 {
-                  output_buffer_length = line.length() + 1/* for the terminating '\0' */;
-                  /** Will be freed in Update() when TX has been completed. */
-                  output_buffer = ( char* ) std::malloc ( output_buffer_length );
-                  strncpy ( output_buffer, line.c_str(), output_buffer_length );
-                }
-              else
+                std::vector <std::string> line_as_list = value.asStringList();
+                std::for_each ( line_as_list.begin(), line_as_list.end(),
+                                /**
+                                    * A lambda within a lambda! But this is how
+                                    * for_each works
+                                    */
+                                [&line] ( std::string& word )
                 {
-                  value = args.at ( "--delimiters" );
-                  if ( value && value.isString() )
-                    {
-                      delimiters = value.asString();
+                    return line+=word;
+                });
+                },
+                /** ... else this lambda function is executed */
+                [&line, this]()
+                {
+                Verbose ( "Input text:\n" );
+                getline ( std::cin, line );
+                });
+
+                if(line.length() > 0) {
+                    /**
+                    * We cannot simply pass a pointer to line.c_str() or
+                    * hex_binaries[0] here because their memory will be destroyed
+                    * as soon as we leave the scope of this function and the serial
+                    * MAC processes the memory asynchronously.
+                    * Therefore we allocate memory and copy the content.
+                    */
+                    value = args.at("--text");
+                    if(value && value.isBool() && value.asBool()) {
+                        output_buffer_length = line.length() + 1/* for the terminating '\0' */;
+                        /** Will be freed in Update() when TX has been completed. */
+                        output_buffer = ( char* ) std::malloc ( output_buffer_length );
+                        strncpy ( output_buffer, line.c_str(), output_buffer_length );
                     }
-                  /**
-                   * In C++ there is no easy way to separate declaration and
-                   * initialization of objects
-                   */
-                  StringHex hex ( delimiters );
-                  std::vector<uint8_t> hex_binaries;
-                  hex.HexStringToBinary ( line, hex_binaries );
-                  output_buffer_length = hex_binaries.size();
-                  /**
-                   * On invalid input the length is 0 and we are finished for
-                   * the moment
-                   */
-                  if(!output_buffer_length)
+                    else {
+                        value = args.at("--delimiters");
+                        if(value && value.isString()) {
+                            delimiters = value.asString();
+                        }
+                        /**
+                        * In C++ there is no easy way to separate declaration and
+                        * initialization of objects
+                        */
+                        StringHex hex(delimiters);
+                        std::vector<uint8_t> hex_binaries;
+                        hex.HexStringToBinary(line, hex_binaries);
+                        output_buffer_length = hex_binaries.size();
+                        /**
+                        * On invalid input the length is 0 and we are finished for
+                        * the moment
+                        */
+                        if(!output_buffer_length)
+                        Quit();
+                        /** Will be freed in Update() when TX has been completed. */
+                        output_buffer = (char*)std::malloc(output_buffer_length);
+                        std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
+                    }
+
+                    payload.assign(output_buffer, output_buffer + output_buffer_length);
+                    SendSerial(payload);
+                    cli_input_state = SERIAL;
+                }
+                else {
                     Quit();
-                  /** Will be freed in Update() when TX has been completed. */
-                  output_buffer = ( char* ) std::malloc ( output_buffer_length );
-                  std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
                 }
 
-              payload.assign(output_buffer, output_buffer + output_buffer_length);
-              SendSerial(payload);
-              cli_input_state = SERIAL;
-            }
-          else
-            {
-              Quit();
-            }
-          break;
+            break;
 
         case SERIAL:
           /**

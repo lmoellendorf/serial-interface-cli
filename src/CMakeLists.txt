@@ -156,7 +156,7 @@ set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
 if(NOT BUILD_STATIC)
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfcrc (= ${SFCRC_VERSION}), libsfobserver (= ${SFOBSERVER_VERSION}), libsfserialmac (= ${SFSERIALMAC_VERSION}), libsfstringhex (= ${SFSTRINGHEX_VERSION}), docopt (= ${DOCOPT_VERSION})")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfcrc (= ${SFCRC_VERSION}), libsfobserver (= ${SFOBSERVER_VERSION}), libsfserialmac (= ${SFSERIALMAC_VERSION}), libsfstringhex (= ${SFSTRINGHEX_VERSION}), docopt (= ${DOCOPT_VERSION})")
 endif()
 
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/stackforce")
