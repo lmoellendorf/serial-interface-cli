@@ -322,8 +322,8 @@ void SerialMacCli::CliInput(void) {
 
     /** Repeat until the user stops you */
     while(run) {
-        switch(cli_input_state) {
-            case CLI:
+        switch(ioState) {
+            case IoState::CLI:
                 /** If payload is passed as parameter ... */
                 IfPayloadPassedAsParameter(
                 /** ... this lambda function is executed ... */
@@ -388,7 +388,7 @@ void SerialMacCli::CliInput(void) {
 
                     payload.assign(output_buffer, output_buffer + output_buffer_length);
                     SendSerial(payload);
-                    cli_input_state = SERIAL;
+                    ioState = IoState::SERIAL;
                 }
                 else {
                     Quit();
@@ -396,7 +396,7 @@ void SerialMacCli::CliInput(void) {
 
             break;
 
-        case SERIAL:
+        case IoState::SERIAL:
           /**
            * Call the callback to process transmission until Update() sets
            * cli_input_state to CLI.
@@ -427,8 +427,8 @@ int SerialMacCli::Run()
     return 1;
   }
 
-  /** Start waiting for CLI input */
-  cli_input_state = CLI;
+    /** Start waiting for CLI input */
+    ioState = IoState::CLI;
   std::thread threadCliInput (&SerialMacCli::CliInput, this);
   threadCliInput.detach();
 
@@ -484,8 +484,8 @@ int SerialMacCli::Run()
                     Verbose ( "Length:\n%zd\n", bufferSize );
                 }
 
-                cli_input_state = CLI;
-                break;
+            ioState = IoState::CLI;
+            break;
 
             case SerialHandler::SERIAL_READ_BUFFER_EVENT:
 

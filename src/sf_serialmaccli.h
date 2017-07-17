@@ -61,12 +61,12 @@ namespace sf {
             std::map<std::string, docopt::value> args;
             SerialPortConfig *serialPortConfig = nullptr;
 
-            enum io_states {
+            enum class IoState {
                 CLI,
                 SERIAL
             };
 
-            io_states cli_input_state;
+            IoState ioState;
             bool run;
 
             static int NonVerbose(const char *format, ...);
