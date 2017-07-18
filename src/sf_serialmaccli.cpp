@@ -130,10 +130,7 @@ MAC v)" SERIALMAC_VERSION, false ); // version string
 }
 
 SerialMacCli::~SerialMacCli() {
-//   SerialMacHandler::Detach ( this );
-//   this->DeInitSerialPort();
-
-    std::cout << "yo soy destructo!!!" << std::endl;
+    DetachSerial();
 }
 
 /**
