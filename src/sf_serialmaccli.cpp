@@ -412,7 +412,6 @@ int SerialMacCli::Run() {
 }
 
 void SerialMacCli::Update(Event* event) {
-    std::cout << "DeviceHandler::Update -> start" << std::endl;
     uint8_t *bufferContent = NULL;
     size_t bufferSize;
     std::vector<uint8_t> payload;
@@ -423,7 +422,6 @@ void SerialMacCli::Update(Event* event) {
 
             bufferSize = event->GetDetails((void**)&bufferContent);
             payload.assign(bufferContent, bufferContent+bufferSize);
-            std::cout << "DeviceHandler::Update -> got SERIAL_READ_FRAME_EVENT " << std::endl;;
 
             /** Check if a valid frame has been received */
             if(bufferSize) {
@@ -455,27 +453,15 @@ void SerialMacCli::Update(Event* event) {
             break;
 
         case SerialHandler::SERIAL_READ_BUFFER_EVENT:
-
-            bufferSize = event->GetDetails((void**)&bufferContent);
-            std::cout << "DeviceHandler::Update -> got SERIAL_READ_BUFFER_EVENT" << std::endl;
             break;
 
         case SerialHandler::SERIAL_WRITE_FRAME_EVENT:
-
-            bufferSize = event->GetDetails((void**)&bufferContent);
-            std::cout << "DeviceHandler::Update -> got SERIAL_WRITE_FRAME_EVENT" << std::endl;
             break;
 
         case SerialHandler::SERIAL_WRITE_BUFFER_EVENT:
-
-            bufferSize = event->GetDetails((void**)&bufferContent);
-            std::cout << "DeviceHandler::Update -> got SERIAL_WRITE_BUFFER_EVENT" << std::endl;
             break;
 
         case SerialHandler::SERIAL_READ_SYNC_BYTE_EVENT:
-
-            bufferSize = event->GetDetails((void**)&bufferContent);
-            std::cout << "DeviceHandler::Update -> got SERIAL_READ_SYNC_BYTE_EVENT" << std::endl;
             break;
 
         case SerialHandler::SERIAL_CONNECTION_ERROR:
@@ -489,7 +475,6 @@ void SerialMacCli::Update(Event* event) {
             std::cout << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
             break;
     }
-    std::cout << "DeviceHandler::Update -> end" << std::endl;
 }
 
 }
