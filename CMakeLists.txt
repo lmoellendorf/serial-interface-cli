@@ -10,11 +10,11 @@
 ## @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
 ## @author     Lars Moellendorf
 ## @author     Adrian Antonana
-## @brief      STACKFORCE Serial MAC Command Line Client
+## @brief      STACKFORCE Serial MAC Command Line Interface
 ##
 ## @details See @code sfserialcli --help @endcode for details.
 ##
-## This file is part of the STACKFORCE Serial Command Line Client
+## This file is part of the STACKFORCE Serial Command Line Interface
 ## (below "serialmac cli").
 ##
 ## The serialmac cli is free software: you can redistribute it and/or modify
@@ -37,35 +37,49 @@ project(sfserialcli VERSION 0.1.2)
 #---------------------------------------------------------------------------------------
 # Include required modules
 #---------------------------------------------------------------------------------------
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
-
-#---------------------------------------------------------------------------------------
-# Product extra info
-#---------------------------------------------------------------------------------------
-set(PROJECT_PRODUCT_COMPANY "STACKFORCE"						CACHE STRING "company")
-set(PROJECT_PRODUCT_NAME    "Serial MAC Command Line Client"	CACHE STRING "product")
+include(ColorMessages)
 
 #---------------------------------------------------------------------------------------
 # Required dependencies versions
 #---------------------------------------------------------------------------------------
 set(DOCOPT_VERSION 0.6.2)
 set(SFOBSERVER_VERSION 2.0.0)
+set(SFSERIALOBSERVER_VERSION 0.1.0)
 set(SFSERIALMAC_VERSION 0.1.2)
 set(SFSTRINGHEX_VERSION 0.2.0)
 set(SFCRC_VERSION 0.1.2)
 
 #---------------------------------------------------------------------------------------
+# Product extra info
+#---------------------------------------------------------------------------------------
+set(PROJECT_PRODUCT_COMPANY     "STACKFORCE")
+set(PROJECT_PRODUCT_NAME        "Serial MAC Command Line Interface")
+set(SERIALMACCLI_PROGRAM_NAME   "sfserialcli")
+set(SERIALMAC_VERSION           ${SFSERIALMAC_VERSION})
+
+#---------------------------------------------------------------------------------------
 # Find required dependencies
 #---------------------------------------------------------------------------------------
-find_package(docopt ${DOCOPT_VERSION} REQUIRED)
-find_package(sfobserver ${SFOBSERVER_VERSION} REQUIRED)
-find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
-find_package(sfstringhex ${SFSTRINGHEX_VERSION} REQUIRED)
-find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
-find_package(Threads REQUIRED)
+colormessage(MORE_IMPORTANT "Searching required project dependencies...")
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
+colormessage(STATUS "Searching docopt project configuration")
+find_package(docopt ${DOCOPT_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfobserver project configuration")
+find_package(sfobserver ${SFOBSERVER_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfserialobserver project configuration")
+find_package(sfserialobserver ${SFSERIALOBSERVER_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfserialmac project configuration")
+find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfstringhex project configuration")
+find_package(sfstringhex ${SFSTRINGHEX_VERSION} REQUIRED)
+colormessage(STATUS "Searching sfcrc project configuration")
+find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
+colormessage(STATUS "Searching Threads")
+find_package(Threads REQUIRED)
+colormessage(STATUS "Searching Serialport project configuration")
 find_package(Serialport REQUIRED)
 
 #---------------------------------------------------------------------------------------

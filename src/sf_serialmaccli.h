@@ -1,5 +1,5 @@
-#ifndef SERIALMACCLI_H
-#define SERIALMACCLI_H
+#ifndef _SF_SERIALMACCLI_H_
+#define _SF_SERIALMACCLI_H_
 /**
  * @code
  *  ___ _____ _   ___ _  _____ ___  ___  ___ ___
@@ -43,52 +43,42 @@ extern "C"
 #include "libserialport.h"
 #include "sf_serialmac.h"
 }
-#include "sf_observer.h"
+#include "sf_serialobserver.h"
 #include "version.h"
 
-namespace sf
-{
+namespace sf {
 
-class SerialMacCli: public Observer
-{
-public:
-    SerialMacCli ( int argc, char **argv );
-    ~SerialMacCli ( );
+    class SerialMacCli: public SerialObserver {
 
-    int Run ( );
-    void Update ( Event *event );
+        public:
+            SerialMacCli(int argc, char **argv);
+            ~SerialMacCli();
 
-private:
+            int Run();
+            void Update(Event *event);
 
-    std::map<std::string, docopt::value> args;
-    struct sp_port_config *port_config_backup;
-    struct sp_port_config *port_config_new;
-    struct sp_port *port_context = NULL;
-    struct sp_event_set *port_rx_event = NULL;
-    struct sp_event_set *port_tx_event = NULL;
-    struct sf_serialmac_ctx *mac_context = NULL;
-    std::string port_name_object;
-    const char *port_name = NULL;
+        private:
+            std::map<std::string, docopt::value> args;
+            SerialPortConfig *serialPortConfig = nullptr;
 
-    enum io_states {
-        CLI,
-        SERIAL
+            enum class IoState {
+                CLI,
+                SERIAL
+            };
+
+            IoState ioState;
+            bool run;
+
+            static int NonVerbose(const char *format, ...);
+            int (*Verbose) (const char *format, ...);
+            template<typename IfFunc, typename ElseFunc>
+            void IfPayloadPassedAsParameter (
+                IfFunc IfOperation, ElseFunc ElseOperation );
+            SerialObserverStatus InitSerialPort();
+            void DeInitSerialPort();
+            void Quit();
+            void CliInput(void);
     };
 
-    io_states cli_input_state;
-    bool run;
-
-    static int NonVerbose (const char *format, ...);
-    int (*Verbose) (const char *format, ...);
-    template<typename IfFunc, typename ElseFunc>
-    void IfPayloadPassedAsParameter (
-        IfFunc IfOperation, ElseFunc ElseOperation );
-    int InitSerialPort ( );
-    void DeInitSerialPort();
-    void Quit();
-    void CliInput ( void );
-    void CliOutput ( void );
-};
-
 }
-#endif // SERIALMACCLI_H
+#endif // _SF_SERIALMACCLI_H_

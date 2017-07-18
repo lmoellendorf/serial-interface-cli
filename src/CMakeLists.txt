@@ -37,12 +37,12 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
 
 if(WIN32)
-	message(STATUS "On Windows")
-	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-	# Not all compilers offer macros to indicate a Windows build environment.
-	add_definitions(-D__WIN32__)
-	find_library(SETUPAPI setupapi)
-	set(WIN32_DEPS ${SETUPAPI})
+    message(STATUS "On Windows")
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+    # Not all compilers offer macros to indicate a Windows build environment.
+    add_definitions(-D__WIN32__)
+    find_library(SETUPAPI setupapi)
+    set(WIN32_DEPS ${SETUPAPI})
 endif()
 
 #---------------------------------------------------------------------------------------
@@ -51,7 +51,6 @@ endif()
 set(SF_SERIALMACCLI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmaccli.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmachandler.cpp
 )
 
 configure_file(
@@ -70,14 +69,14 @@ target_include_directories(sfserialcli PRIVATE
 )
 
 if(BUILD_STATIC)
-	set(LINK_LIBS sfserialmac-static docopt_s sfobserver-static sfstringhex-static)
+    set(LINK_LIBS sfserialmac-static docopt_s sfobserver-static sfserialobserver-static sfstringhex-static)
 else()
-	set(LINK_LIBS sfserialmac docopt sfobserver sfstringhex)
+    set(LINK_LIBS sfserialmac docopt sfserialobserver sfstringhex)
 endif()
 
 target_link_libraries(sfserialcli PRIVATE
-	${LINK_LIBS}
-	libserialport-static
+    ${LINK_LIBS}
+    libserialport-static
     ${CMAKE_THREAD_LIBS_INIT}
     ${WIN32_DEPS}
 )
@@ -157,7 +156,7 @@ set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
 if(NOT BUILD_STATIC)
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfcrc (= ${SFCRC_VERSION}), libsfobserver (= ${SFOBSERVER_VERSION}), libsfserialmac (= ${SFSERIALMAC_VERSION}), libsfstringhex (= ${SFSTRINGHEX_VERSION}), docopt (= ${DOCOPT_VERSION})")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfcrc (= ${SFCRC_VERSION}), libsfobserver (= ${SFOBSERVER_VERSION}), libsfserialmac (= ${SFSERIALMAC_VERSION}), libsfstringhex (= ${SFSTRINGHEX_VERSION}), docopt (= ${DOCOPT_VERSION})")
 endif()
 
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/stackforce")

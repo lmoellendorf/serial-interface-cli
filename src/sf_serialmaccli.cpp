@@ -11,6 +11,7 @@
  * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
  * @author     STACKFORCE
  * @author     Lars Möllendorf
+ * @author     Adrian Antonana
  * @brief      STACKFORCE Serial MAC Command Line Client
  *
  * @details See @code sf --help @endcode for details.
@@ -39,8 +40,8 @@
 #include <algorithm>
 #include <docopt.h>
 
+#include "sf_serialobserver.h"
 #include "sf_serialmaccli.h"
-#include "sf_serialmachandler.h"
 #include "sf_serialmac.h"
 #include "version.h"
 #include "sf_stringhex.h"
@@ -51,13 +52,13 @@
 #define CURRENT_SUPPLY_DEFAULT_PARAMETER
 #endif
 
-namespace sf
-{
+namespace sf {
     static const char USAGE[] =
-      SERIALMAC_PRODUCT_NAME R"(.
+    SERIALMACCLI_PRODUCT_NAME R"(
+Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VERSION R"(
 
       Usage:
-      )" SERIALMACCLI_PRODUCT_NAME R"( [options] [<payload> ...]
+      )" SERIALMACCLI_PROGRAM_NAME R"( [options] [<payload> ...]
 
       Options:
       -h, --help                                  Show this screen.
@@ -100,436 +101,189 @@ namespace sf
       -V, --verbose                               Verbosive debug information on stderr.
       )";
 
-SerialMacCli::SerialMacCli ( int argc, char **argv )
-{
-  run = true;
-  docopt::value value;
-  args = docopt::docopt ( USAGE,
-  { argv + 1, argv + argc },
-  true,               // show help if requested
-  SERIALMACCLI_VERSION_STRING, false ); // version string
+SerialMacCli::SerialMacCli(int argc, char **argv) : SerialObserver() {
+    run = true;
+    docopt::value value;
+    args = docopt::docopt ( USAGE,
+    { argv + 1, argv + argc },
+    true,               // show help if requested
+    SERIALMACCLI_PRODUCT_NAME R"(
+Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH
+CLI v)" SERIALMACCLI_VERSION R"(
+MAC v)" SERIALMAC_VERSION, false ); // version string
 
-  value = args.at ( "--verbose" );
-  if ( value && value.isBool() )
-    {
-      if ( value.asBool() )
-        {
-          Verbose = std::printf;
+    value = args.at ( "--verbose" );
+    if(value && value.isBool()) {
+        if( value.asBool()) {
+            Verbose = std::printf;
         }
-      else
-        {
-          Verbose = NonVerbose;
+        else {
+            Verbose = NonVerbose;
         }
     }
 
-  /* for debugging docopt
-  for ( auto const& arg : args )
+    /* for debugging docopt
+    for ( auto const& arg : args )
     {
-      std::cout << arg.first << ": " <<  arg.second << std::endl;
+        std::cout << arg.first << ": " <<  arg.second << std::endl;
     }
-   */
-
-  mac_context = ( sf_serialmac_ctx* ) std::malloc ( sf_serialmac_ctx_size() );
+    */
 }
 
-SerialMacCli::~SerialMacCli ( )
-{
-  SerialMacHandler::Detach ( this );
-  this->DeInitSerialPort();
-  if ( mac_context )
-    {
-      std::free ( mac_context );
-    }
+SerialMacCli::~SerialMacCli() {
+//   SerialMacHandler::Detach ( this );
+//   this->DeInitSerialPort();
+
+    std::cout << "yo soy destructo!!!" << std::endl;
 }
 
 /**
  * This is a dummy function which is used instead of printf in non-verbose
  * mode.
  */
-int SerialMacCli::NonVerbose (const char *format, ...){
+int SerialMacCli::NonVerbose (const char *format, ...) {
   return strlen(format);
 }
 
 /**
  * Initialize the serial port.
  */
-int SerialMacCli::InitSerialPort ( )
-{
-  sp_return sp_ret = SP_OK;
-  struct sp_port **available_ports = NULL;
-  docopt::value value;
-  long baudrate = 115200;
-  long data_bits = 8;
-  enum sp_parity parity_bit = SP_PARITY_NONE;
-  long stop_bits = 1;
-  enum sp_flowcontrol flow_control = SP_FLOWCONTROL_NONE;
-  enum sp_rts rts = SP_RTS_FLOW_CONTROL;
-  enum sp_dtr dtr = SP_DTR_FLOW_CONTROL;
-  enum sp_xonxoff xon_xoff = SP_XONXOFF_DISABLED;
+SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
+    docopt::value value;
 
-  value = args.at ( "--device" );
-  if ( value && value.isString() )
-    {
-      port_name_object = value.asString();
-      port_name = port_name_object.c_str();
-      sp_ret = sp_get_port_by_name ( port_name, &port_context );
-      if ( SP_OK > sp_ret || !port_context )
-        {
-          std::cerr << "Port \"" << port_name << "\" could not be found!"  <<
-                    std::endl;
-          return ( 0 == sp_ret ? 1 : sp_ret );
-        }
-    }
-  else
-    {
-      /** If the user specified no port, choose any. */
-      sp_ret = sp_list_ports ( &available_ports );
-      if ( SP_OK > sp_ret )
-        {
-          return  sp_ret;
-        }
-      if ( available_ports[0] )
-        {
-          sp_ret = sp_copy_port ( available_ports[0], &port_context );
-        }
-      if ( available_ports )
-        {
-          sp_free_port_list ( available_ports );
-        }
-      if ( SP_OK > sp_ret  || ( !port_context ) )
-        {
-          std::cerr << "Could not find any serial port!" << std::endl;
-          return ( 0 == sp_ret ? 1 : sp_ret );
-        }
-      port_name = sp_get_port_name(port_context);
-    }
+    serialPortConfig = new SerialPortConfig(args.at( "--device" ).asString());
+    serialPortConfig->SetMode(SerialPortConfig::PortMode::READWRITE);
+    serialPortConfig->SetBaudRate(args.at("--baudrate").asLong());
+    serialPortConfig->SetDataBits(args.at("--data-bits").asLong());
+    serialPortConfig->SetStopBits(args.at("--stop-bits").asLong());
 
-  sp_ret = sp_open ( port_context, SP_MODE_READ_WRITE );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Port \"" << port_name << "\" could not be opened!" <<
-                std::endl;
-      return sp_ret;
-    }
-
-  /** Save current port configuration for later restoring */
-  sp_ret = sp_new_config ( &port_config_backup );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Config of port  \"" << port_name
-                << "\" could not be saved! (Out of memory?)" << std::endl;
-      return sp_ret;
-    }
-  sp_ret = sp_get_config ( port_context, port_config_backup );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Config of port  \"" << port_name
-                << "\" could not be saved! (Read error?)" << std::endl;
-      return sp_ret;
-    }
-
-  /** Create new port configuration */
-  sp_ret = sp_new_config ( &port_config_new );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "New config for port  \"" << port_name
-                << "\" could not be set! (Out of memory?)" << std::endl;
-      return sp_ret;
-    }
-
-  value = args.at ( "--baudrate" );
-  if ( value )
-    {
-      if ( value.isString() )
-        {
-          baudrate = std::strtoul(value.asString().c_str(), NULL, 0);
-        }
-      else if ( value.isLong() )
-        {
-          baudrate = value.asLong();
-        }
-    }
-  sp_ret = sp_set_config_baudrate ( port_config_new, baudrate );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not set baudrate to " << baudrate
-                << " on port \"" << port_name << "\"!" << std::endl;
-      return sp_ret;
-    }
-
-  value = args.at ( "--data-bits" );
-  if ( value )
-    {
-      if ( value.isString() )
-        {
-          data_bits = std::strtoul ( value.asString().c_str(), NULL, 0 );
-        }
-      else if ( value.isLong() )
-        {
-          data_bits = value.asLong();
-        }
-    }
-  sp_ret = sp_set_config_bits ( port_config_new, data_bits );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not set data bits to " << data_bits
-                << " on port \"" << port_name << "\"!" << std::endl;
-      return sp_ret;
-    }
-
-  value = args.at ( "--parity-bit" );
-  if ( value && value.isString() )
-    {
-      switch ( value.asString().at ( 0 ) )
-        {
+    value = args.at("--parity-bit");
+    if(value && value.isString()) {
+        switch(value.asString().at(0)) {
         case 'n':
-          parity_bit = SP_PARITY_NONE;
-          break;
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::NONE);
+            break;
         case 'o':
-          parity_bit = SP_PARITY_ODD;
-          break;
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::ODD);
+            break;
         case 'e':
-          parity_bit = SP_PARITY_EVEN;
-          break;
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::EVEN);
+            break;
         case 's':
-          parity_bit = SP_PARITY_SPACE;
-          break;
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::SPACE);
+            break;
         case 'm':
-          parity_bit = SP_PARITY_MARK;
-          break;
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::MARK);
+            break;
         }
-    }
-  sp_ret = sp_set_config_parity ( port_config_new, parity_bit );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not set parity bit mode to " << parity_bit
-                << " on port \"" << port_name << "\"!" << std::endl;
-      return sp_ret;
     }
 
-  value = args.at ( "--stop-bits" );
-  if ( value )
-    {
-      if ( value.isString() )
-        {
-          stop_bits = std::strtoul ( value.asString().c_str(), NULL, 0 );
-        }
-      else if ( value.isLong() )
-        {
-          stop_bits = value.asLong();
-        }
-    }
-  sp_ret = sp_set_config_stopbits ( port_config_new, stop_bits );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not set stop-bits to " << stop_bits <<
-                " on port \"" << port_name << "\"!" << std::endl;
-      return sp_ret;
-    }
-
-  value = args.at ( "--flow-control" );
-  if ( value && value.isString() )
-    {
-      switch ( value.asString().at ( 0 ) )
-        {
+    value = args.at("--flow-control");
+    if(value && value.isString()) {
+        switch( value.asString().at(0)) {
         case 'n':
-          flow_control = SP_FLOWCONTROL_NONE;
-          break;
+            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::NONE);
+            break;
         case 'x':
-          flow_control = SP_FLOWCONTROL_XONXOFF;
-          break;
+            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::XONXOFF);
+            break;
         case 'r':
-          flow_control = SP_FLOWCONTROL_RTSCTS;
-          break;
+            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::RTSCTS);
+            break;
         case 'd':
-          flow_control = SP_FLOWCONTROL_DTRDSR;
-          break;
+            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::DTRDSR);
+            break;
         }
-    }
-  sp_ret = sp_set_config_flowcontrol ( port_config_new, flow_control );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not set flow-control to " << flow_control <<
-                " on port \"" << port_name << "\"!" << std::endl;
-      return sp_ret;
     }
 
-  value = args.at ( "--xon-xoff" );
-  if ( value && value.isString() )
-    {
-      if ( value.asString().length() > 1
-           && ( value.asString() == "io"
-                || value.asString() == "oi" )
-         )
-        {
-          xon_xoff = SP_XONXOFF_INOUT;
+    value = args.at("--xon-xoff");
+    if(value && value.isString()) {
+        if(value.asString().length() > 1
+            && (value.asString() == "io"
+                || value.asString() == "oi")) {
+            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::INOUT);
         }
-      switch ( value.asString().at ( 0 ) )
-        {
+
+        switch(value.asString().at(0)) {
         case 'i':
-          xon_xoff = SP_XONXOFF_IN;
-          break;
+            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::IN);
+            break;
         case 'o':
-          xon_xoff = SP_XONXOFF_OUT;
-          break;
-        }
-      sp_set_config_xon_xoff ( port_config_new, xon_xoff );
-      if ( SP_OK > sp_ret )
-        {
-          std::cerr << "Could not set XON/XOFF direction " <<
-                    " on port \"" << port_name << "\"!" << std::endl;
-          return sp_ret;
+            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::OUT);
+            break;
         }
     }
 
-  value = args.at ( "--current" );
-  if ( value && value.isString() )
-    {
-      if ( value.asString().length() > 1
-           && ( value.asString() == "dr"
-                || value.asString() == "rd" )
-         )
-        {
-          rts = SP_RTS_ON;
-          dtr = SP_DTR_ON;
+    value = args.at ( "--current" );
+    if(value && value.isString()) {
+        if(value.asString().length() > 1
+            && (value.asString() == "dr"
+                || value.asString() == "rd")) {
+            serialPortConfig->SetRts(SerialPortConfig::RTS::ON);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::ON);
         }
-      switch ( value.asString().at ( 0 ) )
-        {
+
+        switch (value.asString().at(0)) {
         case 'd':
-          dtr = SP_DTR_ON;
-          rts = SP_RTS_OFF;
-          break;
+            serialPortConfig->SetRts(SerialPortConfig::RTS::OFF);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::ON);
+            break;
         case 'r':
-          rts = SP_RTS_ON;
-          dtr = SP_DTR_OFF;
-          break;
+            serialPortConfig->SetRts(SerialPortConfig::RTS::ON);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::OFF);
+            break;
         case 'n':
-          rts = SP_RTS_OFF;
-          dtr = SP_DTR_OFF;
-          break;
-        }
-      sp_set_config_rts ( port_config_new, rts );
-      if ( SP_OK > sp_ret )
-        {
-          std::cerr << "Could not set RTS power mode " <<
-                    " on port \"" << port_name << "\"!" << std::endl;
-          return sp_ret;
-        }
-      sp_set_config_dtr ( port_config_new, dtr );
-      if ( SP_OK > sp_ret )
-        {
-          std::cerr << "Could not set DTR power mode " <<
-                    " on port \"" << port_name << "\"!" << std::endl;
-          return sp_ret;
+            serialPortConfig->SetRts(SerialPortConfig::RTS::OFF);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::OFF);
+            break;
         }
     }
 
-  value = args.at ( "--ignore" );
-  if ( value && value.isString() )
-    {
-      switch ( value.asString().at ( 0 ) )
-        {
+    value = args.at ("--ignore");
+    if(value && value.isString()) {
+        switch(value.asString().at(0)) {
         case 'd':
-           sp_ret = sp_set_config_dtr(port_config_new, SP_DTR_INVALID);
-          break;
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::INVALID);
+            break;
         case 'r':
-           sp_ret = sp_set_config_rts(port_config_new, SP_RTS_INVALID);
-          break;
+            serialPortConfig->SetRts(SerialPortConfig::RTS::INVALID);
+            break;
         case 'c':
-           sp_ret = sp_set_config_cts(port_config_new, SP_CTS_INVALID);
-          break;
+            serialPortConfig->SetCts(SerialPortConfig::CTS::INVALID);
+            break;
         case 's':
-           sp_ret = sp_set_config_dsr(port_config_new, SP_DSR_INVALID);
-          break;
+            serialPortConfig->SetDsr(SerialPortConfig::DSR::INVALID);
+            break;
         case 'x':
-           sp_ret = sp_set_config_xon_xoff(port_config_new, SP_XONXOFF_INVALID);
-          break;
-        }
-      if ( SP_OK > sp_ret )
-        {
-          std::cerr << "Could not pin mode " <<
-                    " on port \"" << port_name << "\"!" << std::endl;
-          return sp_ret;
+            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::INVALID);
+            break;
         }
     }
 
-  sp_ret =  sp_set_config ( port_context, port_config_new );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not configure " <<
-                " port \"" << port_name << "\"!" << std::endl;
-      return sp_ret;
-    }
-
-  sp_free_config ( port_config_new );
-
-  sp_ret = sp_new_event_set ( &port_rx_event );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "RX event set for  \"" << port_name
-                << "\" could not be created! (Out of memory?)" << std::endl;
-      return sp_ret;
-    }
-
-  sp_ret = sp_add_port_events ( port_rx_event,
-                                port_context,
-                                SP_EVENT_RX_READY );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not set RX event on port \"" << port_name << "\"!"
-                << std::endl;
-      return sp_ret;
-    }
-
-  sp_ret = sp_new_event_set ( &port_tx_event );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "TX event set for  \"" << port_name
-                << "\" could not be created! (Out of memory?)" << std::endl;
-      return sp_ret;
-    }
-
-  sp_ret = sp_add_port_events ( port_tx_event,
-                                port_context,
-                                SP_EVENT_TX_READY );
-  if ( SP_OK > sp_ret )
-    {
-      std::cerr << "Could not set TX event on port \"" << port_name << "\"!"
-                << std::endl;
-      return sp_ret;
-    }
-
-  port_name = sp_get_port_name ( port_context );
-  if ( port_name )
-    {
-      Verbose( "Opened port: \"%s\"\n",  port_name );
-    }
-
-  return sp_ret;
+    return AttachSerial(serialPortConfig);
 }
 
-void SerialMacCli::DeInitSerialPort()
-{
-  if ( port_rx_event )
-    {
-      sp_free_event_set ( port_rx_event );
-    }
-  if ( port_tx_event )
-    {
-      sp_free_event_set ( port_tx_event );
-    }
-  if ( port_context )
-    {
-      /** Restore previous port configuration */
-      sp_set_config ( port_context, port_config_backup );
-      sp_free_port ( port_context );
-    }
+void SerialMacCli::DeInitSerialPort() {
+//   if ( port_rx_event )
+//     {
+//       sp_free_event_set ( port_rx_event );
+//     }
+//   if ( port_tx_event )
+//     {
+//       sp_free_event_set ( port_tx_event );
+//     }
+//   if ( port_context )
+//     {
+//       /** Restore previous port configuration */
+//       sp_set_config ( port_context, port_config_backup );
+//       sp_free_port ( port_context );
+//     }
 }
 
-void SerialMacCli::Quit(){
-          Verbose ( "Quitting.\n" );
-          /** Userinput was empty line -> STOP */
-          run = false;
+void SerialMacCli::Quit() {
+    Verbose ( "Quitting.\n" );
+    /** Userinput was empty line -> STOP */
+    run = false;
 }
 
 /**
@@ -541,271 +295,219 @@ template<typename IfFunc, typename ElseFunc>
  * To avoid code rendundancy this function executes the IfOperation if
  * payload has been passed as parameter and the ElseOperation otherwise.
  */
-void SerialMacCli::IfPayloadPassedAsParameter (
-  IfFunc IfOperation, ElseFunc ElseOperation )
-{
-  docopt::value value = args.at ( "<payload>" );
+void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseOperation) {
+    docopt::value value = args.at("<payload>");
 
-  if ( value && value.isStringList()
-       && value.asStringList().size() != 0 )
-    {
-      return IfOperation (value);
+    if(value && value.isStringList()
+        && value.asStringList().size() != 0) {
+        return IfOperation(value);
     }
-  return ElseOperation();
+
+    return ElseOperation();
 }
 
 
-void SerialMacCli::CliInput ( void )
-{
-  std::string line = "";
-  docopt::value value;
-  std::string delimiters;
-  char *output_buffer = NULL;
-  int output_buffer_length = 0;
-  sf_serialmac_return ret;
+void SerialMacCli::CliInput(void) {
+    std::string line = "";
+    docopt::value value;
+    std::string delimiters;
+    char *output_buffer = NULL;
+    int output_buffer_length = 0;
+    std::vector<uint8_t> payload;
 
-  /** Repeat until the user stops you */
-  while ( run )
-    {
-      switch ( cli_input_state )
-        {
-        case CLI:
-          /** If payload is passed as parameter ... */
-          IfPayloadPassedAsParameter (
-          /** ... this lambda function is executed ... */
-          [&line, this] ( docopt::value value )
-          {
-            std::vector <std::string> line_as_list = value.asStringList();
-            std::for_each ( line_as_list.begin(), line_as_list.end(),
-                            /**
-                             * A lambda within a lambda! But this is how
-                             * for_each works
-                             */
-                            [&line] ( std::string& word )
-            {
-              return line+=word;
-            } );
-          },
-          /** ... else this lambda function is executed */
-          [&line, this] ()
-          {
-            Verbose ( "Input text:\n" );
-            getline ( std::cin, line );
-          } );
-          if ( line.length() > 0 )
-            {
-              /**
-               * We cannot simply pass a pointer to line.c_str() or
-               * hex_binaries[0] here because their memory will be destroyed
-               * as soon as we leave the scope of this function and the serial
-               * MAC processes the memory asynchronously.
-               * Therefore we allocate memory and copy the content.
-               */
-              value = args.at ( "--text" );
-              if ( value && value.isBool() && value.asBool() )
-                {
-                  output_buffer_length = line.length() + 1/* for the terminating '\0' */;
-                  /** Will be freed in Update() when TX has been completed. */
-                  output_buffer = ( char* ) std::malloc ( output_buffer_length );
-                  strncpy ( output_buffer, line.c_str(), output_buffer_length );
-                }
-              else
-                {
-                  value = args.at ( "--delimiters" );
-                  if ( value && value.isString() )
+    /** Repeat until the user stops you */
+    while(run) {
+        switch(ioState) {
+            case IoState::CLI:
+                /** If payload is passed as parameter ... */
+                IfPayloadPassedAsParameter(
+                /** ... this lambda function is executed ... */
+                [&line, this](docopt::value value) {
+                    std::vector <std::string> line_as_list = value.asStringList();
+                    std::for_each(line_as_list.begin(), line_as_list.end(),
+                                    /**
+                                        * A lambda within a lambda! But this is how
+                                        * for_each works
+                                        */
+                                    [&line](std::string& word)
                     {
-                      delimiters = value.asString();
-                    }
-                  /**
-                   * In C++ there is no easy way to separate declaration and
-                   * initialization of objects
-                   */
-                  StringHex hex ( delimiters );
-                  std::vector<uint8_t> hex_binaries;
-                  hex.HexStringToBinary ( line, hex_binaries );
-                  output_buffer_length = hex_binaries.size();
-                  /**
-                   * On invalid input the length is 0 and we are finished for
-                   * the moment
-                   */
-                  if(!output_buffer_length)
-                    Quit();
-                  /** Will be freed in Update() when TX has been completed. */
-                  output_buffer = ( char* ) std::malloc ( output_buffer_length );
-                  std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
-                }
-              //TODO: add error handling
-              /** Trigger TX */
-              sf_serialmac_tx_frame (
-                mac_context, output_buffer_length,
-                (uint8_t*)output_buffer,
-                output_buffer_length
-              );
-              cli_input_state = SERIAL;
-            }
-          else
-            {
-              Quit();
-            }
-          break;
+                        return line+=word;
+                    });
+                },
+                /** ... else this lambda function is executed */
+                [&line, this]() {
+                    Verbose ("Input text:\n");
+                    std::getline(std::cin, line);
+                });
 
-        case SERIAL:
+                if(line.length() > 0) {
+                    /**
+                    * We cannot simply pass a pointer to line.c_str() or
+                    * hex_binaries[0] here because their memory will be destroyed
+                    * as soon as we leave the scope of this function and the serial
+                    * MAC processes the memory asynchronously.
+                    * Therefore we allocate memory and copy the content.
+                    */
+                    value = args.at("--text");
+                    if(value && value.isBool() && value.asBool()) {
+                        output_buffer_length = line.length() + 1/* for the terminating '\0' */;
+                        /** Will be freed in Update() when TX has been completed. */
+                        output_buffer = ( char* ) std::malloc ( output_buffer_length );
+                        strncpy ( output_buffer, line.c_str(), output_buffer_length );
+                    }
+                    else {
+                        value = args.at("--delimiters");
+                        if(value && value.isString()) {
+                            delimiters = value.asString();
+                        }
+                        /**
+                        * In C++ there is no easy way to separate declaration and
+                        * initialization of objects
+                        */
+                        StringHex hex(delimiters);
+                        std::vector<uint8_t> hex_binaries;
+                        hex.HexStringToBinary(line, hex_binaries);
+                        output_buffer_length = hex_binaries.size();
+                        /**
+                        * On invalid input the length is 0 and we are finished for
+                        * the moment
+                        */
+                        if(!output_buffer_length)
+                        Quit();
+                        /** Will be freed in Update() when TX has been completed. */
+                        output_buffer = (char*)std::malloc(output_buffer_length);
+                        std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
+                    }
+
+                    payload.assign(output_buffer, output_buffer + output_buffer_length);
+                    SendSerial(payload);
+                    ioState = IoState::SERIAL;
+                }
+                else {
+                    Quit();
+                }
+
+            break;
+
+        case IoState::SERIAL:
           /**
            * Call the callback to process transmission until Update() sets
            * cli_input_state to CLI.
            */
-          ret = sf_serialmac_hal_tx_callback ( mac_context );
-          if ( (SF_SERIALMAC_SUCCESS != ret && SF_SERIALMAC_ERROR_HAL_BUSY != ret)||
-               SP_OK != sp_wait ( port_tx_event, 0 ) )
-            {
-              std::cerr << "Error during transmission on \"" << port_name
-                        << "\"!"<< std::endl;
-              Quit();
-            }
+//           ret = sf_serialmac_hal_tx_callback ( mac_context );
+//           if ( (SF_SERIALMAC_SUCCESS != ret && SF_SERIALMAC_ERROR_HAL_BUSY != ret)||
+//                SP_OK != sp_wait ( port_tx_event, 0 ) )
+//             {
+//               std::cerr << "Error during transmission on \"" << port_name
+//                         << "\"!"<< std::endl;
+//               Quit();
+//             }
+//           break;
+//
+//         default:
+//           std::cerr << "Error during transmission on \"" << port_name
+//                     << "\"!"<< std::endl;
+//           Quit();
           break;
+        }
+    }
+}
+
+int SerialMacCli::Run() {
+    if(InitSerialPort() != SerialObserverStatus::ATTACH_OK) {
+        std::cerr << "Could not initialize serial port " << serialPortConfig->GetPortName() << std::endl;
+        return 1;
+    }
+
+    /** Start waiting for CLI input */
+    ioState = IoState::CLI;
+    std::thread threadCliInput(&SerialMacCli::CliInput, this);
+    threadCliInput.detach();
+
+    while(run) {};
+
+    return 0;
+}
+
+void SerialMacCli::Update(Event* event) {
+    std::cout << "DeviceHandler::Update -> start" << std::endl;
+    uint8_t *bufferContent = NULL;
+    size_t bufferSize;
+    std::vector<uint8_t> payload;
+    docopt::value value;
+
+    switch(event->GetIdentifier()) {
+        case SerialHandler::SERIAL_READ_FRAME_EVENT:
+
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            payload.assign(bufferContent, bufferContent+bufferSize);
+            std::cout << "DeviceHandler::Update -> got SERIAL_READ_FRAME_EVENT " << std::endl;;
+
+            /** Check if a valid frame has been received */
+            if(bufferSize) {
+                value = args.at ( "--text" );
+                if(value && value.isBool() && value.asBool()) {
+                    if('\n' == bufferContent[0]) {
+                        Quit();
+                    }
+                    else {
+                        std::printf("%s\n", bufferContent);
+                    }
+                }
+                else {
+                    std::string delimiters;
+                    value = args.at ( "--delimiters" );
+                    if(value && value.isString()) {
+                        delimiters = value.asString();
+                    }
+                    StringHex hex(delimiters);
+                    std::string hex_string;
+                    std::vector<uint8_t> hex_binaries(bufferContent, bufferContent + bufferSize);
+                    hex.BinaryToHexString(hex_binaries, hex_string);
+                    std::printf("%s\n", hex_string.c_str());
+                }
+                Verbose("Length:\n%zd\n", bufferSize);
+            }
+
+            ioState = IoState::CLI;
+            break;
+
+        case SerialHandler::SERIAL_READ_BUFFER_EVENT:
+
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_READ_BUFFER_EVENT" << std::endl;
+            break;
+
+        case SerialHandler::SERIAL_WRITE_FRAME_EVENT:
+
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_WRITE_FRAME_EVENT" << std::endl;
+            break;
+
+        case SerialHandler::SERIAL_WRITE_BUFFER_EVENT:
+
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_WRITE_BUFFER_EVENT" << std::endl;
+            break;
+
+        case SerialHandler::SERIAL_READ_SYNC_BYTE_EVENT:
+
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_READ_SYNC_BYTE_EVENT" << std::endl;
+            break;
+
+        case SerialHandler::SERIAL_CONNECTION_ERROR:
+
+            bufferSize = event->GetDetails((void**)&bufferContent);
+            std::cout << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
+            this->Quit();
+            break;
 
         default:
-          std::cerr << "Error during transmission on \"" << port_name
-                    << "\"!"<< std::endl;
-          Quit();
-          break;
-        }
+            std::cout << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
+            break;
     }
+    std::cout << "DeviceHandler::Update -> end" << std::endl;
 }
 
-void SerialMacCli::CliOutput ( void )
-{
-  while ( run )
-    {
-      /**
-       * Start waiting for serial input.
-       * A timeout is given to quit on demand. */
-      if ( SP_OK != sp_wait ( port_rx_event, 100 )
-           || SF_SERIALMAC_SUCCESS !=
-           sf_serialmac_hal_rx_callback ( mac_context ) )
-        {
-          std::cerr << "Error during reception on \"" << port_name
-                    << "\"!"<< std::endl;
-          Quit();
-        }
-    }
-}
-
-
-int SerialMacCli::Run ( )
-{
-  int ret = InitSerialPort ( );
-
-  if(ret){
-    std::cerr << "Could not initialize \"" << port_name
-                        << "\"!"<< std::endl;
-    return ret;
-  }
-
-  ret = SerialMacHandler::Attach ( this, port_context, mac_context );
-  if(ret){
-    std::cerr << "Could not initialize serial MAC on \"" << port_name
-                        << "\"!"<< std::endl;
-    return ret;
-  }
-
-  /** Start waiting for CLI input */
-  cli_input_state = CLI;
-  std::thread process_cli_input (&SerialMacCli::CliInput, this);
-  process_cli_input.detach();
-
-  /** Start waiting for CLI output */
-  CliOutput();
-
-  return ret;
-}
-
-
-void SerialMacCli::Update ( Event *event )
-{
-  if ( event->GetSource() == mac_context )
-    {
-      char *frame_buffer = NULL;
-      size_t frame_buffer_length = event->GetDetails ( ( void** ) &frame_buffer
-                                                     );
-      switch ( ( SerialMacHandler::event_identifier ) event->GetIdentifier() )
-        {
-
-        case SerialMacHandler::READ_BUFFER:
-          if ( frame_buffer_length )
-            {
-              frame_buffer = ( char* ) std::malloc ( frame_buffer_length );
-
-              sf_serialmac_rx_frame ( ( struct sf_serialmac_ctx * ) mac_context,
-                                      (uint8_t*)frame_buffer,
-                                      frame_buffer_length );
-            }
-          break;
-        case SerialMacHandler::READ_FRAME:
-          if ( frame_buffer )
-            {
-              docopt::value value;
-              /** Check if a valid frame has been received */
-              if ( frame_buffer_length )
-                {
-                  value = args.at ( "--text" );
-                  if ( value && value.isBool() && value.asBool() )
-                    {
-
-                      if ( '\n' == frame_buffer[0] )
-                        {
-                          Quit();
-                        }
-                      else
-                        {
-                          std::printf ( "%s\n", frame_buffer );
-                        }
-                    }
-                  else
-                    {
-                      std::string delimiters;
-                      value = args.at ( "--delimiters" );
-                      if ( value && value.isString() )
-                        {
-                          delimiters = value.asString();
-                        }
-                      StringHex hex ( delimiters );
-                      std::string hex_string;
-                      std::vector<uint8_t> hex_binaries ( frame_buffer, frame_buffer + frame_buffer_length );
-                      hex.BinaryToHexString ( hex_binaries, hex_string );
-                      std::printf ( "%s\n", hex_string.c_str() );
-                    }
-                  Verbose ( "Length:\n%zd\n", frame_buffer_length );
-                }
-              /**
-               * Frame buffer has been processed.
-               */
-              std::free ( frame_buffer );
-            }
-          break;
-        case SerialMacHandler::WRITE_BUFFER:
-          if ( frame_buffer )
-            {
-              std::free ( frame_buffer );
-            }
-          break;
-        case SerialMacHandler::WRITE_FRAME:
-          IfPayloadPassedAsParameter (
-            [this] ( docopt::value value )
-          {
-            /**
-             * Silence the warning: "unused parameter" because we really do not
-             * need it here.
-             */
-            ( void ) value;
-            /** Payload passed as parameter has been send. */
-            Quit();
-          }, [this] ()
-          {
-            cli_input_state = CLI;
-          } );
-          break;
-        }
-    }
-}
 }
