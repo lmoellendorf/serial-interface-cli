@@ -11,8 +11,8 @@
  *
  * @file
  * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
- * @author     STACKFORCE
  * @author     Lars Möllendorf
+ * @author     Adrian Antonana
  * @brief      STACKFORCE Serial MAC Command Line Client
  *
  * @details See @code sf --help @endcode for details.

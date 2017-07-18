@@ -9,12 +9,11 @@
  *
  * @file
  * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
- * @author     STACKFORCE
  * @author     Lars Möllendorf
  * @author     Adrian Antonana
  * @brief      STACKFORCE Serial MAC Command Line Client
  *
- * @details See @code sf --help @endcode for details.
+ * @details See @code sfserialcli --help @endcode for details.
  *
  * This file is part of the STACKFORCE Serial Command Line Client
  * (below "serialmac cli").
