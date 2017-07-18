@@ -4,7 +4,7 @@
     / __|_   _/_\ / __| |/ / __/ _ \| _ \/ __| __|
     \__ \ | |/ _ \ (__| ' <| _| (_) |   / (__| _|
     |___/ |_/_/ \_\___|_|\_\_| \___/|_|_\\___|___|
-    embedded.connectivity.solutions.==============
+    embedded.connectivity.solutions===============
 ```
 
 # Introduction
