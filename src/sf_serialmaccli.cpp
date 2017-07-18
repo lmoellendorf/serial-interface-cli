@@ -389,25 +389,7 @@ void SerialMacCli::CliInput(void) {
 
             break;
 
-        case IoState::SERIAL:
-          /**
-           * Call the callback to process transmission until Update() sets
-           * cli_input_state to CLI.
-           */
-//           ret = sf_serialmac_hal_tx_callback ( mac_context );
-//           if ( (SF_SERIALMAC_SUCCESS != ret && SF_SERIALMAC_ERROR_HAL_BUSY != ret)||
-//                SP_OK != sp_wait ( port_tx_event, 0 ) )
-//             {
-//               std::cerr << "Error during transmission on \"" << port_name
-//                         << "\"!"<< std::endl;
-//               Quit();
-//             }
-//           break;
-//
-//         default:
-//           std::cerr << "Error during transmission on \"" << port_name
-//                     << "\"!"<< std::endl;
-//           Quit();
+        case IoState::SERIAL: //nothing to do
           break;
         }
     }
