@@ -75,7 +75,6 @@ namespace sf {
             void IfPayloadPassedAsParameter (
                 IfFunc IfOperation, ElseFunc ElseOperation );
             SerialObserverStatus InitSerialPort();
-            void DeInitSerialPort();
             void Quit();
             void CliInput(void);
     };

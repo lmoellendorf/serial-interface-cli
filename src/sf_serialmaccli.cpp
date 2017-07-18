@@ -259,23 +259,6 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     return AttachSerial(serialPortConfig);
 }
 
-void SerialMacCli::DeInitSerialPort() {
-//   if ( port_rx_event )
-//     {
-//       sp_free_event_set ( port_rx_event );
-//     }
-//   if ( port_tx_event )
-//     {
-//       sp_free_event_set ( port_tx_event );
-//     }
-//   if ( port_context )
-//     {
-//       /** Restore previous port configuration */
-//       sp_set_config ( port_context, port_config_backup );
-//       sp_free_port ( port_context );
-//     }
-}
-
 void SerialMacCli::Quit() {
     Verbose ( "Quitting.\n" );
     /** Userinput was empty line -> STOP */
