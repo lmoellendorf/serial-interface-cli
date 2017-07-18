@@ -415,7 +415,7 @@ void SerialMacCli::CliInput(void) {
 
 int SerialMacCli::Run() {
     if(InitSerialPort() != SerialObserverStatus::ATTACH_OK) {
-        std::cerr << "Could not initialize <port name here>" << std::endl;
+        std::cerr << "Could not initialize serial port " << serialPortConfig->getPortName() << std::endl;
         return 1;
     }
 
