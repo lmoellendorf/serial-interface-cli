@@ -1,87 +1,69 @@
-# README                                                             {#mainpage}
-    @code
-
+# README
+```
      ___ _____ _   ___ _  _____ ___  ___  ___ ___
     / __|_   _/_\ / __| |/ / __/ _ \| _ \/ __| __|
     \__ \ | |/ _ \ (__| ' <| _| (_) |   / (__| _|
     |___/ |_/_/ \_\___|_|\_\_| \___/|_|_\\___|___|
-    embedded.connectivity.solutions.==============
+    embedded.connectivity.solutions===============
+```
 
-    @endcode
+# Introduction
 
-# Introduction                                                   {#introduction}
+Command Line Interface to easily send and receive serial messages from and to devices using the STACKFORCE [serial-interface-mac](https://github.com/stackforce/serial-interface-mac).
 
-## Purpose                                                            {#purpose}
+# Get Precompiled Binaries
 
-The STACKFORCE Serial MAC provides framing for serial interfaces.
+## Windows
 
-On TX the STACKFORCE Serial MAC takes over the task to wrap up data in frames
-before sending them over the serial interface.
-On RX the STACKFORCE Serial MAC listens for incoming frames, verifies their
-CRC and provides the payload to the upper layer.
+Precompiled binaries for Windows can be found in the [releases](https://github.com/stackforce/serial-interface-cli/releases) section. **Please note that currently Windows binaries have been tested under Windows 10 only.**
 
-## Frame format                                                         {#frame}
+Download and execute the installer. **When asked for it, select adding the program either to the system or user path.**
 
-The Frame format is:
+## Ubuntu based Linux distributions
 
-    +--------------+--------+-- - - --+-----+
-    | SYNC BYTE(S) | LENGTH | payload | CRC |
-    +--------------+--------+-- - - --+-----+
+Precompiled binaries for Ubuntu based Linux distributions can be found in the [releases](https://github.com/stackforce/serial-interface-cli/releases) section. **Please note that currently DEB packages have been tested under Ubuntu-14.04 and Ubuntu-16.04 based systems only.**
 
-## Features                                                           {#feature}
+Download the DEB package that suites your Ubuntu version and run the following command to install it, where **[path/to/deb]** is the path to the downloaded DEB package:
 
-The STACKFORCE Serial MAC is written with cross-platform portability in mind.
-It should be usable within operating systems as well as bare metal devices.
+    $ sudo dpkg -i [path/to/deb]
 
-* All API functions are non-blocking.
-* The MAC has no direct dependencies (besides standard C libs and
-STACKFORCE utilities that are hardware/OS independent, e.g. CRC module).
-* The MAC is usable with any HAL library that provides non-blocking
-functions to read from and write to the serial interface and a function
-which returns the number of bytes waiting on input.
-* Buffer allocation and management is completely left to the upper layer.
+# Usage
 
-# Usage                                                                 {#usage}
+Following a simple example of how to send a ping command to a device attached on serial port **/dev/ttyACM0** using the default serial port settings and getting the according response
 
-## Initialization                                              {#initialization}
+    $ sfserialcli -d /dev/ttyACM0
+    a
+    00 00 0A
 
-To use the STACKFORCE Serial MAC you have to initialize it using
-sf_serialmac_init()
+Entering an empty line will cause the programm to quit.
 
-## Reacting to events                                                  {#events}
+**NOTE there is no need to specify SYNC, Length or CRC fields since this is handled by the underlying [serial-interface-mac](https://github.com/stackforce/serial-interface-mac) library.** Those fields get stripped out by the serial mac from the incoming responses as well, leaving the payload only.
 
-The STACKFORCE Serial MAC is event driven. You can use the MAC by calling
-sf_serialmac_entry() periodically.
+# Build
 
-Or you can add sf_serialmac_hal_tx_callback() and
-sf_serialmac_hal_rx_callback() as callback function to the corresponding
-serial port events. (TODO: How to?)
+## GNU/Linux
 
-## Receiving frames                                                        {#rx}
+The STACKFORCE serial-interface-cli uses CMake as build system.
 
-Whenever the STACKFORCE Serial MAC receives the header of a frame it calls
-the upper layers callback function registered as SF_SERIALMAC_RX_EVENT
-rx_buffer_event() on Initialization. To receive the frame the upper layer has
-to provide a memory location for the payload passed to the MAC by calling
-sf_serialmac_rx_frame(). As soon as the frame has been completed or rejected
-due to CRC error or time out, the upper layer's callback function is called
-which has been registered as SF_SERIALMAC_RX_EVENT rx_event() on
-initialization.
+Go to the project directory and create a build subdirectory:
 
-## Transmitting frames                                                     {#tx}
+    cd serial-interface-cli
+    git submodule update --init --recursive
+    mkdir build
+    cd build
 
-Frames can be transmitted at once using sf_serialmac_tx_frame(). Or by
-starting a frame with sf_serialmac_tx_frame_start() and successively
-appending the payload using sf_serialmac_tx_frame_append() until the frame
-is filled.
+and run:
 
-Whenever the MAC completed the transmission of a frame the upper layer's
-callback called that has been registered as SF_SERIALMAC_TX_EVENT tx_event()
-on initialization.
+    cmake ..
+    make
+    sudo make install
 
-Whenever the MAC processed a buffer with payload the upper layer's callback
-is called which has been registered as SF_SERIALMAC_TX_EVENT tx_buf_event on
-initialization. The upper layer must not touch the buffer memory passed with
-sf_serialmac_tx_frame() or sf_serialmac_tx_frame_append() before this
-callback has been called. Also all calls to sf_serialmac_tx_frame_append()
-are ignored until the previously provided buffer has been processed.
+or to define a custom install directory e.g. devroot:
+
+    cmake .. -DCMAKE_INSTALL_PREFIX=devroot
+    make
+    make install
+
+## Cross building for Windows on GNU/Linux
+
+Currently cross building for Windows is supported in the **win-cross-build** branch.
