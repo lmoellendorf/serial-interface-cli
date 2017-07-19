@@ -32,7 +32,7 @@
 ##
 
 cmake_minimum_required(VERSION 3.6)
-project(sfserialcli VERSION 0.1.2)
+project(sfserialcli VERSION 1.0.0)
 
 #---------------------------------------------------------------------------------------
 # Include required modules
