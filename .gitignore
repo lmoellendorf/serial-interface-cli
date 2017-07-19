@@ -7,3 +7,5 @@ build.*/
 *.kate-swp
 # ignore temporary notepad++ files
 *~
+# KDE dolphin
+.directory

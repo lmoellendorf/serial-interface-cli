@@ -9,11 +9,11 @@
  *
  * @file
  * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
- * @author     STACKFORCE
  * @author     Lars Möllendorf
+ * @author     Adrian Antonana
  * @brief      STACKFORCE Serial MAC Command Line Client
  *
- * @details See @code sf --help @endcode for details.
+ * @details See @code sfserialcli --help @endcode for details.
  *
  * This file is part of the STACKFORCE Serial Command Line Client
  * (below "serialmac cli").
@@ -33,30 +33,16 @@
  *
  */
 
-#ifndef SF_STRINGHEX_H
-#define SF_STRINGHEX_H
+#ifndef _STACKFORCE_SERIALMACCLI_VERSION_H_
+#define _STACKFORCE_SERIALMACCLI_VERSION_H_
 
-#include <string>
-#include <stdint.h>
-#include <vector>
+#define TOSTR_(...) #__VA_ARGS__
+#define STRINGIFY(x) TOSTR_(x)
 
-namespace sf
-{
+#define SERIALMACCLI_VERSION                "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
+#define SERIALMAC_VERSION                   "@SERIALMAC_VERSION@"
+#define SERIALMACCLI_PRODUCT_COMPANY        "@PROJECT_PRODUCT_COMPANY@"
+#define SERIALMACCLI_PRODUCT_NAME           "@PROJECT_PRODUCT_NAME@"
+#define SERIALMACCLI_PROGRAM_NAME           "@SERIALMACCLI_PROGRAM_NAME@"
 
-class StringHex
-{
-public:
-    StringHex(std::string delimiter);
-    StringHex();
-    ~StringHex();
-
-    std::vector<uint8_t> &HexStringToBinary ( std::string &hex_string,
-            std::vector<uint8_t> &hex_binaries );
-    std::string &BinaryToHexString ( std::vector<uint8_t> &hex_binaries,
-                                     std::string &hex_string );
-private:
-    std::string delimiter = " ,;.:";
-};
-
-}
-#endif // SF_STRINGHEX_H
+#endif
