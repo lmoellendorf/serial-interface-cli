@@ -39,6 +39,8 @@ Entering an empty line will cause the programm to quit.
 
 **NOTE there is no need to specify SYNC, Length or CRC fields since this is handled by the underlying [serial-interface-mac](https://github.com/stackforce/serial-interface-mac) library.** Those fields get stripped out by the serial mac from the incoming responses as well, leaving the payload only.
 
+Running sfserialcli with the **-h** parameter will show the program's usage help with further invocation options.
+
 # Build
 
 ## GNU/Linux
