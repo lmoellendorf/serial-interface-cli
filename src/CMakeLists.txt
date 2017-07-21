@@ -68,6 +68,12 @@ target_include_directories(sfserialcli PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+if(WIN32)
+	target_include_directories(sfserialcli PRIVATE
+		${MINGW_THREADS_INCLUDE_DIRS}
+	)
+endif()
+
 if(BUILD_STATIC)
     set(LINK_LIBS sfserialmac-static docopt_s sfobserver-static sfserialobserver-static sfstringhex-static)
 else()

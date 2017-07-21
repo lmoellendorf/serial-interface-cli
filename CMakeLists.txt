@@ -82,10 +82,23 @@ find_package(Threads REQUIRED)
 colormessage(STATUS "Searching Serialport project configuration")
 find_package(Serialport REQUIRED)
 
+if(CMAKE_CROSSCOMPILING AND WIN32)
+    colormessage(STATUS "Searching mingw threads for windows cross build")
+    find_package(MingwThreads REQUIRED)
+endif()
+
 #---------------------------------------------------------------------------------------
 # CMake options
 #---------------------------------------------------------------------------------------
 option(BUILD_STATIC "Build static executable" ON)
+
+#---------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------
+# Get include directories
+#---------------------------------------------------------------------------------------
+if(CMAKE_CROSSCOMPILING AND WIN32)
+	get_target_property(MINGW_THREADS_INCLUDE_DIRS mingw-std-threads INTERFACE_INCLUDE_DIRECTORIES)
+endif()
 
 #---------------------------------------------------------------------------------------
 # Add subdirectories
