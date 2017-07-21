@@ -32,20 +32,6 @@
 ##
 
 #---------------------------------------------------------------------------------------
-# Compiler options
-#---------------------------------------------------------------------------------------
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
-
-if(WIN32)
-    message(STATUS "On Windows")
-    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-    # Not all compilers offer macros to indicate a Windows build environment.
-    add_definitions(-D__WIN32__)
-    find_library(SETUPAPI setupapi)
-    set(WIN32_DEPS ${SETUPAPI})
-endif()
-
-#---------------------------------------------------------------------------------------
 # cli headers and sources
 #---------------------------------------------------------------------------------------
 set(SF_SERIALMACCLI_SOURCES
@@ -67,6 +53,12 @@ target_include_directories(sfserialcli PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+if(WIN32)
+	target_include_directories(sfserialcli PRIVATE
+		${MINGW_THREADS_INCLUDE_DIRS}
+	)
+endif()
 
 if(BUILD_STATIC)
     set(LINK_LIBS sfserialmac-static docopt_s sfobserver-static sfserialobserver-static sfstringhex-static)
@@ -130,16 +122,19 @@ export(PACKAGE ${PROJECT_NAME})
 # package release version
 set(PACKAGE_RELEASE_VERSION 1)
 
-# determine distribution and architecture
-execute_process(COMMAND lsb_release -si OUTPUT_VARIABLE LINUX_DISTRO OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-# determine CPack generators
+# default CPack generators
 set(CPACK_GENERATOR TGZ STGZ)
 
-if(LINUX_DISTRO STREQUAL "Debian" OR LINUX_DISTRO STREQUAL "Ubuntu" OR LINUX_DISTRO STREQUAL "LinuxMint")
-    execute_process(COMMAND dpkg-architecture -qDEB_HOST_ARCH OUTPUT_VARIABLE DEBIAN_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-    list(APPEND CPACK_GENERATOR DEB)
+# determine distribution and architecture
+if(NOT WIN32)
+	execute_process(COMMAND lsb_release -si OUTPUT_VARIABLE LINUX_DISTRO OUTPUT_STRIP_TRAILING_WHITESPACE)
+	execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+
+	if(LINUX_DISTRO STREQUAL "Debian" OR LINUX_DISTRO STREQUAL "Ubuntu" OR LINUX_DISTRO STREQUAL "LinuxMint")
+        execute_process(COMMAND dpkg-architecture -qDEB_HOST_ARCH OUTPUT_VARIABLE DEBIAN_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+	    list(APPEND CPACK_GENERATOR DEB)
+	endif()
 endif()
 
 # general CPack config
