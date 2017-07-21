@@ -122,16 +122,19 @@ export(PACKAGE ${PROJECT_NAME})
 # package release version
 set(PACKAGE_RELEASE_VERSION 1)
 
-# determine distribution and architecture
-execute_process(COMMAND lsb_release -si OUTPUT_VARIABLE LINUX_DISTRO OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-# determine CPack generators
+# default CPack generators
 set(CPACK_GENERATOR TGZ STGZ)
 
-if(LINUX_DISTRO STREQUAL "Debian" OR LINUX_DISTRO STREQUAL "Ubuntu" OR LINUX_DISTRO STREQUAL "LinuxMint")
-    execute_process(COMMAND dpkg-architecture -qDEB_HOST_ARCH OUTPUT_VARIABLE DEBIAN_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-    list(APPEND CPACK_GENERATOR DEB)
+# determine distribution and architecture
+if(NOT WIN32)
+	execute_process(COMMAND lsb_release -si OUTPUT_VARIABLE LINUX_DISTRO OUTPUT_STRIP_TRAILING_WHITESPACE)
+	execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+
+	if(LINUX_DISTRO STREQUAL "Debian" OR LINUX_DISTRO STREQUAL "Ubuntu" OR LINUX_DISTRO STREQUAL "LinuxMint")
+        execute_process(COMMAND dpkg-architecture -qDEB_HOST_ARCH OUTPUT_VARIABLE DEBIAN_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+	    list(APPEND CPACK_GENERATOR DEB)
+	endif()
 endif()
 
 # general CPack config
