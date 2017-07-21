@@ -152,7 +152,7 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     docopt::value value;
 
     serialPortConfig = new SerialPortConfig(args.at( "--device" ).asString());
-    serialPortConfig->SetMode(SerialPortConfig::PortMode::READWRITE);
+    serialPortConfig->SetMode(SerialPortConfig::PortMode::PORTMODE_READWRITE);
     serialPortConfig->SetBaudRate(args.at("--baudrate").asLong());
     serialPortConfig->SetDataBits(args.at("--data-bits").asLong());
     serialPortConfig->SetStopBits(args.at("--stop-bits").asLong());
@@ -161,19 +161,19 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     if(value && value.isString()) {
         switch(value.asString().at(0)) {
         case 'n':
-            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::NONE);
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::PARBIT_NONE);
             break;
         case 'o':
-            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::ODD);
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::PARBIT_ODD);
             break;
         case 'e':
-            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::EVEN);
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::PARBIT_EVEN);
             break;
         case 's':
-            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::SPACE);
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::PARBIT_SPACE);
             break;
         case 'm':
-            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::MARK);
+            serialPortConfig->SetParityBit(SerialPortConfig::ParityBit::PARBIT_MARK);
             break;
         }
     }
@@ -182,16 +182,16 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     if(value && value.isString()) {
         switch( value.asString().at(0)) {
         case 'n':
-            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::NONE);
+            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::FLOWCTRL_NONE);
             break;
         case 'x':
-            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::XONXOFF);
+            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::FLOWCTRL_XONXOFF);
             break;
         case 'r':
-            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::RTSCTS);
+            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::FLOWCTRL_RTSCTS);
             break;
         case 'd':
-            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::DTRDSR);
+            serialPortConfig->SetFlowCtrl(SerialPortConfig::FlowCtrl::FLOWCTRL_DTRDSR);
             break;
         }
     }
@@ -201,15 +201,15 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
         if(value.asString().length() > 1
             && (value.asString() == "io"
                 || value.asString() == "oi")) {
-            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::INOUT);
+            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::XONXOFF_INOUT);
         }
 
         switch(value.asString().at(0)) {
         case 'i':
-            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::IN);
+            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::XONXOFF_IN);
             break;
         case 'o':
-            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::OUT);
+            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::XONXOFF_OUT);
             break;
         }
     }
@@ -219,22 +219,22 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
         if(value.asString().length() > 1
             && (value.asString() == "dr"
                 || value.asString() == "rd")) {
-            serialPortConfig->SetRts(SerialPortConfig::RTS::ON);
-            serialPortConfig->SetDtr(SerialPortConfig::DTR::ON);
+            serialPortConfig->SetRts(SerialPortConfig::RTS::RTS_ON);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::DTR_ON);
         }
 
         switch (value.asString().at(0)) {
         case 'd':
-            serialPortConfig->SetRts(SerialPortConfig::RTS::OFF);
-            serialPortConfig->SetDtr(SerialPortConfig::DTR::ON);
+            serialPortConfig->SetRts(SerialPortConfig::RTS::RTS_OFF);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::DTR_ON);
             break;
         case 'r':
-            serialPortConfig->SetRts(SerialPortConfig::RTS::ON);
-            serialPortConfig->SetDtr(SerialPortConfig::DTR::OFF);
+            serialPortConfig->SetRts(SerialPortConfig::RTS::RTS_ON);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::DTR_OFF);
             break;
         case 'n':
-            serialPortConfig->SetRts(SerialPortConfig::RTS::OFF);
-            serialPortConfig->SetDtr(SerialPortConfig::DTR::OFF);
+            serialPortConfig->SetRts(SerialPortConfig::RTS::RTS_OFF);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::DTR_OFF);
             break;
         }
     }
@@ -243,19 +243,19 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     if(value && value.isString()) {
         switch(value.asString().at(0)) {
         case 'd':
-            serialPortConfig->SetDtr(SerialPortConfig::DTR::INVALID);
+            serialPortConfig->SetDtr(SerialPortConfig::DTR::DTR_INVALID);
             break;
         case 'r':
-            serialPortConfig->SetRts(SerialPortConfig::RTS::INVALID);
+            serialPortConfig->SetRts(SerialPortConfig::RTS::RTS_INVALID);
             break;
         case 'c':
-            serialPortConfig->SetCts(SerialPortConfig::CTS::INVALID);
+            serialPortConfig->SetCts(SerialPortConfig::CTS::CTS_INVALID);
             break;
         case 's':
-            serialPortConfig->SetDsr(SerialPortConfig::DSR::INVALID);
+            serialPortConfig->SetDsr(SerialPortConfig::DSR::DSR_INVALID);
             break;
         case 'x':
-            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::INVALID);
+            serialPortConfig->SetXonXoffBehaviour(SerialPortConfig::XonXoffBehaviour::XONXOFF_INVALID);
             break;
         }
     }
