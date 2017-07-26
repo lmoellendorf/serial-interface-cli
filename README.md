@@ -61,11 +61,6 @@ and run:
     cmake ..
     make
 
-or to define a custom install directory e.g. devroot:
-
-    cmake .. -DCMAKE_INSTALL_PREFIX=devroot
-    make
-
 ## Build dependencies
 
 * [crc](https://github.com/stackforce/crc)
