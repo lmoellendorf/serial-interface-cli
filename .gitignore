@@ -1,6 +1,5 @@
 # ignore cmake generated stuff
-build/
-build.*/
+build*/
 # ignore KDevelop files
 *.kdev4
 *.swp

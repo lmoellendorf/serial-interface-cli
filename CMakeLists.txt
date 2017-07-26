@@ -32,7 +32,7 @@
 ##
 
 cmake_minimum_required(VERSION 3.6)
-project(sfserialcli VERSION 1.0.0)
+project(sfserialcli VERSION 1.0.1)
 
 #---------------------------------------------------------------------------------------
 # Include required modules
@@ -47,7 +47,7 @@ include(ColorMessages)
 #---------------------------------------------------------------------------------------
 set(DOCOPT_VERSION 0.6.2)
 set(SFOBSERVER_VERSION 2.0.0)
-set(SFSERIALOBSERVER_VERSION 0.2.0)
+set(SFSERIALOBSERVER_VERSION 0.2.1)
 set(SFSERIALMAC_VERSION 0.1.2)
 set(SFSTRINGHEX_VERSION 0.2.0)
 set(SFCRC_VERSION 0.1.2)
@@ -82,10 +82,49 @@ find_package(Threads REQUIRED)
 colormessage(STATUS "Searching Serialport project configuration")
 find_package(Serialport REQUIRED)
 
+if(CMAKE_CROSSCOMPILING AND WIN32)
+    colormessage(STATUS "Searching mingw threads for windows cross build")
+    find_package(MingwThreads REQUIRED)
+endif()
+
 #---------------------------------------------------------------------------------------
 # CMake options
 #---------------------------------------------------------------------------------------
 option(BUILD_STATIC "Build static executable" ON)
+
+#---------------------------------------------------------------------------------------
+# Compiler options
+#---------------------------------------------------------------------------------------
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
+
+if(WIN32)
+    if(CMAKE_CROSSCOMPILING)
+        message(STATUS "Cross compiling for Windows")
+        message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
+        add_definitions(-D__WIN32_CROSS_BUILD__)
+    else()
+        message(STATUS "Windows native")
+    endif()
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
+    # Not all compilers offer macros to indicate a Windows build environment.
+    add_definitions(-D__WIN32__)
+
+    # Find the setupapi library
+    find_library (SETUPAPI setupapi)
+    if(SETUPAPI)
+        message(STATUS "Setupapi library location: ${SETUPAPI}")
+    else()
+        message(FATAL_ERROR "Failed to locate the setupapi library")
+    endif()
+    set(WIN32_DEPS ${SETUPAPI})
+endif()
+
+#---------------------------------------------------------------------------------------
+# Get include directories
+#---------------------------------------------------------------------------------------
+if(CMAKE_CROSSCOMPILING AND WIN32)
+	get_target_property(MINGW_THREADS_INCLUDE_DIRS mingw-std-threads INTERFACE_INCLUDE_DIRECTORIES)
+endif()
 
 #---------------------------------------------------------------------------------------
 # Add subdirectories

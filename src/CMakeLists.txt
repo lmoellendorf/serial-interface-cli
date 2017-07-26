@@ -32,20 +32,6 @@
 ##
 
 #---------------------------------------------------------------------------------------
-# Compiler options
-#---------------------------------------------------------------------------------------
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pedantic -fmessage-length=0")
-
-if(WIN32)
-    message(STATUS "On Windows")
-    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static")
-    # Not all compilers offer macros to indicate a Windows build environment.
-    add_definitions(-D__WIN32__)
-    find_library(SETUPAPI setupapi)
-    set(WIN32_DEPS ${SETUPAPI})
-endif()
-
-#---------------------------------------------------------------------------------------
 # cli headers and sources
 #---------------------------------------------------------------------------------------
 set(SF_SERIALMACCLI_SOURCES
@@ -67,6 +53,12 @@ target_include_directories(sfserialcli PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+if(WIN32)
+    target_include_directories(sfserialcli PRIVATE
+        ${MINGW_THREADS_INCLUDE_DIRS}
+    )
+endif()
 
 if(BUILD_STATIC)
     set(LINK_LIBS sfserialmac-static docopt_s sfobserver-static sfserialobserver-static sfstringhex-static)
@@ -103,6 +95,14 @@ install(TARGETS sfserialcli
         COMPONENT runtime
 )
 
+# install windows specific files
+if(WIN32)
+    install(FILES ${CMAKE_SOURCE_DIR}/cmake/cpack/startcli.cmd ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            COMPONENT runtime
+    )
+endif()
+
 # install version file
 install(FILES ${PROJECT_VERSION_FILE}
         DESTINATION ${CONFIG_INSTALL_DIR}
@@ -130,20 +130,10 @@ export(PACKAGE ${PROJECT_NAME})
 # package release version
 set(PACKAGE_RELEASE_VERSION 1)
 
-# determine distribution and architecture
-execute_process(COMMAND lsb_release -si OUTPUT_VARIABLE LINUX_DISTRO OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-# determine CPack generators
-set(CPACK_GENERATOR TGZ STGZ)
-
-if(LINUX_DISTRO STREQUAL "Debian" OR LINUX_DISTRO STREQUAL "Ubuntu" OR LINUX_DISTRO STREQUAL "LinuxMint")
-    execute_process(COMMAND dpkg-architecture -qDEB_HOST_ARCH OUTPUT_VARIABLE DEBIAN_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-    list(APPEND CPACK_GENERATOR DEB)
-endif()
-
 # general CPack config
 set(CPACK_COMPONENTS_ALL runtime) # generate packages for runtime only
+set(CPACK_COMPONENT_RUNTIME_DISPLAY_NAME sfserialcli)
+set(CPACK_COMPONENT_RUNTIME_DESCRIPTION "Serial Interface Command Line Tool")
 set(CPACK_PACKAGE_DIRECTORY ${CMAKE_BINARY_DIR}/packages)
 message(STATUS "CPack: packages will be generated under ${CPACK_PACKAGE_DIRECTORY}")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
@@ -152,22 +142,68 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_PRODUCT_COMPANY} ${PROJECT_PROD
 set(CPACK_PACKAGE_VENDOR "${PROJECT_PRODUCT_COMPANY} GmbH")
 set(CPACK_PACKAGE_CONTACT "info@stackforce.de")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
-set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}_Linux-${MACHINE_ARCH})
+
 set(CPACK_STRIP_FILES ON)
 
-# debian specific CPack config
-set(CPACK_DEB_COMPONENT_INSTALL ON)
-set(CPACK_DEBIAN_RUNTIME_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}_${DEBIAN_ARCH}.deb)
-set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME ${CPACK_PACKAGE_NAME})
-set(CPACK_DEBIAN_PACKAGE_RELEASE ${PACKAGE_RELEASE_VERSION})
-set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+# determine distribution and architecture
+if(NOT WIN32)
+    execute_process(COMMAND lsb_release -si OUTPUT_VARIABLE LINUX_DISTRO OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if(NOT BUILD_STATIC)
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfcrc (= ${SFCRC_VERSION}), libsfobserver (= ${SFOBSERVER_VERSION}), libsfserialmac (= ${SFSERIALMAC_VERSION}), libsfstringhex (= ${SFSTRINGHEX_VERSION}), docopt (= ${DOCOPT_VERSION})")
+    set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}_Linux-${MACHINE_ARCH})
+
+    if(LINUX_DISTRO STREQUAL "Debian" OR LINUX_DISTRO STREQUAL "Ubuntu" OR LINUX_DISTRO STREQUAL "LinuxMint")
+        execute_process(COMMAND dpkg-architecture -qDEB_HOST_ARCH OUTPUT_VARIABLE DEBIAN_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+        list(APPEND CPACK_GENERATOR DEB)
+        set(CPACK_DEB_COMPONENT_INSTALL ON)
+        set(CPACK_DEBIAN_RUNTIME_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}_${DEBIAN_ARCH}.deb)
+        set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME ${CPACK_PACKAGE_NAME})
+        set(CPACK_DEBIAN_PACKAGE_RELEASE ${PACKAGE_RELEASE_VERSION})
+        set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+        if(NOT BUILD_STATIC)
+            set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsfcrc (= ${SFCRC_VERSION}), libsfobserver (= ${SFOBSERVER_VERSION}), libsfserialmac (= ${SFSERIALMAC_VERSION}), libsfstringhex (= ${SFSTRINGHEX_VERSION}), docopt (= ${DOCOPT_VERSION})")
+        endif()
+
+        set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/stackforce")
+        set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+    endif()
+else()
+    list(APPEND CPACK_GENERATOR NSIS)
+    set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}_win64)
+    set(CPACK_NSIS_PACKAGE_NAME "Serial Command Line Tool")
+    set(CPACK_NSIS_MUI_ICON ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico)
+    set(CPACK_NSIS_MUI_UNIICON ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico)
+    set(CPACK_NSIS_INSTALLED_ICON_NAME ${CMAKE_SOURCE_DIR}/cmake/cpack/sf.ico)
+    set(CPACK_PACKAGE_ICON ${CMAKE_SOURCE_DIR}/cmake/cpack/sf_logo_heading.bmp)
+    set(CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP ${CMAKE_SOURCE_DIR}/cmake/cpack/sf_logo_margin.bmp)
+    set(CPACK_NSIS_MUI_UNWELCOMEFINISHPAGE_BITMAP ${CMAKE_SOURCE_DIR}/cmake/cpack/sf_logo_margin.bmp)
+    set(CPACK_NSIS_HELP_LINK "www.stackforce.de")
+    set(CPACK_NSIS_URL_INFO_ABOUT "www.stackforce.de")
+    set(CPACK_NSIS_CONTACT "info@stackforce.de")
+
+    set(CPACK_PACKAGE_EXECUTABLES "sfserialcli" "sfserialcli")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "sfserialcli")
+    set(CPACK_NSIS_MENU_LINKS
+        "https://github.com/stackforce/serial-interface-cli" "Serial CLI project on GitHub"
+        "https://www.stackforce.de" "STACKFORCE Home Page"
+    )
+
+#     set(CPACK_CREATE_DESKTOP_LINKS "sfserialcli")
+    set(CPACK_NSIS_INSTALLED_ICON_NAME $INSTDIR\\\\bin\\\\sf.ico)
+    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+        "CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\sfserialcli.lnk' '$INSTDIR\\\\bin\\\\startcli.cmd' '' '$INSTDIR\\\\bin\\\\sf.ico'
+        CreateShortCut '$DESKTOP\\\\sfserialcli.lnk' '$INSTDIR\\\\bin\\\\startcli.cmd' '' '$INSTDIR\\\\bin\\\\sf.ico'"
+    )
+
+    set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
+        "Delete '$SMPROGRAMS\\\\$START_MENU\\\\sfserialcli.lnk'
+        Delete '$DESKTOP\\\\sfserialcli.lnk'"
+    )
+
+#     set(CPACK_NSIS_MODIFY_PATH ON)
 endif()
-
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/stackforce")
-set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
 
 include(CPack)
