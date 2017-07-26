@@ -15,13 +15,13 @@ Command Line Interface to easily send and receive serial messages from and to de
 
 ## Windows
 
-Precompiled binaries for Windows can be found in the [releases](https://github.com/stackforce/serial-interface-cli/releases) section. **Please note that currently Windows binaries have been tested under Windows 10 only.**
+Precompiled binaries for Windows can be found in the [releases](https://github.com/stackforce/serial-interface-cli/releases) section. **Please note that currently Windows binaries have been tested under 64Bit Windows 7/10 only.**
 
-Download and execute the installer. **When asked for it, select adding the program either to the system or user path.**
+Download and execute the installer.
 
 ## Ubuntu based Linux distributions
 
-Precompiled binaries for Ubuntu based Linux distributions can be found in the [releases](https://github.com/stackforce/serial-interface-cli/releases) section. **Please note that currently DEB packages have been tested under Ubuntu-14.04 and Ubuntu-16.04 based systems only.**
+Precompiled binaries for Ubuntu based Linux distributions can be found in the [releases](https://github.com/stackforce/serial-interface-cli/releases) section. **Please note that currently DEB packages have been tested under Ubuntu-14.04 64Bit and Ubuntu-16.04 64Bit based systems only.**
 
 Download the DEB package that suites your Ubuntu version and run the following command to install it, where **[path/to/deb]** is the path to the downloaded DEB package:
 
@@ -47,10 +47,12 @@ Running sfserialcli with the **-h** parameter will show the program's usage help
 
 The STACKFORCE serial-interface-cli uses CMake as build system.
 
+**NOTE all required dependencies have to be available in order to build the CLI**. Seen section **Build Dependencies** for a list of the required dependencies.
+
 Go to the project directory and create a build subdirectory:
 
     cd serial-interface-cli
-    git submodule update --init --recursive
+    git submodule update --init
     mkdir build
     cd build
 
@@ -58,14 +60,41 @@ and run:
 
     cmake ..
     make
-    sudo make install
 
 or to define a custom install directory e.g. devroot:
 
     cmake .. -DCMAKE_INSTALL_PREFIX=devroot
     make
-    make install
 
-## Cross building for Windows on GNU/Linux
+## Build dependencies
 
-Currently cross building for Windows is supported in the **win-cross-build** branch.
+* crc
+* observer
+* stringhex
+* docopt
+* serial observer
+* serial mac
+
+## Cross building for Windows on GNU/Linux using MinGW toolchain
+
+**NOTE: The dependencies list applies to Ubuntu 16.04 64Bit based distributions**
+
+* binutils-mingw-w64-x86-64
+* g++-mingw-w64
+* g++-mingw-w64-x86-64
+* gcc-mingw-w64
+* gcc-mingw-w64-base
+* gcc-mingw-w64-x86-64
+* mingw-w64
+* mingw-w64-common
+* mingw-w64-tools
+* mingw-w64-x86-64-dev
+
+Cross building requires a toolchain file to be specified during the build process. You can use your own defined toolchain file. For simplicity a toolchain file named **toolchain-cross-mingw-x86_64.cmake** for MinGW is available in the project's **cmake/modules** subdirectory:
+
+    cd serial-interface-cli
+    git submodule update --init
+    mkdir build
+    cd build
+    cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake ..
+    make
