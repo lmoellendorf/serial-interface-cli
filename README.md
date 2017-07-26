@@ -47,7 +47,7 @@ Running sfserialcli with the **-h** parameter will show the program's usage help
 
 The STACKFORCE serial-interface-cli uses CMake as build system.
 
-**NOTE all required dependencies have to be available in order to build the CLI**. Seen section **Build Dependencies** for a list of the required dependencies.
+**NOTE all required dependencies have to be available in order to build the CLI**. See section **Build dependencies** for a list of the required dependencies.
 
 Go to the project directory and create a build subdirectory:
 
