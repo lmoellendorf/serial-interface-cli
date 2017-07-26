@@ -68,12 +68,12 @@ or to define a custom install directory e.g. devroot:
 
 ## Build dependencies
 
-* crc
-* observer
-* stringhex
-* docopt
-* serial observer
-* serial mac
+* [crc](https://github.com/stackforce/crc)
+* [stringhex](https://github.com/stackforce/stringhex)
+* [observer](https://github.com/stackforce/observer)
+* [serial mac](https://github.com/stackforce/serial-interface-mac)
+* [serial observer](https://github.com/stackforce/serial-interface-observer)
+* [docopt](https://github.com/docopt/docopt.cpp)
 
 ## Cross building for Windows on GNU/Linux using MinGW toolchain
 
