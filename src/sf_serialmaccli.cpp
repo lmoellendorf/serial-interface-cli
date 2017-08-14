@@ -370,8 +370,8 @@ void SerialMacCli::CliInput(void) {
                     }
 
                     payload.assign(output_buffer, output_buffer + output_buffer_length);
-                    SendSerial(payload);
                     ioState = IoState::SERIAL;
+                    SendSerial(payload);
                 }
                 else {
                     Quit();
