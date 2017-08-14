@@ -125,6 +125,14 @@ MAC v)" SERIALMAC_VERSION, false ); // version string
         }
     }
 
+    value = args.at("<payload>");
+    if(value && value.isStringList() && value.asStringList().size() != 0) {
+        interactive = false;
+    }
+    else {
+        interactive = true;
+    }
+
     /* for debugging docopt
     for ( auto const& arg : args )
     {
@@ -281,8 +289,7 @@ template<typename IfFunc, typename ElseFunc>
 void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseOperation) {
     docopt::value value = args.at("<payload>");
 
-    if(value && value.isStringList()
-        && value.asStringList().size() != 0) {
+    if(!interactive) {
         return IfOperation(value);
     }
 
@@ -363,8 +370,8 @@ void SerialMacCli::CliInput(void) {
                     }
 
                     payload.assign(output_buffer, output_buffer + output_buffer_length);
-                    SendSerial(payload);
                     ioState = IoState::SERIAL;
+                    SendSerial(payload);
                 }
                 else {
                     Quit();
@@ -427,12 +434,18 @@ void SerialMacCli::Update(Event* event) {
                     std::string hex_string;
                     std::vector<uint8_t> hex_binaries(bufferContent, bufferContent + bufferSize);
                     hex.BinaryToHexString(hex_binaries, hex_string);
-                    std::printf("%s\n", hex_string.c_str());
+                    std::cout << hex_string << std::endl;
+
                 }
                 Verbose("Length:\n%zd\n", bufferSize);
             }
 
-            ioState = IoState::CLI;
+            if(!interactive) {
+                Quit();
+            }
+            else {
+                ioState = IoState::CLI;
+            }
             break;
 
         case SerialHandler::SERIAL_READ_BUFFER_EVENT:

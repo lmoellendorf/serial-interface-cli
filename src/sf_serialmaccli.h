@@ -68,6 +68,7 @@ namespace sf {
 
             IoState ioState;
             bool run;
+            bool interactive;
 
             static int NonVerbose(const char *format, ...);
             int (*Verbose) (const char *format, ...);
