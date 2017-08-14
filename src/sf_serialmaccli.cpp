@@ -125,6 +125,14 @@ MAC v)" SERIALMAC_VERSION, false ); // version string
         }
     }
 
+    value = args.at("<payload>");
+    if(value && value.isStringList() && value.asStringList().size() != 0) {
+        interactive = false;
+    }
+    else {
+        interactive = true;
+    }
+
     /* for debugging docopt
     for ( auto const& arg : args )
     {
@@ -281,8 +289,7 @@ template<typename IfFunc, typename ElseFunc>
 void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseOperation) {
     docopt::value value = args.at("<payload>");
 
-    if(value && value.isStringList()
-        && value.asStringList().size() != 0) {
+    if(!interactive) {
         return IfOperation(value);
     }
 
@@ -430,6 +437,10 @@ void SerialMacCli::Update(Event* event) {
                     std::printf("%s\n", hex_string.c_str());
                 }
                 Verbose("Length:\n%zd\n", bufferSize);
+            }
+
+            if(!interactive) {
+                Quit();
             }
 
             ioState = IoState::CLI;
