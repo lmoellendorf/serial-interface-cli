@@ -107,6 +107,7 @@ Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VER
 SerialMacCli::SerialMacCli(int argc, char **argv) : SerialObserver() {
     run = true;
     docopt::value value;
+    exitStatus = EXIT_SUCCESS;
     args = docopt::docopt ( USAGE,
     { argv + 1, argv + argc },
     true,               // show help if requested
@@ -388,7 +389,7 @@ void SerialMacCli::CliInput(void) {
 int SerialMacCli::Run() {
     if(InitSerialPort() != SerialObserverStatus::ATTACH_OK) {
         std::cerr << "Could not initialize serial port " << serialPortConfig->GetPortName() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /** Start waiting for CLI input */
@@ -398,7 +399,7 @@ int SerialMacCli::Run() {
 
     while(run) {};
 
-    return 0;
+    return exitStatus;
 }
 
 void SerialMacCli::Update(Event* event) {
@@ -464,6 +465,7 @@ void SerialMacCli::Update(Event* event) {
 
             bufferSize = event->GetDetails((void**)&bufferContent);
             std::cout << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
+            exitStatus = EXIT_FAILURE;
             this->Quit();
             break;
 

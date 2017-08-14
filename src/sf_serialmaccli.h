@@ -40,6 +40,7 @@
 #include <string.h>
 extern "C"
 {
+#include <stdlib.h>
 #include "libserialport.h"
 #include "sf_serialmac.h"
 }
@@ -69,6 +70,7 @@ namespace sf {
             IoState ioState;
             bool run;
             bool interactive;
+            int exitStatus;
 
             static int NonVerbose(const char *format, ...);
             int (*Verbose) (const char *format, ...);
