@@ -434,7 +434,8 @@ void SerialMacCli::Update(Event* event) {
                     std::string hex_string;
                     std::vector<uint8_t> hex_binaries(bufferContent, bufferContent + bufferSize);
                     hex.BinaryToHexString(hex_binaries, hex_string);
-                    std::printf("%s\n", hex_string.c_str());
+                    std::cout << hex_string << std::endl;
+
                 }
                 Verbose("Length:\n%zd\n", bufferSize);
             }
