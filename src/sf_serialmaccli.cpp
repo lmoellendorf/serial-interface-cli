@@ -442,8 +442,9 @@ void SerialMacCli::Update(Event* event) {
             if(!interactive) {
                 Quit();
             }
-
-            ioState = IoState::CLI;
+            else {
+                ioState = IoState::CLI;
+            }
             break;
 
         case SerialHandler::SERIAL_READ_BUFFER_EVENT:
