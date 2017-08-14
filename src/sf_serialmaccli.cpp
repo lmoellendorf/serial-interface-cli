@@ -464,13 +464,13 @@ void SerialMacCli::Update(Event* event) {
         case SerialHandler::SERIAL_CONNECTION_ERROR:
 
             bufferSize = event->GetDetails((void**)&bufferContent);
-            std::cout << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
+            std::cerr << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
             exitStatus = EXIT_FAILURE;
             this->Quit();
             break;
 
         default:
-            std::cout << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
+            std::cerr << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
             break;
     }
 }
