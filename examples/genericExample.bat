@@ -52,11 +52,10 @@ pause
 rem === Select port and do basic explanation ===
 cls
 echo.
-echo Please specify the COM port to be used, e.g. by simply typing COM6.
+echo Please specify the COM port to be used by simply typing the number only, e.g. '6' for usage of COM6.
 if not "%sfcomport%"=="" echo When leaving input blank and simply hit 'Enter', the last port '%sfcomport%' will be used.
 set /p sfcomport=COM Port? 
-set sfcmd=sfserialcli.exe -d %sfcomport%
-timeout /t 1 > NUL
+set sfcmd=%ProgramFiles%\sfserialcli\bin\sfserialcli.exe
 echo.
 echo Thanks, from now on we will use the command line tool for any communication with the device just this:
 echo.
@@ -72,7 +71,8 @@ echo 2. Length = 2 Bytes
 echo 3. Payload ... whatever the application has been passing to that tool
 echo 4. CRC = 2 Bytes
 echo.
-pause
+echo Press any key to continue with an example ...
+>nul pause
 
 rem === Perform ping test ===
 cls
@@ -80,6 +80,7 @@ echo.
 echo First we send a PING command to the device in order to check if the device is present and accessible:
 timeout /t 1 > NUL
 call :SEND 0A
+if errorlevel 5 exit /B %errorlevel%
 timeout /t 1 > NUL
 echo.
 echo Ok, we received the following response: %input%
@@ -105,9 +106,10 @@ exit /B 0
 
 :SEND
 echo ^< %*
-FOR /F "delims=" %%i IN ('%sfcmd% %*') DO set input=%%i
+FOR /F "delims=" %%i IN ('"%sfcmd%" -d %sfcomport% %*') DO set input=%%i
 if "%input%" == "" (
     echo Something went wrong ... :-(
+    pause
     exit /B 5
 )
 echo ^> %input%
