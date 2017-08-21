@@ -106,7 +106,7 @@ exit /B 0
 
 :SEND
 echo ^< %*
-FOR /F "delims=" %%i IN ('"%sfcmd%" -d %sfcomport% %*') DO set input=%%i
+FOR /F "delims=" %%i IN ('"%sfcmd%" -d COM%sfcomport% %*') DO set input=%%i
 if "%input%" == "" (
     echo Something went wrong ... :-(
     pause
