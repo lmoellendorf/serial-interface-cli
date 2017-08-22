@@ -102,6 +102,12 @@ case "$(uname -s)" in
 		exit 1
 		;;
 esac
+
+# check cli binary
+echo -ne "${CYAN}CLI tool${NO_COLOR} : "
+[[ -z "$(which $CLI_EXEC 2> /dev/null)" ]] && { echo -e "${RED}not found${NO_COLOR}"; exit 1; } || echo -e "${GREEN}${CLI_EXEC}${NO_COLOR}"
+
+# paramter check
 [[ ! -z "$1" ]] && SERIAL_PORT="$1"
 
 echo -e "${CYAN}Serial port${NO_COLOR} : $SERIAL_PORT"
