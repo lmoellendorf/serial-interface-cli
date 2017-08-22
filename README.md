@@ -29,6 +29,8 @@ Download the DEB package that suites your Ubuntu version and run the following c
 
 # Usage
 
+## Interactive
+
 Following a simple example of how to send a ping command to a device attached on serial port **/dev/ttyACM0** using the default serial port settings and getting the according response
 
     $ sfserialcli -d /dev/ttyACM0
@@ -40,6 +42,15 @@ Entering an empty line will cause the programm to quit.
 **NOTE there is no need to specify SYNC, Length or CRC fields since this is handled by the underlying [serial-interface-mac](https://github.com/stackforce/serial-interface-mac) library.** Those fields get stripped out by the serial mac from the incoming responses as well, leaving the payload only.
 
 Running sfserialcli with the **-h** parameter will show the program's usage help with further invocation options.
+
+## Script
+
+The sfserialcli tool can be used inside custom scripts by providing the payload to be sent as a parameter when the tool is invoked. The sfserialcli sends the provided payload and prints the received response to standard output so it can be stored in a variable for further use. A success/failure exit code is returned as well. Demo scripts can be found under the *"examples"* directory.
+
+BASH demo script:
+
+![cliBashDemo](doc/gif/cliBashDemo.gif)
+
 
 # Build
 
