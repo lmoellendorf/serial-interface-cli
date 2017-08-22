@@ -47,7 +47,11 @@
 #---------------------------------------------------------------------------------------
 # general settings
 #---------------------------------------------------------------------------------------
-CLI_EXEC="../build/src/sfserialcli"
+if [[ $OS == *"Win"* ]]; then
+    CLI_EXEC="$PROGRAMFILES\\sfserialcli\\bin\\sfserialcli.exe"
+else
+    CLI_EXEC="../build/src/sfserialcli"
+fi
 SERIAL_PORT="/dev/ttyACM0"
 SUCCESS_COUNT=0
 FAILURE_COUNT=0
@@ -81,7 +85,7 @@ NEW_METER_ADDRESS="D1 33 80 00 00 01 23 08"
 # function definitions
 #---------------------------------------------------------------------------------------
 function sendExpect {
-    [[ "$($CLI_EXEC -d $SERIAL_PORT $1)" == "$2" ]] && { ((SUCCESS_COUNT++)); SEND_EXPECT_RET_VAL=0; } || { ((FAILURE_COUNT++)); SEND_EXPECT_RET_VAL=1; }
+    [[ "$("$CLI_EXEC" -d $SERIAL_PORT $1)" == "$2" ]] && { ((SUCCESS_COUNT++)); SEND_EXPECT_RET_VAL=0; } || { ((FAILURE_COUNT++)); SEND_EXPECT_RET_VAL=1; }
 }
 
 #---------------------------------------------------------------------------------------
