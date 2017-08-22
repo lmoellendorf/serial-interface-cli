@@ -30,9 +30,7 @@
 
 # Usage
 # -----
-# Set the CLI_EXEC variable with the full path to the sfserialcli executable if
-# the sfserialcli executable is not in your path, set the CLI_EXEC to "sfserialcli"
-# otherwise.
+# Set the CLI_EXEC variable with the full path to the sfserialcli executable.
 # The default serial port SERIAL_PORT can be overriden by pasing a port as script
 # parameter.
 #
@@ -91,7 +89,7 @@ echo -ne "${CYAN}OS${NO_COLOR}       : "
 case "$(uname -s)" in
 	Linux)
 		echo "Linux"
-		CLI_EXEC="sfserialcli"
+		CLI_EXEC="/usr/bin/sfserialcli"
 		;;
 	CYGWIN*|MINGW*|MSYS*)
 		echo "Windows"
@@ -105,7 +103,7 @@ esac
 
 # check cli binary
 echo -ne "${CYAN}CLI tool${NO_COLOR} : "
-[[ -z "$(which $CLI_EXEC 2> /dev/null)" ]] && { echo -e "${RED}not found${NO_COLOR}"; exit 1; } || echo -e "${GREEN}${CLI_EXEC}${NO_COLOR}"
+[[ -x "$CLI_EXEC" ]] && echo -e "${GREEN}${CLI_EXEC}${NO_COLOR}" || { echo -e "${RED}not found${NO_COLOR}"; exit 1; }
 
 # paramter check
 [[ ! -z "$1" ]] && SERIAL_PORT="$1"
