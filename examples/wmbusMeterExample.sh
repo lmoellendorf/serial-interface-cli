@@ -47,11 +47,6 @@
 #---------------------------------------------------------------------------------------
 # general settings
 #---------------------------------------------------------------------------------------
-if [[ $OS == *"Win"* ]]; then
-    CLI_EXEC="$PROGRAMFILES\\sfserialcli\\bin\\sfserialcli.exe"
-else
-    CLI_EXEC="../build/src/sfserialcli"
-fi
 SERIAL_PORT="/dev/ttyACM0"
 SUCCESS_COUNT=0
 FAILURE_COUNT=0
@@ -91,6 +86,22 @@ function sendExpect {
 #---------------------------------------------------------------------------------------
 # main part
 #---------------------------------------------------------------------------------------
+# detect OS env
+echo -ne "${CYAN}OS${NO_COLOR}       : "
+case "$(uname -s)" in
+	Linux)
+		echo "Linux"
+		CLI_EXEC="sfserialcli"
+		;;
+	CYGWIN*|MINGW*|MSYS*)
+		echo "Windows"
+		CLI_EXEC="$PROGRAMFILES\\sfserialcli\\bin\\sfserialcli.exe"
+		;;
+	*)
+		echo -e "${RED}unkown${NO_COLOR}"
+		exit 1
+		;;
+esac
 [[ ! -z "$1" ]] && SERIAL_PORT="$1"
 
 echo -e "${CYAN}Serial port${NO_COLOR} : $SERIAL_PORT"
