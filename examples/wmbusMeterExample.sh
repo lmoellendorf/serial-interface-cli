@@ -30,9 +30,7 @@
 
 # Usage
 # -----
-# Set the CLI_EXEC variable with the full path to the sfserialcli executable if
-# the sfserialcli executable is not in your path, set the CLI_EXEC to "sfserialcli"
-# otherwise.
+# Set the CLI_EXEC variable with the full path to the sfserialcli executable.
 # The default serial port SERIAL_PORT can be overriden by pasing a port as script
 # parameter.
 #
@@ -47,11 +45,6 @@
 #---------------------------------------------------------------------------------------
 # general settings
 #---------------------------------------------------------------------------------------
-if [[ $OS == *"Win"* ]]; then
-    CLI_EXEC="$PROGRAMFILES\\sfserialcli\\bin\\sfserialcli.exe"
-else
-    CLI_EXEC="../build/src/sfserialcli"
-fi
 SERIAL_PORT="/dev/ttyACM0"
 SUCCESS_COUNT=0
 FAILURE_COUNT=0
@@ -91,6 +84,28 @@ function sendExpect {
 #---------------------------------------------------------------------------------------
 # main part
 #---------------------------------------------------------------------------------------
+# detect OS env
+echo -ne "${CYAN}OS${NO_COLOR}       : "
+case "$(uname -s)" in
+	Linux)
+		echo "Linux"
+		CLI_EXEC="/usr/bin/sfserialcli"
+		;;
+	CYGWIN*|MINGW*|MSYS*)
+		echo "Windows"
+		CLI_EXEC="$PROGRAMFILES/sfserialcli/bin/sfserialcli.exe"
+		;;
+	*)
+		echo -e "${RED}unkown${NO_COLOR}"
+		exit 1
+		;;
+esac
+
+# check cli binary
+echo -ne "${CYAN}CLI tool${NO_COLOR} : "
+[[ -x "$CLI_EXEC" ]] && echo -e "${GREEN}${CLI_EXEC}${NO_COLOR}" || { echo -e "${RED}not found${NO_COLOR}"; exit 1; }
+
+# paramter check
 [[ ! -z "$1" ]] && SERIAL_PORT="$1"
 
 echo -e "${CYAN}Serial port${NO_COLOR} : $SERIAL_PORT"
