@@ -93,7 +93,7 @@ case "$(uname -s)" in
 		;;
 	CYGWIN*|MINGW*|MSYS*)
 		echo "Windows"
-		CLI_EXEC="$PROGRAMFILES\\sfserialcli\\bin\\sfserialcli.exe"
+		CLI_EXEC="$PROGRAMFILES/sfserialcli/bin/sfserialcli.exe"
 		;;
 	*)
 		echo -e "${RED}unkown${NO_COLOR}"
