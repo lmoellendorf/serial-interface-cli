@@ -107,6 +107,7 @@ Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VER
 SerialMacCli::SerialMacCli(int argc, char **argv) : SerialObserver() {
     run = true;
     docopt::value value;
+    exitStatus = EXIT_SUCCESS;
     args = docopt::docopt ( USAGE,
     { argv + 1, argv + argc },
     true,               // show help if requested
@@ -123,6 +124,14 @@ MAC v)" SERIALMAC_VERSION, false ); // version string
         else {
             Verbose = NonVerbose;
         }
+    }
+
+    value = args.at("<payload>");
+    if(value && value.isStringList() && value.asStringList().size() != 0) {
+        interactive = false;
+    }
+    else {
+        interactive = true;
     }
 
     /* for debugging docopt
@@ -281,8 +290,7 @@ template<typename IfFunc, typename ElseFunc>
 void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseOperation) {
     docopt::value value = args.at("<payload>");
 
-    if(value && value.isStringList()
-        && value.asStringList().size() != 0) {
+    if(!interactive) {
         return IfOperation(value);
     }
 
@@ -363,8 +371,8 @@ void SerialMacCli::CliInput(void) {
                     }
 
                     payload.assign(output_buffer, output_buffer + output_buffer_length);
-                    SendSerial(payload);
                     ioState = IoState::SERIAL;
+                    SendSerial(payload);
                 }
                 else {
                     Quit();
@@ -381,7 +389,7 @@ void SerialMacCli::CliInput(void) {
 int SerialMacCli::Run() {
     if(InitSerialPort() != SerialObserverStatus::ATTACH_OK) {
         std::cerr << "Could not initialize serial port " << serialPortConfig->GetPortName() << std::endl;
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /** Start waiting for CLI input */
@@ -391,7 +399,7 @@ int SerialMacCli::Run() {
 
     while(run) {};
 
-    return 0;
+    return exitStatus;
 }
 
 void SerialMacCli::Update(Event* event) {
@@ -427,12 +435,18 @@ void SerialMacCli::Update(Event* event) {
                     std::string hex_string;
                     std::vector<uint8_t> hex_binaries(bufferContent, bufferContent + bufferSize);
                     hex.BinaryToHexString(hex_binaries, hex_string);
-                    std::printf("%s\n", hex_string.c_str());
+                    std::cout << hex_string << std::endl;
+
                 }
                 Verbose("Length:\n%zd\n", bufferSize);
             }
 
-            ioState = IoState::CLI;
+            if(!interactive) {
+                Quit();
+            }
+            else {
+                ioState = IoState::CLI;
+            }
             break;
 
         case SerialHandler::SERIAL_READ_BUFFER_EVENT:
@@ -450,12 +464,13 @@ void SerialMacCli::Update(Event* event) {
         case SerialHandler::SERIAL_CONNECTION_ERROR:
 
             bufferSize = event->GetDetails((void**)&bufferContent);
-            std::cout << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
+            std::cerr << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
+            exitStatus = EXIT_FAILURE;
             this->Quit();
             break;
 
         default:
-            std::cout << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
+            std::cerr << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
             break;
     }
 }
