@@ -32,7 +32,7 @@
 ##
 
 cmake_minimum_required(VERSION 3.6)
-project(sfserialcli VERSION 1.0.2)
+project(sfserialcli VERSION 1.0.3)
 
 #---------------------------------------------------------------------------------------
 # Include required modules
@@ -46,11 +46,11 @@ include(ColorMessages)
 # Required dependencies versions
 #---------------------------------------------------------------------------------------
 set(DOCOPT_VERSION 0.6.2)
-set(SFOBSERVER_VERSION 2.0.0)
-set(SFSERIALOBSERVER_VERSION 0.2.1)
-set(SFSERIALMAC_VERSION 0.1.2)
+set(SFOBSERVER_VERSION 3.0.0)
+set(SFSERIALOBSERVER_VERSION 1.0.0)
+set(SFSERIALMAC_VERSION 1.0.1)
 set(SFSTRINGHEX_VERSION 0.2.0)
-set(SFCRC_VERSION 0.1.2)
+set(SFCRC_VERSION 0.1.3)
 
 #---------------------------------------------------------------------------------------
 # Product extra info
