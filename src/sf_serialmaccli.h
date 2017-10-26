@@ -38,6 +38,7 @@
 #include <docopt.h>
 #include <functional>
 #include <string.h>
+#include <condition_variable>
 extern "C"
 {
 #include <stdlib.h>
@@ -71,6 +72,8 @@ namespace sf {
             bool run;
             bool interactive;
             int exitStatus;
+            std::condition_variable running;
+            std::mutex runningMutex;
 
             static int NonVerbose(const char *format, ...);
             int (*Verbose) (const char *format, ...);
