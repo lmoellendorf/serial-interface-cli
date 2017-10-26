@@ -38,6 +38,7 @@
 #include <string.h>
 #include <algorithm>
 #include <docopt.h>
+#include <condition_variable>
 
 #include "sf_serialobserver.h"
 #include "sf_serialmaccli.h"
@@ -53,6 +54,8 @@
 
 #ifdef __WIN32_CROSS_BUILD__
 #include "mingw.thread.h"
+#include "mingw.mutex.h"
+#include "mingw.condition_variable.h"
 #endif
 
 namespace sf {
@@ -274,8 +277,8 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
 
 void SerialMacCli::Quit() {
     Verbose ( "Quitting.\n" );
-    /** Userinput was empty line -> STOP */
     run = false;
+    running.notify_one();
 }
 
 /**
@@ -397,7 +400,8 @@ int SerialMacCli::Run() {
     std::thread threadCliInput(&SerialMacCli::CliInput, this);
     threadCliInput.detach();
 
-    while(run) {};
+    std::unique_lock<std::mutex> lockRunning(runningMutex);
+    running.wait(lockRunning);
 
     return exitStatus;
 }
