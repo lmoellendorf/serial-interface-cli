@@ -48,6 +48,11 @@ extern "C"
 #include "sf_serialobserver.h"
 #include "version.h"
 
+#ifdef __WIN32_CROSS_BUILD__
+#include "mingw.mutex.h"
+#include "mingw.condition_variable.h"
+#endif
+
 namespace sf {
 
     class SerialMacCli: public SerialObserver {
