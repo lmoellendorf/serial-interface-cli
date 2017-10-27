@@ -54,6 +54,15 @@ BASH demo script:
 
 # Build
 
+## Build dependencies
+
+* [crc](https://github.com/stackforce/crc)
+* [stringhex](https://github.com/stackforce/stringhex)
+* [observer](https://github.com/stackforce/observer)
+* [serial mac](https://github.com/stackforce/serial-interface-mac)
+* [serial observer](https://github.com/stackforce/serial-interface-observer)
+* [docopt](https://github.com/docopt/docopt.cpp)
+
 ## GNU/Linux
 
 The STACKFORCE serial-interface-cli uses CMake as build system.
@@ -71,15 +80,6 @@ and run:
 
     cmake ..
     make
-
-## Build dependencies
-
-* [crc](https://github.com/stackforce/crc)
-* [stringhex](https://github.com/stackforce/stringhex)
-* [observer](https://github.com/stackforce/observer)
-* [serial mac](https://github.com/stackforce/serial-interface-mac)
-* [serial observer](https://github.com/stackforce/serial-interface-observer)
-* [docopt](https://github.com/docopt/docopt.cpp)
 
 ## Cross building for Windows on GNU/Linux using MinGW toolchain
 
@@ -104,3 +104,16 @@ Cross building requires a toolchain file to be specified during the build proces
     cd build
     cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake ..
     make
+
+## Docker Build
+Docker files can be used to generate different platforms packages. A convenience script to build a packages for a specific platform is provided under the _*docker*_ directory. Following example builds the _*ubuntu*_ DEB package using the helper script:
+
+    cd docker
+    ./buildpackage.sh <platform>
+
+Where _*platform*_ is one of
+* ubuntu (Ubuntu Xenial)
+* debian (Debian Stretch)
+* windows (Windows 10)
+
+Generated packages are placed under the _*packages*_ subdirectory.
