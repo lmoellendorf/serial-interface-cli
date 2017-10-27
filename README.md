@@ -54,6 +54,15 @@ BASH demo script:
 
 # Build
 
+## Build dependencies
+
+* [crc](https://github.com/stackforce/crc)
+* [stringhex](https://github.com/stackforce/stringhex)
+* [observer](https://github.com/stackforce/observer)
+* [serial mac](https://github.com/stackforce/serial-interface-mac)
+* [serial observer](https://github.com/stackforce/serial-interface-observer)
+* [docopt](https://github.com/docopt/docopt.cpp)
+
 ## GNU/Linux
 
 The STACKFORCE serial-interface-cli uses CMake as build system.
@@ -71,15 +80,6 @@ and run:
 
     cmake ..
     make
-
-## Build dependencies
-
-* [crc](https://github.com/stackforce/crc)
-* [stringhex](https://github.com/stackforce/stringhex)
-* [observer](https://github.com/stackforce/observer)
-* [serial mac](https://github.com/stackforce/serial-interface-mac)
-* [serial observer](https://github.com/stackforce/serial-interface-observer)
-* [docopt](https://github.com/docopt/docopt.cpp)
 
 ## Cross building for Windows on GNU/Linux using MinGW toolchain
 
