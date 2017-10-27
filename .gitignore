@@ -8,3 +8,5 @@ build*/
 *~
 # KDE dolphin
 .directory
+# docker packges dir
+docker/packages/
