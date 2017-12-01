@@ -473,6 +473,26 @@ void SerialMacCli::Update(Event* event) {
             this->Quit();
             break;
 
+        case SerialHandler::SERIAL_MAC_ERROR_CRC:
+            std::cerr << "DeviceHandler::Update -> got SERIAL_MAC_ERROR_CRC" << std::endl;
+            if(!interactive) {
+                Quit();
+            }
+            else {
+                ioState = IoState::CLI;
+            }
+            break;
+
+        case SerialHandler::SERIAL_MAC_ERROR_SYNC_BYTE:
+            std::cerr << "DeviceHandler::Update -> got SERIAL_MAC_ERROR_SYNC_BYTE" << std::endl;
+            if(!interactive) {
+                Quit();
+            }
+            else {
+                ioState = IoState::CLI;
+            }
+            break;
+
         default:
             std::cerr << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
             break;
