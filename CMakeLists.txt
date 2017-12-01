@@ -47,8 +47,8 @@ include(ColorMessages)
 #---------------------------------------------------------------------------------------
 set(DOCOPT_VERSION 0.6.2)
 set(SFOBSERVER_VERSION 3.0.0)
-set(SFSERIALOBSERVER_VERSION 1.0.0)
-set(SFSERIALMAC_VERSION 1.0.1)
+set(SFSERIALOBSERVER_VERSION 1.1.0)
+set(SFSERIALMAC_VERSION 2.0.0)
 set(SFSTRINGHEX_VERSION 0.2.0)
 set(SFCRC_VERSION 0.1.3)
 
