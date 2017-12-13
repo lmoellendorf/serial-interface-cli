@@ -66,6 +66,7 @@ namespace sf {
 
         private:
             std::map<std::string, docopt::value> args;
+            SerialMACConfig *serialMACConfig = nullptr;
             SerialPortConfig *serialPortConfig = nullptr;
 
             enum class IoState {

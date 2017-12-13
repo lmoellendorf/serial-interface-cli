@@ -167,6 +167,15 @@ int SerialMacCli::NonVerbose (const char *format, ...) {
 SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     docopt::value value;
 
+    serialMACConfig = new SerialMACConfig();
+    if(noInvertedLengthField) {
+        serialMACConfig->SetLengthFieldType(SerialMACConfig::LengthField::LENGTHFIELD_SIMPLE);
+    }
+    else {
+        serialMACConfig->SetLengthFieldType(SerialMACConfig::LengthField::LENGTHFIELD_EXTENDED);
+    }
+
+
     serialPortConfig = new SerialPortConfig(args.at( "--device" ).asString());
     serialPortConfig->SetMode(SerialPortConfig::PortMode::PORTMODE_READWRITE);
     serialPortConfig->SetBaudRate(args.at("--baudrate").asLong());
@@ -276,7 +285,7 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
         }
     }
 
-    return AttachSerial(serialPortConfig);
+    return AttachSerial(serialPortConfig, serialMACConfig);
 }
 
 void SerialMacCli::Quit() {
