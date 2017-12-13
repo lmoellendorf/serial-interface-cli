@@ -76,6 +76,7 @@ namespace sf {
             IoState ioState;
             bool run;
             bool interactive;
+            bool noInvertedLengthField;
             int exitStatus;
             std::condition_variable running;
             std::mutex runningMutex;
