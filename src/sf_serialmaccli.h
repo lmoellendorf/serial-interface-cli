@@ -76,14 +76,17 @@ namespace sf {
             std::map<std::string, docopt::value> args;
             SerialMACConfig *serialMACConfig = nullptr;
             SerialPortConfig *serialPortConfig = nullptr;
+            uint respTimeoutSecs = 5;
 
             bool interactive;
             bool noInvertedLengthField;
             bool textMode;
             std::string delimiters;
             ExitStatus exitStatus;
-            std::condition_variable running;
-            std::mutex runningMutex;
+            std::condition_variable confirmation;
+            std::condition_variable userInput;
+            std::mutex confirmMutex;
+            std::mutex inputMutex;
 
             static int NonVerbose(FILE *stream, const char *format, ...);
             int (*Verbose) (FILE *stream, const char *format, ...);

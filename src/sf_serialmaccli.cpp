@@ -400,17 +400,31 @@ void SerialMacCli::CliInput(void) {
     }
 }
 
-int SerialMacCli::Run() {
-    if(InitSerialPort() != SerialObserverStatus::ATTACH_OK) {
+SerialMacCli::ExitStatus SerialMacCli::Run() {
+
+    std::unique_lock<std::mutex> lockConfirm(confirmMutex);
+    std::unique_lock<std::mutex> lockInput(inputMutex);
+    std::chrono::seconds confirmTimeout(respTimeoutSecs);
+
+    // initialize serial port
+    if(InitSerialPort() != SerialObserverStatus::OBSERVER_OK) {
         std::cerr << "Could not initialize serial port " << serialPortConfig->GetPortName() << std::endl;
         return ExitStatus::EXIT_ERROR;
     }
 
+    // spawn user input thread
     std::thread threadCliInput(&SerialMacCli::CliInput, this);
     threadCliInput.detach();
 
-    std::unique_lock<std::mutex> lockRunning(runningMutex);
-    running.wait(lockRunning);
+    if(interactive) { // in interactive mode block while expecting user input
+        userInput.wait(lockInput);
+    }
+    else { // in non interactive mode block for a confirmation to be received within a timeout
+
+        if(confirmation.wait_for(lockConfirm, confirmTimeout) == std::cv_status::timeout) {
+            return SerialMacCli::ExitStatus::EXIT_TIMEOUT;
+        }
+    }
 
     return exitStatus;
 }
