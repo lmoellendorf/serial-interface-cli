@@ -328,8 +328,6 @@ void SerialMacCli::CliInput(void) {
 
     /** Repeat until the user stops you */
     while(run) {
-        switch(ioState) {
-            case IoState::CLI:
                 /** If payload is passed as parameter ... */
                 IfPayloadPassedAsParameter(
                 /** ... this lambda function is executed ... */
@@ -398,8 +396,6 @@ void SerialMacCli::CliInput(void) {
 
             break;
 
-        case IoState::SERIAL: //nothing to do
-          break;
         }
     }
 }
@@ -410,8 +406,6 @@ int SerialMacCli::Run() {
         return EXIT_FAILURE;
     }
 
-    /** Start waiting for CLI input */
-    ioState = IoState::CLI;
     std::thread threadCliInput(&SerialMacCli::CliInput, this);
     threadCliInput.detach();
 
@@ -460,9 +454,6 @@ void SerialMacCli::Update(Event* event) {
 
             if(!interactive) {
             }
-            else {
-                ioState = IoState::CLI;
-            }
             break;
 
         case SerialHandler::SERIAL_READ_BUFFER_EVENT:
@@ -493,17 +484,12 @@ void SerialMacCli::Update(Event* event) {
             if(!interactive) {
                 Quit();
             }
-            else {
-                ioState = IoState::CLI;
             }
             break;
 
         case SerialHandler::SERIAL_MAC_ERROR_SYNC_BYTE:
             std::cerr << "DeviceHandler::Update -> got SERIAL_MAC_ERROR_SYNC_BYTE" << std::endl;
             if(!interactive) {
-            }
-            else {
-                ioState = IoState::CLI;
             }
             break;
 

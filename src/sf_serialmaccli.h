@@ -69,12 +69,6 @@ namespace sf {
             SerialMACConfig *serialMACConfig = nullptr;
             SerialPortConfig *serialPortConfig = nullptr;
 
-            enum class IoState {
-                CLI,
-                SERIAL
-            };
-
-            IoState ioState;
             bool interactive;
             bool noInvertedLengthField;
             bool textMode;
