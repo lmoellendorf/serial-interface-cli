@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <docopt.h>
 #include <condition_variable>
+#include <chrono>
 
 #include "sf_serialobserver.h"
 #include "sf_serialmaccli.h"
