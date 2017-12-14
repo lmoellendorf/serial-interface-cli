@@ -66,6 +66,7 @@ namespace sf {
 
         private:
             std::map<std::string, docopt::value> args;
+            SerialMACConfig *serialMACConfig = nullptr;
             SerialPortConfig *serialPortConfig = nullptr;
 
             enum class IoState {
@@ -76,6 +77,7 @@ namespace sf {
             IoState ioState;
             bool run;
             bool interactive;
+            bool noInvertedLengthField;
             int exitStatus;
             std::condition_variable running;
             std::mutex runningMutex;

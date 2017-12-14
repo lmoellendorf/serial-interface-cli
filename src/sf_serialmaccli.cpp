@@ -104,6 +104,7 @@ Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VER
       -t, --text                                  Send and receive plain text instead of converting it to binary values first.
       -s <delimiters>, --delimiters=<delimiters>  String delimiter(s) [default: ,;.: ] <- The last default is a whitespace!
                                                   Will split the string at the given delimiters before converting them to binary values.
+      --no-inverted-length                        Disables the inverted length field in MAC header (For MAC versions <= 2.0.0).
       -V, --verbose                               Verbosive debug information on stderr.
       )";
 
@@ -137,6 +138,9 @@ MAC v)" SERIALMAC_VERSION, false ); // version string
         interactive = true;
     }
 
+    value = args.at("--no-inverted-length");
+    noInvertedLengthField = value.asBool();
+
     /* for debugging docopt
     for ( auto const& arg : args )
     {
@@ -162,6 +166,15 @@ int SerialMacCli::NonVerbose (const char *format, ...) {
  */
 SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     docopt::value value;
+
+    serialMACConfig = new SerialMACConfig();
+    if(noInvertedLengthField) {
+        serialMACConfig->SetLengthFieldType(SerialMACConfig::LengthField::LENGTHFIELD_SIMPLE);
+    }
+    else {
+        serialMACConfig->SetLengthFieldType(SerialMACConfig::LengthField::LENGTHFIELD_EXTENDED);
+    }
+
 
     serialPortConfig = new SerialPortConfig(args.at( "--device" ).asString());
     serialPortConfig->SetMode(SerialPortConfig::PortMode::PORTMODE_READWRITE);
@@ -272,7 +285,7 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
         }
     }
 
-    return AttachSerial(serialPortConfig);
+    return AttachSerial(serialPortConfig, serialMACConfig);
 }
 
 void SerialMacCli::Quit() {
