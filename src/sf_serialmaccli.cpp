@@ -109,7 +109,7 @@ Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VER
       )";
 
 SerialMacCli::SerialMacCli(int argc, char **argv) : SerialObserver() {
-    run = true;
+
     docopt::value value;
     exitStatus = EXIT_SUCCESS;
     args = docopt::docopt ( USAGE,
@@ -324,6 +324,7 @@ void SerialMacCli::CliInput(void) {
     char *output_buffer = NULL;
     int output_buffer_length = 0;
     std::vector<uint8_t> payload;
+    bool run = true;
 
     /** Repeat until the user stops you */
     while(run) {

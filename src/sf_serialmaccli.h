@@ -75,7 +75,6 @@ namespace sf {
             };
 
             IoState ioState;
-            bool run;
             bool interactive;
             bool noInvertedLengthField;
             bool textMode;
