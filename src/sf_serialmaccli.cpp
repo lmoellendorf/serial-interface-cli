@@ -482,8 +482,6 @@ void SerialMacCli::Update(Event* event) {
             std::cerr << ":: SERIAL_MAC_ERROR_CRC" << std::endl;
             if(!interactive) {
                 confirmation.notify_one();
-                Quit();
-            }
             }
             break;
 
