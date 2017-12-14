@@ -431,6 +431,7 @@ void SerialMacCli::Update(Event* event) {
 
                 if(textMode) {
                     if('\n' == bufferContent[0]) {
+                        userInput.notify_one();
                     }
                     else {
                         std::printf("%s\n", bufferContent);
@@ -448,6 +449,7 @@ void SerialMacCli::Update(Event* event) {
             }
 
             if(!interactive) {
+                confirmation.notify_one();
             }
             break;
 
@@ -472,11 +474,14 @@ void SerialMacCli::Update(Event* event) {
             bufferSize = event->GetDetails((void**)&bufferContent);
             std::cerr << ":: SERIAL_CONNECTION_ERROR" << std::endl;
             exitStatus = ExitStatus::EXIT_ERROR;
+            userInput.notify_one();
+            confirmation.notify_one();
             break;
 
         case SerialHandler::SERIAL_MAC_ERROR_CRC:
             std::cerr << ":: SERIAL_MAC_ERROR_CRC" << std::endl;
             if(!interactive) {
+                confirmation.notify_one();
                 Quit();
             }
             }
@@ -485,6 +490,7 @@ void SerialMacCli::Update(Event* event) {
         case SerialHandler::SERIAL_MAC_ERROR_SYNC_BYTE:
             std::cerr << ":: SERIAL_MAC_ERROR_SYNC_BYTE" << std::endl;
             if(!interactive) {
+                confirmation.notify_one();
             }
             break;
 
