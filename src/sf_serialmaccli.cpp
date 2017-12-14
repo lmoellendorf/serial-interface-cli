@@ -489,12 +489,12 @@ void SerialMacCli::Update(Event* event) {
         case SerialHandler::SERIAL_CONNECTION_ERROR:
 
             bufferSize = event->GetDetails((void**)&bufferContent);
-            std::cerr << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
+            std::cerr << ":: SERIAL_CONNECTION_ERROR" << std::endl;
             exitStatus = ExitStatus::EXIT_ERROR;
             break;
 
         case SerialHandler::SERIAL_MAC_ERROR_CRC:
-            std::cerr << "DeviceHandler::Update -> got SERIAL_MAC_ERROR_CRC" << std::endl;
+            std::cerr << ":: SERIAL_MAC_ERROR_CRC" << std::endl;
             if(!interactive) {
                 Quit();
             }
@@ -502,7 +502,7 @@ void SerialMacCli::Update(Event* event) {
             break;
 
         case SerialHandler::SERIAL_MAC_ERROR_SYNC_BYTE:
-            std::cerr << "DeviceHandler::Update -> got SERIAL_MAC_ERROR_SYNC_BYTE" << std::endl;
+            std::cerr << ":: SERIAL_MAC_ERROR_SYNC_BYTE" << std::endl;
             if(!interactive) {
             }
             break;
