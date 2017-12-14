@@ -84,8 +84,8 @@ namespace sf {
             std::condition_variable running;
             std::mutex runningMutex;
 
-            static int NonVerbose(const char *format, ...);
-            int (*Verbose) (const char *format, ...);
+            static int NonVerbose(FILE *stream, const char *format, ...);
+            int (*Verbose) (FILE *stream, const char *format, ...);
             template<typename IfFunc, typename ElseFunc>
             void IfPayloadPassedAsParameter (
                 IfFunc IfOperation, ElseFunc ElseOperation );

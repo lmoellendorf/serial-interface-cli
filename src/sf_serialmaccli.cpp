@@ -122,8 +122,8 @@ MAC v)" SERIALMAC_VERSION, false ); // version string
 
     value = args.at ( "--verbose" );
     if(value && value.isBool()) {
-        if( value.asBool()) {
-            Verbose = std::printf;
+        if(value.asBool()) {
+            Verbose = std::fprintf;
         }
         else {
             Verbose = NonVerbose;
@@ -167,7 +167,7 @@ SerialMacCli::~SerialMacCli() {
  * This is a dummy function which is used instead of printf in non-verbose
  * mode.
  */
-int SerialMacCli::NonVerbose (const char *format, ...) {
+int SerialMacCli::NonVerbose(FILE *stream, const char *format, ...) {
   return strlen(format);
 }
 
@@ -437,11 +437,15 @@ void SerialMacCli::Update(Event* event) {
     switch(event->GetIdentifier()) {
         case SerialHandler::SERIAL_READ_FRAME_EVENT:
 
+            Verbose(stderr, ":: SERIAL_READ_FRAME_EVENT\n");
+
             bufferSize = event->GetDetails((void**)&bufferContent);
             payload.assign(bufferContent, bufferContent+bufferSize);
 
             /** Check if a valid frame has been received */
             if(bufferSize) {
+
+                Verbose(stderr, "Payload: ");
 
                 if(textMode) {
                     if('\n' == bufferContent[0]) {
@@ -459,7 +463,7 @@ void SerialMacCli::Update(Event* event) {
                     std::cout << hex_string << std::endl;
 
                 }
-                Verbose("Length:\n%zd\n", bufferSize);
+                Verbose(stderr, "Length: %zd\n", bufferSize);
             }
 
             if(!interactive) {
@@ -471,15 +475,19 @@ void SerialMacCli::Update(Event* event) {
             break;
 
         case SerialHandler::SERIAL_READ_BUFFER_EVENT:
+            Verbose(stderr, ":: SERIAL_READ_BUFFER_EVENT\n");
             break;
 
         case SerialHandler::SERIAL_WRITE_FRAME_EVENT:
+            Verbose(stderr, ":: SERIAL_WRITE_FRAME_EVENT\n");
             break;
 
         case SerialHandler::SERIAL_WRITE_BUFFER_EVENT:
+            Verbose(stderr, ":: SERIAL_WRITE_BUFFER_EVENT\n");
             break;
 
         case SerialHandler::SERIAL_READ_SYNC_BYTE_EVENT:
+            Verbose(stderr, ":: SERIAL_READ_SYNC_BYTE_EVENT\n");
             break;
 
         case SerialHandler::SERIAL_CONNECTION_ERROR:
@@ -511,7 +519,7 @@ void SerialMacCli::Update(Event* event) {
             break;
 
         default:
-            std::cerr << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
+            Verbose(stderr, ":: UNHANDLED EVENT: %i\n", event->GetIdentifier());
             break;
     }
 }
