@@ -78,6 +78,8 @@ namespace sf {
             bool run;
             bool interactive;
             bool noInvertedLengthField;
+            bool textMode;
+            std::string delimiters;
             int exitStatus;
             std::condition_variable running;
             std::mutex runningMutex;

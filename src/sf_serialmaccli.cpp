@@ -141,6 +141,16 @@ MAC v)" SERIALMAC_VERSION, false ); // version string
     value = args.at("--no-inverted-length");
     noInvertedLengthField = value.asBool();
 
+    value = args.at("--text");
+    if(value && value.isBool()) {
+        textMode = value.asBool();
+    }
+
+    value = args.at("--delimiters");
+    if(value && value.isString()) {
+        delimiters = value.asString();
+    }
+
     /* for debugging docopt
     for ( auto const& arg : args )
     {
@@ -317,7 +327,6 @@ void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseO
 void SerialMacCli::CliInput(void) {
     std::string line = "";
     docopt::value value;
-    std::string delimiters;
     char *output_buffer = NULL;
     int output_buffer_length = 0;
     std::vector<uint8_t> payload;
@@ -433,8 +442,8 @@ void SerialMacCli::Update(Event* event) {
 
             /** Check if a valid frame has been received */
             if(bufferSize) {
-                value = args.at ( "--text" );
-                if(value && value.isBool() && value.asBool()) {
+
+                if(textMode) {
                     if('\n' == bufferContent[0]) {
                         Quit();
                     }
@@ -443,11 +452,6 @@ void SerialMacCli::Update(Event* event) {
                     }
                 }
                 else {
-                    std::string delimiters;
-                    value = args.at ( "--delimiters" );
-                    if(value && value.isString()) {
-                        delimiters = value.asString();
-                    }
                     StringHex hex(delimiters);
                     std::string hex_string;
                     std::vector<uint8_t> hex_binaries(bufferContent, bufferContent + bufferSize);
