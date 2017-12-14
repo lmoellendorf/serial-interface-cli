@@ -10,7 +10,7 @@
  * @file
  * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
  * @author     Lars Möllendorf
- * @author     Adrian Antonana
+ * @author     Adrian Antonana <adrian.antonana@stackforce.de>
  * @brief      STACKFORCE Serial MAC Command Line Client
  *
  * @details See @code sfserialcli --help @endcode for details.
@@ -120,7 +120,7 @@ Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH
 CLI v)" SERIALMACCLI_VERSION R"(
 MAC v)" SERIALMAC_VERSION, false ); // version string
 
-    value = args.at ( "--verbose" );
+    value = args.at("--verbose");
     if(value && value.isBool()) {
         if(value.asBool()) {
             Verbose = std::fprintf;
