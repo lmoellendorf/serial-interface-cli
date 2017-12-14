@@ -58,13 +58,21 @@ namespace sf {
     class SerialMacCli: public SerialObserver {
 
         public:
+
+            enum ExitStatus {
+                EXIT_OK,
+                EXIT_ERROR,
+                EXIT_TIMEOUT
+            };
+
             SerialMacCli(int argc, char **argv);
             ~SerialMacCli();
 
-            int Run();
+            ExitStatus Run();
             void Update(Event *event);
 
         private:
+
             std::map<std::string, docopt::value> args;
             SerialMACConfig *serialMACConfig = nullptr;
             SerialPortConfig *serialPortConfig = nullptr;
@@ -73,7 +81,7 @@ namespace sf {
             bool noInvertedLengthField;
             bool textMode;
             std::string delimiters;
-            int exitStatus;
+            ExitStatus exitStatus;
             std::condition_variable running;
             std::mutex runningMutex;
 
