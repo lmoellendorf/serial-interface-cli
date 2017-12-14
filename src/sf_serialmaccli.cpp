@@ -321,83 +321,64 @@ void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseO
 void SerialMacCli::CliInput(void) {
     std::string line = "";
     docopt::value value;
-    char *output_buffer = NULL;
-    int output_buffer_length = 0;
+    char *outputBuffer = NULL;
+    int outputBufferLength = 0;
     std::vector<uint8_t> payload;
+    std::vector<uint8_t> hexBinaries;
     bool run = true;
 
     /** Repeat until the user stops you */
     while(run) {
-                /** If payload is passed as parameter ... */
-                IfPayloadPassedAsParameter(
-                /** ... this lambda function is executed ... */
-                [&line, this](docopt::value value) {
-                    std::vector <std::string> line_as_list = value.asStringList();
-                    std::for_each(line_as_list.begin(), line_as_list.end(),
-                                    /**
-                                        * A lambda within a lambda! But this is how
-                                        * for_each works
-                                        */
-                                    [&line](std::string& word)
-                    {
-                        return line+=word;
-                    });
-                },
-                /** ... else this lambda function is executed */
-                [&line, this]() {
-                    Verbose ("Input text:\n");
-                    std::getline(std::cin, line);
-                });
+        /** If payload is passed as parameter ... */
+        IfPayloadPassedAsParameter(
+        /** ... this lambda function is executed ... */
+        [&line, this](docopt::value value) {
+            std::vector <std::string> line_as_list = value.asStringList();
+            std::for_each(line_as_list.begin(), line_as_list.end(), [&line](std::string& word) {
+                return line+=word;
+            });
+        },
+        /** ... else this lambda function is executed */
+        [&line, this]() {
+            std::getline(std::cin, line);
+        });
 
-                if(line.length() > 0) {
-                    /**
-                    * We cannot simply pass a pointer to line.c_str() or
-                    * hex_binaries[0] here because their memory will be destroyed
-                    * as soon as we leave the scope of this function and the serial
-                    * MAC processes the memory asynchronously.
-                    * Therefore we allocate memory and copy the content.
-                    */
-                    value = args.at("--text");
-                    if(value && value.isBool() && value.asBool()) {
-                        output_buffer_length = line.length() + 1/* for the terminating '\0' */;
-                        /** Will be freed in Update() when TX has been completed. */
-                        output_buffer = ( char* ) std::malloc ( output_buffer_length );
-                        strncpy ( output_buffer, line.c_str(), output_buffer_length );
-                    }
-                    else {
-                        value = args.at("--delimiters");
-                        if(value && value.isString()) {
-                            delimiters = value.asString();
-                        }
-                        /**
-                        * In C++ there is no easy way to separate declaration and
-                        * initialization of objects
-                        */
-                        StringHex hex(delimiters);
-                        std::vector<uint8_t> hex_binaries;
-                        hex.HexStringToBinary(line, hex_binaries);
-                        output_buffer_length = hex_binaries.size();
-                        /**
-                        * On invalid input the length is 0 and we are finished for
-                        * the moment
-                        */
-                        if(!output_buffer_length)
-                        /** Will be freed in Update() when TX has been completed. */
-                        output_buffer = (char*)std::malloc(output_buffer_length);
-                        std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
-                    }
+        if(line.length() > 0) {
 
-                    payload.assign(output_buffer, output_buffer + output_buffer_length);
-                    ioState = IoState::SERIAL;
-                    SendSerial(payload);
+            if(textMode) {
+                outputBufferLength = line.length() + 1;
+                outputBuffer = (char*)std::malloc(outputBufferLength);
+                strncpy(outputBuffer, line.c_str(), outputBufferLength);
+                payload.assign(outputBuffer, outputBuffer + outputBufferLength);
+                std::free(outputBuffer);
+            }
+            else {
+                StringHex hex(delimiters);
+                hex.HexStringToBinary(line, hexBinaries);
+
+                if(!hexBinaries.size()) {
+                    run = false;
+                    break;
                 }
                 else {
+                    payload = hexBinaries;
                 }
 
-            break;
+                hexBinaries.clear();
+            }
 
+            SendSerial(payload);
+
+            if(!interactive) {
+                run = false;
+            }
+        }
+        else {
+            run = false;
         }
     }
+
+    userInput.notify_one();
 }
 
 SerialMacCli::ExitStatus SerialMacCli::Run() {
