@@ -298,12 +298,6 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     return AttachSerial(serialPortConfig, serialMACConfig);
 }
 
-void SerialMacCli::Quit() {
-    Verbose ( "Quitting.\n" );
-    run = false;
-    running.notify_one();
-}
-
 /**
  * Using a template allows us to ignore the differences between functors,
  * function pointers and lambda
@@ -389,7 +383,6 @@ void SerialMacCli::CliInput(void) {
                         * the moment
                         */
                         if(!output_buffer_length)
-                        Quit();
                         /** Will be freed in Update() when TX has been completed. */
                         output_buffer = (char*)std::malloc(output_buffer_length);
                         std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
@@ -400,7 +393,6 @@ void SerialMacCli::CliInput(void) {
                     SendSerial(payload);
                 }
                 else {
-                    Quit();
                 }
 
             break;
@@ -449,7 +441,6 @@ void SerialMacCli::Update(Event* event) {
 
                 if(textMode) {
                     if('\n' == bufferContent[0]) {
-                        Quit();
                     }
                     else {
                         std::printf("%s\n", bufferContent);
@@ -467,7 +458,6 @@ void SerialMacCli::Update(Event* event) {
             }
 
             if(!interactive) {
-                Quit();
             }
             else {
                 ioState = IoState::CLI;
@@ -495,7 +485,6 @@ void SerialMacCli::Update(Event* event) {
             bufferSize = event->GetDetails((void**)&bufferContent);
             std::cerr << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
             exitStatus = EXIT_FAILURE;
-            this->Quit();
             break;
 
         case SerialHandler::SERIAL_MAC_ERROR_CRC:
@@ -511,7 +500,6 @@ void SerialMacCli::Update(Event* event) {
         case SerialHandler::SERIAL_MAC_ERROR_SYNC_BYTE:
             std::cerr << "DeviceHandler::Update -> got SERIAL_MAC_ERROR_SYNC_BYTE" << std::endl;
             if(!interactive) {
-                Quit();
             }
             else {
                 ioState = IoState::CLI;
