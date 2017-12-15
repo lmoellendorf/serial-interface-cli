@@ -5,7 +5,7 @@
 #    embedded.connectivity.solutions===============
 #
 # copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
-# author     Adrian Antonana
+# author     Adrian Antonana <adrian.antonana@stackforce.de>
 # brief      STACKFORCE's serial CLI Dockerfile for Windows installer generation
 
 FROM ubuntu:xenial

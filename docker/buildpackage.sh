@@ -7,7 +7,7 @@
 # embedded.connectivity.solutions.==============
 #
 # copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
-# author     Adrian Antonana
+# author     Adrian Antonana <adrian.antonana@stackforce.de>
 # brief      STACKFORCE Serial MAC CLI Docker build script
 
 
