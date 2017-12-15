@@ -35,7 +35,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /work
 RUN git clone -b v3.9.4 https://github.com/Kitware/CMake.git
 WORKDIR CMake/build
-RUN cmake -DCPACK_GENERATOR="DEB" .. && make package
+RUN cmake -DCPACK_GENERATOR="DEB" -DCMAKE_BUILD_TYPE=Release .. && make package
 RUN apt-get remove --purge -y cmake cmake-data
 RUN dpkg -i cmake-3.9.4-Linux-x86_64.deb
 
@@ -47,7 +47,7 @@ RUN git clone -b 2.0.1 https://github.com/stackforce/cmake-modules.git
 WORKDIR /work
 RUN git clone -b export-cmake-build-tree https://github.com/mrpelotazo/docopt.cpp.git
 WORKDIR docopt.cpp/build
-RUN cmake -DCPACK_GENERATOR="DEB" -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/toolchain-cross-mingw-x86_64.cmake .. && make
+RUN cmake -DCPACK_GENERATOR="DEB" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/toolchain-cross-mingw-x86_64.cmake .. && make
 
 # build stringhex
 # NOTE version 0.2.1 has not the mingw toolchain in the cmake/modules git submodule
@@ -55,7 +55,7 @@ RUN cmake -DCPACK_GENERATOR="DEB" -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/too
 WORKDIR /work
 RUN git clone -b 0.2.1 https://github.com/stackforce/stringhex.git
 WORKDIR stringhex/build
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/toolchain-cross-mingw-x86_64.cmake .. && make
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/toolchain-cross-mingw-x86_64.cmake .. && make
 
 # build crc
 # NOTE version 0.1.3 has not the mingw toolchain in the cmake/modules git submodule
@@ -63,7 +63,7 @@ RUN cmake -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/toolchain-cross-mingw-x86_6
 WORKDIR /work
 RUN git clone -b 0.1.3 https://github.com/stackforce/crc.git
 WORKDIR crc/build
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/toolchain-cross-mingw-x86_64.cmake .. && make
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/toolchain-cross-mingw-x86_64.cmake .. && make
 
 # build serial mac
 WORKDIR /work
@@ -71,7 +71,7 @@ RUN git clone -b 1.0.1 https://github.com/stackforce/serial-interface-mac.git
 WORKDIR serial-interface-mac
 RUN git submodule update --init
 WORKDIR build
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake .. && make
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake .. && make
 
 # build observer
 WORKDIR /work
@@ -79,7 +79,7 @@ RUN git clone -b 3.0.0 https://github.com/stackforce/observer.git
 WORKDIR observer
 RUN git submodule update --init
 WORKDIR build
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake .. && make
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake .. && make
 
 # build serial observer
 WORKDIR /work
@@ -87,9 +87,9 @@ RUN git clone -b 1.0.0 https://github.com/stackforce/serial-interface-observer.g
 WORKDIR serial-interface-observer
 RUN git submodule update --init
 WORKDIR build
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake .. && make
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake .. && make
 
 # build serial cli
 COPY . /work/serial-interface-cli
 WORKDIR /work/serial-interface-cli/build
-RUN cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake .. && make package
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/toolchain-cross-mingw-x86_64.cmake .. && make package
