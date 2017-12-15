@@ -76,7 +76,7 @@ namespace sf {
             std::map<std::string, docopt::value> args;
             SerialMACConfig *serialMACConfig = nullptr;
             SerialPortConfig *serialPortConfig = nullptr;
-            uint respTimeoutSecs = 5;
+            long int respTimeoutSecs = 5;
 
             bool interactive;
             bool noInvertedLengthField;
