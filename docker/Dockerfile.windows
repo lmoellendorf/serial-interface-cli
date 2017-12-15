@@ -67,7 +67,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=/work/cmake-modules/
 
 # build serial mac
 WORKDIR /work
-RUN git clone -b 1.0.1 https://github.com/stackforce/serial-interface-mac.git
+RUN git clone -b 3.0.0 https://github.com/stackforce/serial-interface-mac.git
 WORKDIR serial-interface-mac
 RUN git submodule update --init
 WORKDIR build
@@ -83,7 +83,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/modules/too
 
 # build serial observer
 WORKDIR /work
-RUN git clone -b 1.0.0 https://github.com/stackforce/serial-interface-observer.git
+RUN git clone -b 2.0.0 https://github.com/stackforce/serial-interface-observer.git
 WORKDIR serial-interface-observer
 RUN git submodule update --init
 WORKDIR build
