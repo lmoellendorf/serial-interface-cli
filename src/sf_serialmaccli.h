@@ -58,37 +58,42 @@ namespace sf {
     class SerialMacCli: public SerialObserver {
 
         public:
+
+            enum ExitStatus {
+                EXIT_OK,
+                EXIT_ERROR,
+                EXIT_TIMEOUT
+            };
+
             SerialMacCli(int argc, char **argv);
             ~SerialMacCli();
 
-            int Run();
+            ExitStatus Run();
             void Update(Event *event);
 
         private:
+
             std::map<std::string, docopt::value> args;
             SerialMACConfig *serialMACConfig = nullptr;
             SerialPortConfig *serialPortConfig = nullptr;
+            long int respTimeoutSecs = 5;
 
-            enum class IoState {
-                CLI,
-                SERIAL
-            };
-
-            IoState ioState;
-            bool run;
             bool interactive;
             bool noInvertedLengthField;
-            int exitStatus;
-            std::condition_variable running;
-            std::mutex runningMutex;
+            bool textMode;
+            std::string delimiters;
+            ExitStatus exitStatus;
+            std::condition_variable confirmation;
+            std::condition_variable userInput;
+            std::mutex confirmMutex;
+            std::mutex inputMutex;
 
-            static int NonVerbose(const char *format, ...);
-            int (*Verbose) (const char *format, ...);
+            static int NonVerbose(FILE *stream, const char *format, ...);
+            int (*Verbose) (FILE *stream, const char *format, ...);
             template<typename IfFunc, typename ElseFunc>
             void IfPayloadPassedAsParameter (
                 IfFunc IfOperation, ElseFunc ElseOperation );
             SerialObserverStatus InitSerialPort();
-            void Quit();
             void CliInput(void);
     };
 
