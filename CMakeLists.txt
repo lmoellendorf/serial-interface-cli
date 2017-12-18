@@ -32,7 +32,7 @@
 ##
 
 cmake_minimum_required(VERSION 3.6)
-project(sfserialcli VERSION 1.0.3)
+project(sfserialcli VERSION 2.0.0)
 
 #---------------------------------------------------------------------------------------
 # Include required modules
@@ -47,8 +47,8 @@ include(ColorMessages)
 #---------------------------------------------------------------------------------------
 set(DOCOPT_VERSION 0.6.2)
 set(SFOBSERVER_VERSION 3.0.0)
-set(SFSERIALOBSERVER_VERSION 1.0.0)
-set(SFSERIALMAC_VERSION 1.0.1)
+set(SFSERIALOBSERVER_VERSION 2.0.0)
+set(SFSERIALMAC_VERSION 3.0.0)
 set(SFSTRINGHEX_VERSION 0.2.0)
 set(SFCRC_VERSION 0.1.3)
 
@@ -65,23 +65,39 @@ set(SERIALMAC_VERSION           ${SFSERIALMAC_VERSION})
 #---------------------------------------------------------------------------------------
 colormessage(MORE_IMPORTANT "Searching required project dependencies...")
 
+# docopt
 colormessage(STATUS "Searching docopt project configuration")
 find_package(docopt ${DOCOPT_VERSION} REQUIRED)
+
+# observer
 colormessage(STATUS "Searching sfobserver project configuration")
 find_package(sfobserver ${SFOBSERVER_VERSION} REQUIRED)
+
+# serial observer
 colormessage(STATUS "Searching sfserialobserver project configuration")
 find_package(sfserialobserver ${SFSERIALOBSERVER_VERSION} REQUIRED)
+
+# serial mac
 colormessage(STATUS "Searching sfserialmac project configuration")
 find_package(sfserialmac ${SFSERIALMAC_VERSION} REQUIRED)
+
+# stringhex
 colormessage(STATUS "Searching sfstringhex project configuration")
 find_package(sfstringhex ${SFSTRINGHEX_VERSION} REQUIRED)
+
+# crc
 colormessage(STATUS "Searching sfcrc project configuration")
 find_package(sfcrc ${SFCRC_VERSION} REQUIRED)
+
+# threads
 colormessage(STATUS "Searching Threads")
 find_package(Threads REQUIRED)
+
+# serial port
 colormessage(STATUS "Searching Serialport project configuration")
 find_package(Serialport REQUIRED)
 
+# mingw threads
 if(CMAKE_CROSSCOMPILING AND WIN32)
     colormessage(STATUS "Searching mingw threads for windows cross build")
     find_package(MingwThreads REQUIRED)
@@ -123,7 +139,7 @@ endif()
 # Get include directories
 #---------------------------------------------------------------------------------------
 if(CMAKE_CROSSCOMPILING AND WIN32)
-	get_target_property(MINGW_THREADS_INCLUDE_DIRS mingw-std-threads INTERFACE_INCLUDE_DIRECTORIES)
+    get_target_property(MINGW_THREADS_INCLUDE_DIRS mingw-std-threads INTERFACE_INCLUDE_DIRECTORIES)
 endif()
 
 #---------------------------------------------------------------------------------------

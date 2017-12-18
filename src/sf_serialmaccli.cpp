@@ -10,7 +10,7 @@
  * @file
  * @copyright  STACKFORCE GmbH, Heitersheim, Germany, http://www.stackforce.de
  * @author     Lars Möllendorf
- * @author     Adrian Antonana
+ * @author     Adrian Antonana <adrian.antonana@stackforce.de>
  * @brief      STACKFORCE Serial MAC Command Line Client
  *
  * @details See @code sfserialcli --help @endcode for details.
@@ -38,88 +38,37 @@
 #include <string.h>
 #include <algorithm>
 #include <docopt.h>
+#include <condition_variable>
+#include <chrono>
 
 #include "sf_serialobserver.h"
 #include "sf_serialmaccli.h"
+#include "sf_serialmaccli_config.h"
 #include "sf_serialmac.h"
-#include "version.h"
 #include "sf_stringhex.h"
-
-#ifdef __WIN32__
-#define CURRENT_SUPPLY_DEFAULT_PARAMETER " [default: d]"
-#else
-#define CURRENT_SUPPLY_DEFAULT_PARAMETER
-#endif
 
 #ifdef __WIN32_CROSS_BUILD__
 #include "mingw.thread.h"
+#include "mingw.mutex.h"
+#include "mingw.condition_variable.h"
 #endif
 
 namespace sf {
-    static const char USAGE[] =
-    SERIALMACCLI_PRODUCT_NAME R"(
-Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VERSION R"(
 
-      Usage:
-      )" SERIALMACCLI_PROGRAM_NAME R"( [options] [<payload> ...]
-
-      Options:
-      -h, --help                                  Show this screen.
-      -v, --version                               Show version.
-      -d <device>, --device=<device>              Serial port to use (e.g. "/dev/tty0", "/dev/ttyUSB0" or "COM1").
-                                                  If none is given, the first available port is chosen.
-      -b <baudrate>, --baudrate=<baudrate>        Baud rate [default: 115200].
-      -D (5-8), --data-bits=(5-8)                 Data bits [default: 8].
-      -P (n|o|e|s|m), --parity-bit=(n|o|e|s|m)    Parity bit mode [default: n]:
-                                                  n: None
-                                                  o: Odd
-                                                  e: Even
-                                                  s: Space
-                                                  m: Mark
-      -S (1|2), --stop-bits=(1|2)                 Stop bits [default: 1].
-      -F (n|x|r|d), --flow-control=(n|x|r|d)      Flow control mode [default: n]:
-                                                  n: None
-                                                  x: XON/XOFF
-                                                  r: RTS/CTS
-                                                  d: DTR/DSR
-      -C (n|d|r|dr|rd), --current=(n|d|r|dr|rd)   Current supply)"
-      CURRENT_SUPPLY_DEFAULT_PARAMETER R"(:
-                                                  n: None
-                                                  d: Power DTR
-                                                  r: Power RTS
-                                                  dr or rd: Power both
-      -X (i|o|io|oi), --xon-xoff=(i|o|io|oi)      XON/XOFF flow control behaviour:
-                                                  i: Enabled for input only
-                                                  o: Enabled for output only
-                                                  io or oi: Enabled for input and output
-      -I (d|r|c|s|x), --ignore=(d|r|c|s|x)        ignore configuration options:
-                                                  Do not configure DTR
-                                                  Do not configure RTS
-                                                  Do not configure CTS
-                                                  Do not configure DSR
-                                                  Do not configure XON/XOFF
-      -t, --text                                  Send and receive plain text instead of converting it to binary values first.
-      -s <delimiters>, --delimiters=<delimiters>  String delimiter(s) [default: ,;.: ] <- The last default is a whitespace!
-                                                  Will split the string at the given delimiters before converting them to binary values.
-      -V, --verbose                               Verbosive debug information on stderr.
-      )";
 
 SerialMacCli::SerialMacCli(int argc, char **argv) : SerialObserver() {
-    run = true;
+
     docopt::value value;
-    exitStatus = EXIT_SUCCESS;
-    args = docopt::docopt ( USAGE,
+    exitStatus = ExitStatus::EXIT_OK;
+    args = docopt::docopt ( cliconfig::USAGE,
     { argv + 1, argv + argc },
     true,               // show help if requested
-    SERIALMACCLI_PRODUCT_NAME R"(
-Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH
-CLI v)" SERIALMACCLI_VERSION R"(
-MAC v)" SERIALMAC_VERSION, false ); // version string
+    cliconfig::VERSION, false ); // version string
 
-    value = args.at ( "--verbose" );
+    value = args.at("--verbose");
     if(value && value.isBool()) {
-        if( value.asBool()) {
-            Verbose = std::printf;
+        if(value.asBool()) {
+            Verbose = std::fprintf;
         }
         else {
             Verbose = NonVerbose;
@@ -132,6 +81,19 @@ MAC v)" SERIALMAC_VERSION, false ); // version string
     }
     else {
         interactive = true;
+    }
+
+    value = args.at("--no-inverted-length");
+    noInvertedLengthField = value.asBool();
+
+    value = args.at("--text");
+    if(value && value.isBool()) {
+        textMode = value.asBool();
+    }
+
+    value = args.at("--delimiters");
+    if(value && value.isString()) {
+        delimiters = value.asString();
     }
 
     /* for debugging docopt
@@ -150,7 +112,7 @@ SerialMacCli::~SerialMacCli() {
  * This is a dummy function which is used instead of printf in non-verbose
  * mode.
  */
-int SerialMacCli::NonVerbose (const char *format, ...) {
+int SerialMacCli::NonVerbose(FILE *stream, const char *format, ...) {
   return strlen(format);
 }
 
@@ -160,6 +122,17 @@ int SerialMacCli::NonVerbose (const char *format, ...) {
 SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     docopt::value value;
 
+    /** configure serial MAC */
+    serialMACConfig = new SerialMACConfig();
+
+    if(noInvertedLengthField) {
+        serialMACConfig->SetLengthFieldType(SerialMACConfig::LengthField::LENGTHFIELD_SIMPLE);
+    }
+    else {
+        serialMACConfig->SetLengthFieldType(SerialMACConfig::LengthField::LENGTHFIELD_EXTENDED);
+    }
+
+    /** configure serial port */
     serialPortConfig = new SerialPortConfig(args.at( "--device" ).asString());
     serialPortConfig->SetMode(SerialPortConfig::PortMode::PORTMODE_READWRITE);
     serialPortConfig->SetBaudRate(args.at("--baudrate").asLong());
@@ -269,13 +242,7 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
         }
     }
 
-    return AttachSerial(serialPortConfig);
-}
-
-void SerialMacCli::Quit() {
-    Verbose ( "Quitting.\n" );
-    /** Userinput was empty line -> STOP */
-    run = false;
+    return AttachSerial(serialPortConfig, serialMACConfig);
 }
 
 /**
@@ -297,107 +264,94 @@ void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseO
     return ElseOperation();
 }
 
-
 void SerialMacCli::CliInput(void) {
     std::string line = "";
     docopt::value value;
-    std::string delimiters;
-    char *output_buffer = NULL;
-    int output_buffer_length = 0;
+    char *outputBuffer = NULL;
+    int outputBufferLength = 0;
     std::vector<uint8_t> payload;
+    std::vector<uint8_t> hexBinaries;
+    bool run = true;
 
-    /** Repeat until the user stops you */
     while(run) {
-        switch(ioState) {
-            case IoState::CLI:
-                /** If payload is passed as parameter ... */
-                IfPayloadPassedAsParameter(
-                /** ... this lambda function is executed ... */
-                [&line, this](docopt::value value) {
-                    std::vector <std::string> line_as_list = value.asStringList();
-                    std::for_each(line_as_list.begin(), line_as_list.end(),
-                                    /**
-                                        * A lambda within a lambda! But this is how
-                                        * for_each works
-                                        */
-                                    [&line](std::string& word)
-                    {
-                        return line+=word;
-                    });
-                },
-                /** ... else this lambda function is executed */
-                [&line, this]() {
-                    Verbose ("Input text:\n");
-                    std::getline(std::cin, line);
+
+        IfPayloadPassedAsParameter(
+            [&line, this](docopt::value value) {
+                std::vector <std::string> line_as_list = value.asStringList();
+                std::for_each(line_as_list.begin(), line_as_list.end(), [&line](std::string& word) {
+                    return line+=word;
                 });
+            },
+            [&line, this]() {
+                std::getline(std::cin, line);
+            }
+        );
 
-                if(line.length() > 0) {
-                    /**
-                    * We cannot simply pass a pointer to line.c_str() or
-                    * hex_binaries[0] here because their memory will be destroyed
-                    * as soon as we leave the scope of this function and the serial
-                    * MAC processes the memory asynchronously.
-                    * Therefore we allocate memory and copy the content.
-                    */
-                    value = args.at("--text");
-                    if(value && value.isBool() && value.asBool()) {
-                        output_buffer_length = line.length() + 1/* for the terminating '\0' */;
-                        /** Will be freed in Update() when TX has been completed. */
-                        output_buffer = ( char* ) std::malloc ( output_buffer_length );
-                        strncpy ( output_buffer, line.c_str(), output_buffer_length );
-                    }
-                    else {
-                        value = args.at("--delimiters");
-                        if(value && value.isString()) {
-                            delimiters = value.asString();
-                        }
-                        /**
-                        * In C++ there is no easy way to separate declaration and
-                        * initialization of objects
-                        */
-                        StringHex hex(delimiters);
-                        std::vector<uint8_t> hex_binaries;
-                        hex.HexStringToBinary(line, hex_binaries);
-                        output_buffer_length = hex_binaries.size();
-                        /**
-                        * On invalid input the length is 0 and we are finished for
-                        * the moment
-                        */
-                        if(!output_buffer_length)
-                        Quit();
-                        /** Will be freed in Update() when TX has been completed. */
-                        output_buffer = (char*)std::malloc(output_buffer_length);
-                        std::copy(hex_binaries.begin(), hex_binaries.end(), output_buffer);
-                    }
+        /** exit if the line is empy, send payload otherwise */
+        if(line.length() > 0) {
 
-                    payload.assign(output_buffer, output_buffer + output_buffer_length);
-                    ioState = IoState::SERIAL;
-                    SendSerial(payload);
+            if(textMode) {
+                outputBufferLength = line.length() + 1;
+                outputBuffer = (char*)std::malloc(outputBufferLength);
+                strncpy(outputBuffer, line.c_str(), outputBufferLength);
+                payload.assign(outputBuffer, outputBuffer + outputBufferLength);
+                std::free(outputBuffer);
+            }
+            else {
+                StringHex hex(delimiters);
+                hex.HexStringToBinary(line, hexBinaries);
+
+                if(!hexBinaries.size()) {
+                    run = false;
+                    break;
                 }
                 else {
-                    Quit();
+                    payload = hexBinaries;
                 }
 
-            break;
+                hexBinaries.clear();
+            }
 
-        case IoState::SERIAL: //nothing to do
-          break;
+            SendSerial(payload);
+
+            if(!interactive) {
+                run = false;
+            }
+        }
+        else {
+            run = false;
         }
     }
+
+    userInput.notify_one();
 }
 
-int SerialMacCli::Run() {
-    if(InitSerialPort() != SerialObserverStatus::ATTACH_OK) {
+SerialMacCli::ExitStatus SerialMacCli::Run() {
+
+    std::unique_lock<std::mutex> lockConfirm(confirmMutex);
+    std::unique_lock<std::mutex> lockInput(inputMutex);
+    std::chrono::seconds confirmTimeout(respTimeoutSecs);
+
+    /** initialize serial port */
+    if(InitSerialPort() != SerialObserverStatus::OBSERVER_OK) {
         std::cerr << "Could not initialize serial port " << serialPortConfig->GetPortName() << std::endl;
-        return EXIT_FAILURE;
+        return ExitStatus::EXIT_ERROR;
     }
 
-    /** Start waiting for CLI input */
-    ioState = IoState::CLI;
+    /** spawn user input thread */
     std::thread threadCliInput(&SerialMacCli::CliInput, this);
     threadCliInput.detach();
 
-    while(run) {};
+    if(interactive) { /** in interactive mode block while expecting user input */
+        userInput.wait(lockInput);
+    }
+    else { /** in non interactive mode block for a confirmation to be received within a timeout */
+
+        if(confirmation.wait_for(lockConfirm, confirmTimeout) == std::cv_status::timeout) {
+            Verbose(stderr, ":: CONFIRMATION_TIMEOUT\n");
+            return SerialMacCli::ExitStatus::EXIT_TIMEOUT;
+        }
+    }
 
     return exitStatus;
 }
@@ -411,26 +365,25 @@ void SerialMacCli::Update(Event* event) {
     switch(event->GetIdentifier()) {
         case SerialHandler::SERIAL_READ_FRAME_EVENT:
 
+            Verbose(stderr, ":: SERIAL_READ_FRAME_EVENT\n");
+
             bufferSize = event->GetDetails((void**)&bufferContent);
             payload.assign(bufferContent, bufferContent+bufferSize);
 
-            /** Check if a valid frame has been received */
+            /** check if a valid frame has been received */
             if(bufferSize) {
-                value = args.at ( "--text" );
-                if(value && value.isBool() && value.asBool()) {
+
+                Verbose(stderr, "Payload: ");
+
+                if(textMode) {
                     if('\n' == bufferContent[0]) {
-                        Quit();
+                        userInput.notify_one();
                     }
                     else {
                         std::printf("%s\n", bufferContent);
                     }
                 }
                 else {
-                    std::string delimiters;
-                    value = args.at ( "--delimiters" );
-                    if(value && value.isString()) {
-                        delimiters = value.asString();
-                    }
                     StringHex hex(delimiters);
                     std::string hex_string;
                     std::vector<uint8_t> hex_binaries(bufferContent, bufferContent + bufferSize);
@@ -438,39 +391,55 @@ void SerialMacCli::Update(Event* event) {
                     std::cout << hex_string << std::endl;
 
                 }
-                Verbose("Length:\n%zd\n", bufferSize);
+                Verbose(stderr, "Length: %zd\n", bufferSize);
             }
 
             if(!interactive) {
-                Quit();
-            }
-            else {
-                ioState = IoState::CLI;
+                confirmation.notify_one();
             }
             break;
 
         case SerialHandler::SERIAL_READ_BUFFER_EVENT:
+            Verbose(stderr, ":: SERIAL_READ_BUFFER_EVENT\n");
             break;
 
         case SerialHandler::SERIAL_WRITE_FRAME_EVENT:
+            Verbose(stderr, ":: SERIAL_WRITE_FRAME_EVENT\n");
             break;
 
         case SerialHandler::SERIAL_WRITE_BUFFER_EVENT:
+            Verbose(stderr, ":: SERIAL_WRITE_BUFFER_EVENT\n");
             break;
 
         case SerialHandler::SERIAL_READ_SYNC_BYTE_EVENT:
+            Verbose(stderr, ":: SERIAL_READ_SYNC_BYTE_EVENT\n");
             break;
 
         case SerialHandler::SERIAL_CONNECTION_ERROR:
 
             bufferSize = event->GetDetails((void**)&bufferContent);
-            std::cerr << "DeviceHandler::Update -> got SERIAL_CONNECTION_ERROR" << std::endl;
-            exitStatus = EXIT_FAILURE;
-            this->Quit();
+            std::cerr << ":: SERIAL_CONNECTION_ERROR" << std::endl;
+            exitStatus = ExitStatus::EXIT_ERROR;
+            userInput.notify_one();
+            confirmation.notify_one();
+            break;
+
+        case SerialHandler::SERIAL_MAC_ERROR_CRC:
+            std::cerr << ":: SERIAL_MAC_ERROR_CRC" << std::endl;
+            if(!interactive) {
+                confirmation.notify_one();
+            }
+            break;
+
+        case SerialHandler::SERIAL_MAC_ERROR_SYNC_BYTE:
+            std::cerr << ":: SERIAL_MAC_ERROR_SYNC_BYTE" << std::endl;
+            if(!interactive) {
+                confirmation.notify_one();
+            }
             break;
 
         default:
-            std::cerr << "DeviceHandler::Update -> got unhandled event: " << event->GetIdentifier() << std::endl;
+            Verbose(stderr, ":: UNHANDLED EVENT: %i\n", event->GetIdentifier());
             break;
     }
 }

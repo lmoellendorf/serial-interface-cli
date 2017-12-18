@@ -32,6 +32,15 @@
 ##
 
 #---------------------------------------------------------------------------------------
+# set configuration variables
+#---------------------------------------------------------------------------------------
+if(WIN32)
+    set(SERIALMACCLI_DEFAULT_PORT COM1)
+else()
+    set(SERIALMACCLI_DEFAULT_PORT /dev/ttyUSB0)
+endif()
+
+#---------------------------------------------------------------------------------------
 # cli headers and sources
 #---------------------------------------------------------------------------------------
 set(SF_SERIALMACCLI_SOURCES
@@ -40,8 +49,8 @@ set(SF_SERIALMACCLI_SOURCES
 )
 
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/version.h.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmaccli_config.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/sf_serialmaccli_config.h"
 )
 
 #---------------------------------------------------------------------------------------
@@ -148,15 +157,17 @@ set(CPACK_STRIP_FILES ON)
 # determine distribution and architecture
 if(NOT WIN32)
     execute_process(COMMAND lsb_release -si OUTPUT_VARIABLE LINUX_DISTRO OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(COMMAND lsb_release -sr OUTPUT_VARIABLE LINUX_DISTRO_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
     execute_process(COMMAND uname -m OUTPUT_VARIABLE MACHINE_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+    string(TOLOWER ${LINUX_DISTRO} LINUX_DISTRO)
 
     set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}_Linux-${MACHINE_ARCH})
 
-    if(LINUX_DISTRO STREQUAL "Debian" OR LINUX_DISTRO STREQUAL "Ubuntu" OR LINUX_DISTRO STREQUAL "LinuxMint")
+    if(LINUX_DISTRO STREQUAL "debian" OR LINUX_DISTRO STREQUAL "ubuntu" OR LINUX_DISTRO STREQUAL "linuxmint")
         execute_process(COMMAND dpkg-architecture -qDEB_HOST_ARCH OUTPUT_VARIABLE DEBIAN_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
         list(APPEND CPACK_GENERATOR DEB)
         set(CPACK_DEB_COMPONENT_INSTALL ON)
-        set(CPACK_DEBIAN_RUNTIME_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}_${DEBIAN_ARCH}.deb)
+        set(CPACK_DEBIAN_RUNTIME_FILE_NAME ${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}-${PACKAGE_RELEASE_VERSION}_${LINUX_DISTRO}-${LINUX_DISTRO_VERSION}_${DEBIAN_ARCH}.deb)
         set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME ${CPACK_PACKAGE_NAME})
         set(CPACK_DEBIAN_PACKAGE_RELEASE ${PACKAGE_RELEASE_VERSION})
         set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
