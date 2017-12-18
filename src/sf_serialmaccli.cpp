@@ -47,12 +47,6 @@
 #include "version.h"
 #include "sf_stringhex.h"
 
-#ifdef __WIN32__
-#define CURRENT_SUPPLY_DEFAULT_PARAMETER " [default: d]"
-#else
-#define CURRENT_SUPPLY_DEFAULT_PARAMETER
-#endif
-
 #ifdef __WIN32_CROSS_BUILD__
 #include "mingw.thread.h"
 #include "mingw.mutex.h"
