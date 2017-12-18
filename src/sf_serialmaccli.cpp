@@ -43,8 +43,8 @@
 
 #include "sf_serialobserver.h"
 #include "sf_serialmaccli.h"
+#include "sf_serialmaccli_config.h"
 #include "sf_serialmac.h"
-#include "version.h"
 #include "sf_stringhex.h"
 
 #ifdef __WIN32_CROSS_BUILD__

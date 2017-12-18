@@ -49,8 +49,8 @@ set(SF_SERIALMACCLI_SOURCES
 )
 
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/version.h.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmaccli_config.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/sf_serialmaccli_config.h"
 )
 
 #---------------------------------------------------------------------------------------

@@ -46,7 +46,6 @@ extern "C"
 #include "sf_serialmac.h"
 }
 #include "sf_serialobserver.h"
-#include "version.h"
 
 #ifdef __WIN32_CROSS_BUILD__
 #include "mingw.mutex.h"
