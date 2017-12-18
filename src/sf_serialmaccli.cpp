@@ -122,7 +122,9 @@ int SerialMacCli::NonVerbose(FILE *stream, const char *format, ...) {
 SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
     docopt::value value;
 
+    /** configure serial MAC */
     serialMACConfig = new SerialMACConfig();
+
     if(noInvertedLengthField) {
         serialMACConfig->SetLengthFieldType(SerialMACConfig::LengthField::LENGTHFIELD_SIMPLE);
     }
@@ -130,7 +132,7 @@ SerialObserver::SerialObserverStatus SerialMacCli::InitSerialPort() {
         serialMACConfig->SetLengthFieldType(SerialMACConfig::LengthField::LENGTHFIELD_EXTENDED);
     }
 
-
+    /** configure serial port */
     serialPortConfig = new SerialPortConfig(args.at( "--device" ).asString());
     serialPortConfig->SetMode(SerialPortConfig::PortMode::PORTMODE_READWRITE);
     serialPortConfig->SetBaudRate(args.at("--baudrate").asLong());
@@ -262,7 +264,6 @@ void SerialMacCli::IfPayloadPassedAsParameter(IfFunc IfOperation, ElseFunc ElseO
     return ElseOperation();
 }
 
-
 void SerialMacCli::CliInput(void) {
     std::string line = "";
     docopt::value value;
@@ -272,22 +273,21 @@ void SerialMacCli::CliInput(void) {
     std::vector<uint8_t> hexBinaries;
     bool run = true;
 
-    /** Repeat until the user stops you */
     while(run) {
-        /** If payload is passed as parameter ... */
-        IfPayloadPassedAsParameter(
-        /** ... this lambda function is executed ... */
-        [&line, this](docopt::value value) {
-            std::vector <std::string> line_as_list = value.asStringList();
-            std::for_each(line_as_list.begin(), line_as_list.end(), [&line](std::string& word) {
-                return line+=word;
-            });
-        },
-        /** ... else this lambda function is executed */
-        [&line, this]() {
-            std::getline(std::cin, line);
-        });
 
+        IfPayloadPassedAsParameter(
+            [&line, this](docopt::value value) {
+                std::vector <std::string> line_as_list = value.asStringList();
+                std::for_each(line_as_list.begin(), line_as_list.end(), [&line](std::string& word) {
+                    return line+=word;
+                });
+            },
+            [&line, this]() {
+                std::getline(std::cin, line);
+            }
+        );
+
+        /** exit if the line is empy, send payload otherwise */
         if(line.length() > 0) {
 
             if(textMode) {
@@ -332,22 +332,23 @@ SerialMacCli::ExitStatus SerialMacCli::Run() {
     std::unique_lock<std::mutex> lockInput(inputMutex);
     std::chrono::seconds confirmTimeout(respTimeoutSecs);
 
-    // initialize serial port
+    /** initialize serial port */
     if(InitSerialPort() != SerialObserverStatus::OBSERVER_OK) {
         std::cerr << "Could not initialize serial port " << serialPortConfig->GetPortName() << std::endl;
         return ExitStatus::EXIT_ERROR;
     }
 
-    // spawn user input thread
+    /** spawn user input thread */
     std::thread threadCliInput(&SerialMacCli::CliInput, this);
     threadCliInput.detach();
 
-    if(interactive) { // in interactive mode block while expecting user input
+    if(interactive) { /** in interactive mode block while expecting user input */
         userInput.wait(lockInput);
     }
-    else { // in non interactive mode block for a confirmation to be received within a timeout
+    else { /** in non interactive mode block for a confirmation to be received within a timeout */
 
         if(confirmation.wait_for(lockConfirm, confirmTimeout) == std::cv_status::timeout) {
+            Verbose(stderr, ":: CONFIRMATION_TIMEOUT\n");
             return SerialMacCli::ExitStatus::EXIT_TIMEOUT;
         }
     }
@@ -369,7 +370,7 @@ void SerialMacCli::Update(Event* event) {
             bufferSize = event->GetDetails((void**)&bufferContent);
             payload.assign(bufferContent, bufferContent+bufferSize);
 
-            /** Check if a valid frame has been received */
+            /** check if a valid frame has been received */
             if(bufferSize) {
 
                 Verbose(stderr, "Payload: ");
