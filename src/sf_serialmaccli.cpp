@@ -43,15 +43,9 @@
 
 #include "sf_serialobserver.h"
 #include "sf_serialmaccli.h"
+#include "sf_serialmaccli_config.h"
 #include "sf_serialmac.h"
-#include "version.h"
 #include "sf_stringhex.h"
-
-#ifdef __WIN32__
-#define CURRENT_SUPPLY_DEFAULT_PARAMETER " [default: d]"
-#else
-#define CURRENT_SUPPLY_DEFAULT_PARAMETER
-#endif
 
 #ifdef __WIN32_CROSS_BUILD__
 #include "mingw.thread.h"
@@ -60,66 +54,16 @@
 #endif
 
 namespace sf {
-    static const char USAGE[] =
-    SERIALMACCLI_PRODUCT_NAME R"(
-Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH v)" SERIALMACCLI_VERSION R"(
 
-      Usage:
-      )" SERIALMACCLI_PROGRAM_NAME R"( [options] [<payload> ...]
-
-      Options:
-      -h, --help                                  Show this screen.
-      -v, --version                               Show version.
-      -d <device>, --device=<device>              Serial port to use (e.g. "/dev/tty0", "/dev/ttyUSB0" or "COM1").
-                                                  If none is given, the first available port is chosen.
-      -b <baudrate>, --baudrate=<baudrate>        Baud rate [default: 115200].
-      -D (5-8), --data-bits=(5-8)                 Data bits [default: 8].
-      -P (n|o|e|s|m), --parity-bit=(n|o|e|s|m)    Parity bit mode [default: n]:
-                                                  n: None
-                                                  o: Odd
-                                                  e: Even
-                                                  s: Space
-                                                  m: Mark
-      -S (1|2), --stop-bits=(1|2)                 Stop bits [default: 1].
-      -F (n|x|r|d), --flow-control=(n|x|r|d)      Flow control mode [default: n]:
-                                                  n: None
-                                                  x: XON/XOFF
-                                                  r: RTS/CTS
-                                                  d: DTR/DSR
-      -C (n|d|r|dr|rd), --current=(n|d|r|dr|rd)   Current supply)"
-      CURRENT_SUPPLY_DEFAULT_PARAMETER R"(:
-                                                  n: None
-                                                  d: Power DTR
-                                                  r: Power RTS
-                                                  dr or rd: Power both
-      -X (i|o|io|oi), --xon-xoff=(i|o|io|oi)      XON/XOFF flow control behaviour:
-                                                  i: Enabled for input only
-                                                  o: Enabled for output only
-                                                  io or oi: Enabled for input and output
-      -I (d|r|c|s|x), --ignore=(d|r|c|s|x)        ignore configuration options:
-                                                  Do not configure DTR
-                                                  Do not configure RTS
-                                                  Do not configure CTS
-                                                  Do not configure DSR
-                                                  Do not configure XON/XOFF
-      -t, --text                                  Send and receive plain text instead of converting it to binary values first.
-      -s <delimiters>, --delimiters=<delimiters>  String delimiter(s) [default: ,;.: ] <- The last default is a whitespace!
-                                                  Will split the string at the given delimiters before converting them to binary values.
-      --no-inverted-length                        Disables the inverted length field in MAC header (For MAC versions <= 2.0.0).
-      -V, --verbose                               Verbosive debug information on stderr.
-      )";
 
 SerialMacCli::SerialMacCli(int argc, char **argv) : SerialObserver() {
 
     docopt::value value;
     exitStatus = ExitStatus::EXIT_OK;
-    args = docopt::docopt ( USAGE,
+    args = docopt::docopt ( cliconfig::USAGE,
     { argv + 1, argv + argc },
     true,               // show help if requested
-    SERIALMACCLI_PRODUCT_NAME R"(
-Copyright (C) 2017 )" SERIALMACCLI_PRODUCT_COMPANY R"( GmbH
-CLI v)" SERIALMACCLI_VERSION R"(
-MAC v)" SERIALMAC_VERSION, false ); // version string
+    cliconfig::VERSION, false ); // version string
 
     value = args.at("--verbose");
     if(value && value.isBool()) {

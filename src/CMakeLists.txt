@@ -32,6 +32,15 @@
 ##
 
 #---------------------------------------------------------------------------------------
+# set configuration variables
+#---------------------------------------------------------------------------------------
+if(WIN32)
+    set(SERIALMACCLI_DEFAULT_PORT COM1)
+else()
+    set(SERIALMACCLI_DEFAULT_PORT /dev/ttyUSB0)
+endif()
+
+#---------------------------------------------------------------------------------------
 # cli headers and sources
 #---------------------------------------------------------------------------------------
 set(SF_SERIALMACCLI_SOURCES
@@ -40,8 +49,8 @@ set(SF_SERIALMACCLI_SOURCES
 )
 
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/version.h.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/version.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sf_serialmaccli_config.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/sf_serialmaccli_config.h"
 )
 
 #---------------------------------------------------------------------------------------
