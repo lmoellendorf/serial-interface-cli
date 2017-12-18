@@ -36,5 +36,68 @@
 #ifndef _STACKFORCE_SERIALMACCLI_VERSION_H_
 #define _STACKFORCE_SERIALMACCLI_VERSION_H_
 
+namespace sf {
+
+    namespace cliconfig {
+
+        const std::string SERIALMACCLI_PRODUCT_NAME     = "@PROJECT_PRODUCT_NAME@";
+        const std::string SERIALMACCLI_PRODUCT_COMPANY  = "@PROJECT_PRODUCT_COMPANY@";
+        const std::string SERIALMACCLI_VERSION          = "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@";
+        const std::string SERIALMACCLI_PROGRAM_NAME     = "@SERIALMACCLI_PROGRAM_NAME@";
+        const std::string SERIALMAC_VERSION             = "@SERIALMAC_VERSION@";
+        const std::string SERIALMAC_CLI_DEFAULT_PORT    = "@SERIALMACCLI_DEFAULT_PORT@";
+
+        static const std::string USAGE =
+        SERIALMACCLI_PRODUCT_NAME + R"( v)" + SERIALMACCLI_VERSION + R"(. Copyright (C) 2017 )" + SERIALMACCLI_PRODUCT_COMPANY + R"( GmbH)" + R"(
+
+      Usage:
+      )" + SERIALMACCLI_PROGRAM_NAME + R"( [options] [<payload> ...]
+
+      Options:
+      -h, --help                                  Show this help.
+      -v, --version                               Show version.
+      -d <device>, --device=<device>              Serial port to use [default: )" + SERIALMAC_CLI_DEFAULT_PORT + R"(].
+      -b <baudrate>, --baudrate=<baudrate>        Baud rate [default: 115200].
+      -D (5-8), --data-bits=(5-8)                 Data bits [default: 8].
+      -P (n|o|e|s|m), --parity-bit=(n|o|e|s|m)    Parity bit mode [default: n]:
+                                                  n: None
+                                                  o: Odd
+                                                  e: Even
+                                                  s: Space
+                                                  m: Mark
+      -S (1|2), --stop-bits=(1|2)                 Stop bits [default: 1].
+      -F (n|x|r|d), --flow-control=(n|x|r|d)      Flow control mode [default: n]:
+                                                  n: None
+                                                  x: XON/XOFF
+                                                  r: RTS/CTS
+                                                  d: DTR/DSR
+      -C (n|d|r|dr|rd), --current=(n|d|r|dr|rd)   Current supply [default: n]:
+                                                  n: None
+                                                  d: Power DTR
+                                                  r: Power RTS
+                                                  dr or rd: Power both
+      -X (i|o|io|oi), --xon-xoff=(i|o|io|oi)      XON/XOFF flow control behaviour:
+                                                  i: Enabled for input only
+                                                  o: Enabled for output only
+                                                  io or oi: Enabled for input and output
+      -I (d|r|c|s|x), --ignore=(d|r|c|s|x)        ignore configuration options:
+                                                  Do not configure DTR
+                                                  Do not configure RTS
+                                                  Do not configure CTS
+                                                  Do not configure DSR
+                                                  Do not configure XON/XOFF
+      -t, --text                                  Send and receive plain text instead of converting it to binary values first.
+      -s <delimiters>, --delimiters=<delimiters>  String delimiter(s) [default: ,;.: ] <- The last default is a whitespace!
+                                                  Will split the string at the given delimiters before converting them to binary values.
+      --no-inverted-length                        Disables the inverted length field in MAC header (For MAC versions <= 2.0.0).
+      -V, --verbose                               Verbosive debug information on stderr.
+      )";
+
+        static const std::string VERSION =
+SERIALMACCLI_PRODUCT_NAME + R"(Copyright (C) 2017 )" + SERIALMACCLI_PRODUCT_COMPANY + R"( GmbH
+CLI v)" + SERIALMACCLI_VERSION + R"(
+MAC v)" + SERIALMAC_VERSION;
+    }
+}
 
 #endif
